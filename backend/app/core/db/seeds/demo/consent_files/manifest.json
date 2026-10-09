@@ -1,0 +1,22 @@
+{
+  "files": [
+    {
+      "code": "CONSENT_DATOS",
+      "name": "Autorización de tratamiento de datos personales",
+      "version": 1,
+      "file": "consentimiento_tratamiento_datos_v1.pdf",
+      "pdf_sha256": "129c89f917584c29b187aa41840e271e6c7b7e03310456068ab3c6f32cf79575",
+      "pdf_size_bytes": 7395,
+      "source_sha256": "ee505a255baf85934c635cf3663f374145b9d3e2158fc03d6270b9d462bef19e"
+    },
+    {
+      "code": "CONSENT_VIH",
+      "name": "Consentimiento informado para prueba de VIH",
+      "version": 1,
+      "file": "consentimiento_vih_v1.pdf",
+      "pdf_sha256": "deb9e3aa8def11a48c5f7af741d4c6ba5640be20acbd1c751faa53f7e5dfee57",
+      "pdf_size_bytes": 7220,
+      "source_sha256": "a1c7f6bbab24107a4261f7bca266fbeccf586c11473353980e12dc6007f01e5b"
+    }
+  ]
+}

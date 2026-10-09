@@ -1,0 +1,65 @@
+"""Validacion del archivo PDF (base64) de una version de documento a firmar.
+
+Funciones puras (sin HTTP ni BD). La API es quien calcula el hash, el tamano
+y el tipo de contenido a partir de los bytes decodificados: el cliente solo
+envia `file_base64`.
+"""
+
+import base64
+import binascii
+import hashlib
+from dataclasses import dataclass
+
+from app.core.exceptions import ValidationAppError
+
+FILE_FIELD = "file_base64"
+PDF_CONTENT_TYPE = "application/pdf"
+PDF_SIGNATURE = b"%PDF-"
+# Tamano maximo del PDF ya decodificado.
+MAX_FILE_BYTES = 5 * 1024 * 1024
+# Longitud maxima del base64 (4 caracteres por cada 3 bytes, con relleno): se
+# comprueba antes de decodificar para no gastar memoria en un cuerpo enorme.
+MAX_FILE_BASE64_LENGTH = (MAX_FILE_BYTES + 2) // 3 * 4
+
+
+@dataclass(frozen=True)
+class PdfFile:
+    """Metadatos calculados de un PDF valido (columnas `file_*` de la version)."""
+
+    content_type: str
+    sha256: str
+    size_bytes: int
+
+
+def _invalid(reason: str, message: str) -> ValidationAppError:
+    return ValidationAppError(
+        message=message, details={"field": FILE_FIELD, "reason": reason}
+    )
+
+
+def validate_pdf_base64(value: str) -> PdfFile:
+    """Valida `value` (base64 estricto de un PDF de hasta 5 MB) y calcula sus
+    metadatos. 422 `validation_error` con `details={field, reason}`;
+    `reason`: `empty`, `too_large`, `invalid_base64` o `not_pdf`.
+    """
+    if not value:
+        raise _invalid("empty", "El archivo está vacío.")
+    if len(value) > MAX_FILE_BASE64_LENGTH:
+        raise _invalid("too_large", "El archivo supera el tamaño máximo de 5 MB.")
+    try:
+        content = base64.b64decode(value, validate=True)
+    except (binascii.Error, ValueError):
+        raise _invalid(
+            "invalid_base64", "El archivo no es base64 válido (sin prefijo ni saltos)."
+        ) from None
+    if not content:
+        raise _invalid("empty", "El archivo está vacío.")
+    if len(content) > MAX_FILE_BYTES:
+        raise _invalid("too_large", "El archivo supera el tamaño máximo de 5 MB.")
+    if not content.startswith(PDF_SIGNATURE):
+        raise _invalid("not_pdf", "El archivo no es un PDF válido.")
+    return PdfFile(
+        content_type=PDF_CONTENT_TYPE,
+        sha256=hashlib.sha256(content).hexdigest(),
+        size_bytes=len(content),
+    )

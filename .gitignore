@@ -1,0 +1,45 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Node / Nuxt
+node_modules/
+.nuxt/
+.output/
+.nitro/
+.cache/
+dist/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# respaldos locales de la BD de desarrollo
+backups/
+
+# Artefactos de pruebas y configuración local de asistentes
+.vitest/
+**/.vitest/
+.claude/settings.local.json
+*.local
+
+# Configuracion de asistentes de codigo (Claude Code): personal, depende de la maquina
+.claude/
+CLAUDE.md
+AGENTS.md
