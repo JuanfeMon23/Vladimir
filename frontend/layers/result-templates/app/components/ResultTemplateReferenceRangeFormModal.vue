@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { UiSelectOption } from '~/components/ui/UiSelect.vue'
+import type { UiSelectOption } from '#andromeda/components/ui/UiSelect.vue'
 import type { ResultTemplateVersionContent } from '../composables/useResultTemplateVersionContent'
 import {
   REFERENCE_RANGE_AGE_UNITS,

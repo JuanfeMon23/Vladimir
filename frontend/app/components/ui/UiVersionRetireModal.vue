@@ -5,7 +5,7 @@
  * del editor). Si el backend responde 409 `version_in_use`, muestra su
  * mensaje y la lista de exámenes que la usan (`versionInUseCodes`).
  */
-import type { ConfirmActionView } from '~/composables/useConfirmAction'
+import type { ConfirmActionView } from '#andromeda/composables/useConfirmAction'
 
 const props = defineProps<{ state: ConfirmActionView }>()
 

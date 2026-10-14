@@ -5,7 +5,7 @@ import { defineComponent, h, nextTick } from 'vue'
 import { z } from 'zod'
 import UiActiveField from './UiActiveField.vue'
 import UiActivityTimeline from './UiActivityTimeline.vue'
-import UiFormModal from './UiFormModal.vue'
+import UiFormModal from '#andromeda/components/ui/UiFormModal.vue'
 import UiToggleActiveModal from './UiToggleActiveModal.vue'
 
 const { getMock } = vi.hoisted(() => ({ getMock: vi.fn() }))
