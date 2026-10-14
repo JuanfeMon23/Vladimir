@@ -1,4 +1,4 @@
-import type { UiSelectOption } from '~/components/ui/UiSelect.vue'
+import type { UiSelectOption } from '#andromeda/components/ui/UiSelect.vue'
 import type {
   AnalyteRead,
   ReferenceRangeRead,

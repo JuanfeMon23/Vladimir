@@ -1,7 +1,7 @@
 import type { Ref, WatchSource } from 'vue'
 import type { ListRequestParams, Page } from '~/types/api'
 import { cacheKey, isCacheFresh, LIST_CACHE_TTL, stampCache, type CacheStamp } from '~/utils/requestCache'
-import { normalizeSearchTerm } from '~/utils/search'
+import { normalizeSearchTerm } from '#andromeda/utils/search'
 
 export interface UsePaginatedListOptions {
   /** Tamaño de página (por defecto 20). */

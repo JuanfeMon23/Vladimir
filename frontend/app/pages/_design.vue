@@ -8,10 +8,10 @@
 import { z } from 'zod'
 import { ApiRequestError } from '~/composables/useApi'
 import type { ActivityEventRead } from '~/types/activity'
-import type { UiDataTableColumn } from '~/components/ui/UiDataTable.vue'
-import type { UiSelectOption } from '~/components/ui/UiSelect.vue'
-import type { UiTab } from '~/components/ui/UiTabs.vue'
-import type { UiVersionTimelineEntry } from '~/components/ui/UiVersionTimeline.vue'
+import type { UiDataTableColumn } from '#andromeda/components/ui/UiDataTable.vue'
+import type { UiSelectOption } from '#andromeda/components/ui/UiSelect.vue'
+import type { UiTab } from '#andromeda/components/ui/UiTabs.vue'
+import type { UiVersionTimelineEntry } from '#andromeda/components/ui/UiVersionTimeline.vue'
 
 definePageMeta({ layout: 'default' })
 useHead({ title: 'Sistema de diseño · Vladimir' })

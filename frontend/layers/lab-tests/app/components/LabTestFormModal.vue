@@ -9,8 +9,8 @@
  * mismo form (`LabTestSampleTypesDraft`) y viajan en el POST.
  */
 import { z } from 'zod'
-import type { UiSelectOption } from '~/components/ui/UiSelect.vue'
-import type { UiTab } from '~/components/ui/UiTabs.vue'
+import type { UiSelectOption } from '#andromeda/components/ui/UiSelect.vue'
+import type { UiTab } from '#andromeda/components/ui/UiTabs.vue'
 import type { LabTestCatalogOption, LabTestRead } from '../types/lab-tests'
 
 const props = defineProps<{ entity: LabTestRead | null }>()
