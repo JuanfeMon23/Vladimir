@@ -59,7 +59,7 @@ function toApiError(err: unknown): ApiRequestError {
     return new ApiRequestError(
       {
         code: 'unknown_error',
-        message: fetchErr.statusText ?? 'Ocurrió un error al comunicarse con el servidor.'
+        message: toUserMessage(err)
       },
       fetchErr.status
     )
@@ -67,7 +67,7 @@ function toApiError(err: unknown): ApiRequestError {
 
   return new ApiRequestError({
     code: 'network_error',
-    message: 'No se pudo establecer conexión con el servidor.'
+    message: toUserMessage(err)
   })
 }
 
