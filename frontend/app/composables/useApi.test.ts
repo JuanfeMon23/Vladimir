@@ -81,10 +81,12 @@ describe('useApi', () => {
     expect(err).toMatchObject({ code: 'http_error', message: 'Not authenticated', status: 401 })
   })
 
-  it('un 500 sin cuerpo usa statusText como unknown_error', async () => {
+  it('un 500 sin cuerpo da un mensaje legible (no el statusText técnico)', async () => {
     failWith({ status: 500, statusText: 'Internal Server Error', data: undefined })
     const err = await errorOf(() => useApi().get('/staff'))
-    expect(err).toMatchObject({ code: 'unknown_error', message: 'Internal Server Error', status: 500 })
+    expect(err).toMatchObject({ code: 'unknown_error', status: 500 })
+    expect(err.message).not.toMatch(/Internal Server Error/)
+    expect(err.message).toMatch(/servidor/i)
   })
 
   it('un 500 sin cuerpo ni statusText usa un mensaje genérico', async () => {
