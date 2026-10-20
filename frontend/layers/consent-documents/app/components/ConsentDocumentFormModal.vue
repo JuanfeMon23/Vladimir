@@ -47,10 +47,23 @@ const { submit, isSubmitting, formError, setFieldError } = useZodForm(schema, {
 
 const consentDocumentsApi = useConsentDocuments()
 
+// Al ver/editar, cada grupo de campos exige su permiso (el backend también lo valida).
+const isEdit = computed(() => props.entity !== null)
+const canEdit = useCan(CONSENT_DOCUMENTS_TAGS.edit)
+const canChangeStatus = useCan(CONSENT_DOCUMENTS_TAGS.changeStatus)
+const readOnly = computed(() => isEdit.value && !canEdit.value && !canChangeStatus.value)
+const dataLocked = computed(() => isEdit.value && !canEdit.value)
+
 const onSubmit = submit(async (values) => {
   try {
-    if (props.entity) await consentDocumentsApi.update(props.entity.id, withActivityReason(values, props.entity.is_active))
-    else await consentDocumentsApi.create(withActivityReason(values, undefined))
+    if (props.entity) {
+      const body = buildGuardedUpdate(values, props.entity, { canEdit: canEdit.value, canChangeStatus: canChangeStatus.value })
+      if (!body) {
+        open.value = false
+        return
+      }
+      await consentDocumentsApi.update(props.entity.id, body)
+    } else await consentDocumentsApi.create(withActivityReason(values, undefined))
   } catch (err) {
     // Segundo general activo: su `details` trae `code` (un campo del form), así que
     // el mapeo genérico lo pondría bajo "Código"; aquí va a los campos que lo causan.
@@ -85,11 +98,11 @@ const versionsApi = computed<UiVersionSectionApi | null>(() => {
   <UiFormModal
     v-model:open="open"
     :activity="entity ? { entityType: 'consent_documents', entityId: entity.id } : null"
-    :title="entity ? 'Editar documento' : 'Nuevo documento'"
+    :title="!entity ? 'Nuevo documento' : readOnly ? 'Documento' : 'Editar documento'"
     :size="entity ? 'lg' : 'md'"
     :submitting="isSubmitting"
     :form-error="formError"
-    :submit-label="entity ? 'Guardar cambios' : 'Crear'"
+    :submit-label="readOnly ? 'Cerrar' : entity ? 'Guardar cambios' : 'Crear'"
     @submit="onSubmit"
   >
     <UiStatusBadge
@@ -100,22 +113,22 @@ const versionsApi = computed<UiVersionSectionApi | null>(() => {
     />
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <UiFormField name="code" label="Código" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="name" label="Nombre" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="document_type" label="Tipo de documento" required :hint="CONSENT_GENERAL_HINT" class="sm:col-span-2">
-        <UiSelect :options="documentTypeOptions" placeholder="Seleccionar tipo" />
+        <UiSelect :options="documentTypeOptions" placeholder="Seleccionar tipo" :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="description" label="Descripción" class="sm:col-span-2">
-        <UiTextarea :rows="2" />
+        <UiTextarea :rows="2" :disabled="dataLocked" />
       </UiFormField>
     </div>
-    <UiActiveField label="Activo" :initial="entity?.is_active" />
+    <UiActiveField v-if="!isEdit || canChangeStatus" label="Activo" :initial="entity?.is_active" />
 
     <template v-if="versionsApi" #extra>
-      <UiVersionSection :api="versionsApi" />
+      <UiVersionSection :api="versionsApi" :permissions="CONSENT_DOCUMENTS_VERSION_PERMISSIONS" />
     </template>
   </UiFormModal>
 </template>

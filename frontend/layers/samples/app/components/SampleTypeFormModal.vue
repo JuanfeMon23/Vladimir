@@ -59,9 +59,21 @@ const { submit, isSubmitting, formError } = useZodForm(schema, {
 
 const samplesApi = useSamples()
 
+// Editar un tipo usa `edit`/`change-status`; crearlo (`add-type`) lo exige el botón que abre el modal.
+const canEdit = useCan(SAMPLES_TAGS.edit)
+const canChangeStatus = useCan(SAMPLES_TAGS.changeStatus)
+const readOnly = computed(() => isEdit.value && !canEdit.value && !canChangeStatus.value)
+const dataLocked = computed(() => isEdit.value && !canEdit.value)
+
 const onSubmit = submit(async (values) => {
-  if (props.entity) await samplesApi.updateType(props.entity.id, withActivityReason(values, props.entity.is_active))
-  else await samplesApi.createType(props.sampleId, withActivityReason(values, undefined))
+  if (props.entity) {
+    const body = buildGuardedUpdate(values, props.entity, { canEdit: canEdit.value, canChangeStatus: canChangeStatus.value })
+    if (!body) {
+      open.value = false
+      return
+    }
+    await samplesApi.updateType(props.entity.id, body)
+  } else await samplesApi.createType(props.sampleId, withActivityReason(values, undefined))
   emit('saved')
   open.value = false
 })
@@ -71,45 +83,45 @@ const onSubmit = submit(async (values) => {
   <UiFormModal
     v-model:open="open"
     :activity="entity ? { entityType: 'sample_types', entityId: entity.id } : null"
-    :title="isEdit ? 'Editar tipo de muestra' : 'Nuevo tipo de muestra'"
+    :title="!isEdit ? 'Nuevo tipo de muestra' : readOnly ? 'Tipo de muestra' : 'Editar tipo de muestra'"
     size="lg"
     :submitting="isSubmitting"
     :form-error="formError"
-    :submit-label="isEdit ? 'Guardar cambios' : 'Crear tipo'"
+    :submit-label="readOnly ? 'Cerrar' : isEdit ? 'Guardar cambios' : 'Crear tipo'"
     @submit="onSubmit"
   >
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <UiFormField name="code" label="Código" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="name" label="Nombre" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="specimen" label="Espécimen" required>
-        <UiSelect :options="specimenOptions" placeholder="Seleccionar espécimen" />
+        <UiSelect :options="specimenOptions" placeholder="Seleccionar espécimen" :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="cap_color_hex" label="Color de tapa" hint="Código hex, p. ej. #F97316">
-        <UiTextInput placeholder="#RRGGBB" />
+        <UiTextInput placeholder="#RRGGBB" :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="additive" label="Aditivo">
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="volume_ml" label="Volumen (mL)">
-        <UiTextInput type="number" min="0" step="any" />
+        <UiTextInput type="number" min="0" step="any" :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="storage_temperature" label="Temperatura de almacenamiento">
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="stability_hours" label="Estabilidad (horas)">
-        <UiTextInput type="number" min="0" step="1" />
+        <UiTextInput type="number" min="0" step="1" :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="draw_order" label="Orden de extracción">
-        <UiTextInput type="number" min="0" step="1" />
+        <UiTextInput type="number" min="0" step="1" :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="collection_instructions" label="Instrucciones de recolección" class="sm:col-span-2">
-        <UiTextarea :rows="3" />
+        <UiTextarea :rows="3" :disabled="dataLocked" />
       </UiFormField>
     </div>
-    <UiActiveField label="Activo" :initial="entity?.is_active" />
+    <UiActiveField v-if="!isEdit || canChangeStatus" label="Activo" :initial="entity?.is_active" />
   </UiFormModal>
 </template>

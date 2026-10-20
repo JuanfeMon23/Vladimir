@@ -34,9 +34,22 @@ const { submit, isSubmitting, formError } = useZodForm(schema, {
 
 const resultTemplatesApi = useResultTemplates()
 
+// Al ver/editar, cada grupo de campos exige su permiso (el backend también lo valida).
+const isEdit = computed(() => props.entity !== null)
+const canEdit = useCan(RESULT_TEMPLATES_TAGS.edit)
+const canChangeStatus = useCan(RESULT_TEMPLATES_TAGS.changeStatus)
+const readOnly = computed(() => isEdit.value && !canEdit.value && !canChangeStatus.value)
+const dataLocked = computed(() => isEdit.value && !canEdit.value)
+
 const onSubmit = submit(async (values) => {
-  if (props.entity) await resultTemplatesApi.update(props.entity.id, withActivityReason(values, props.entity.is_active))
-  else await resultTemplatesApi.create(withActivityReason(values, undefined))
+  if (props.entity) {
+    const body = buildGuardedUpdate(values, props.entity, { canEdit: canEdit.value, canChangeStatus: canChangeStatus.value })
+    if (!body) {
+      open.value = false
+      return
+    }
+    await resultTemplatesApi.update(props.entity.id, body)
+  } else await resultTemplatesApi.create(withActivityReason(values, undefined))
   emit('saved')
   open.value = false
 })
@@ -59,29 +72,30 @@ const versionsApi = computed<UiVersionSectionApi | null>(() => {
   <UiFormModal
     v-model:open="open"
     :activity="entity ? { entityType: 'result_templates', entityId: entity.id } : null"
-    :title="entity ? 'Editar plantilla' : 'Nueva plantilla'"
+    :title="!entity ? 'Nueva plantilla' : readOnly ? 'Plantilla' : 'Editar plantilla'"
     :size="entity ? 'lg' : 'md'"
     :submitting="isSubmitting"
     :form-error="formError"
-    :submit-label="entity ? 'Guardar cambios' : 'Crear'"
+    :submit-label="readOnly ? 'Cerrar' : entity ? 'Guardar cambios' : 'Crear'"
     @submit="onSubmit"
   >
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <UiFormField name="code" label="Código" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="name" label="Nombre" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="description" label="Descripción" class="sm:col-span-2">
-        <UiTextarea :rows="2" />
+        <UiTextarea :rows="2" :disabled="dataLocked" />
       </UiFormField>
     </div>
-    <UiActiveField label="Activa" :initial="entity?.is_active" />
+    <UiActiveField v-if="!isEdit || canChangeStatus" label="Activa" :initial="entity?.is_active" />
 
     <template v-if="versionsApi" #extra>
       <UiVersionSection
         :api="versionsApi"
+        :permissions="RESULT_TEMPLATES_VERSION_PERMISSIONS"
         description="Secciones, analitos y rangos se editan por versión; solo un borrador es editable."
       />
     </template>

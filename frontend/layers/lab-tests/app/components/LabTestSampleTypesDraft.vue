@@ -12,6 +12,8 @@ import { useFormContext } from 'vee-validate'
 import type { LabTestAssignmentRow } from '../utils/assignmentRows'
 
 const labTestsApi = useLabTests()
+/** Sin el `view` de muestras no hay catálogo que elegir: se avisa y no se pide nada. */
+const canConsult = useCan(MODULE_VIEW.samples.tag)
 const form = useFormContext<{ sample_types: LabTestSampleTypeRowValues[] }>()
 
 const catalog = useLabTestAssignmentCatalog<LabTestAssignmentRow>(async () => {
@@ -20,7 +22,7 @@ const catalog = useLabTestAssignmentCatalog<LabTestAssignmentRow>(async () => {
   // Los valores no se reinician: el form ya está montado y puede traer lo escrito.
   form.setFieldValue('sample_types', rows.map(row => emptySampleTypeRow(row.id)), false)
   return rows
-}, 'No se pudo cargar el catálogo de tipos de muestra.')
+}, 'No se pudo cargar el catálogo de tipos de muestra.', () => canConsult.value)
 
 const { isSelected, onToggle, updateRows } = useLabTestAssignmentRows<LabTestSampleTypeRowValues>({
   get values() { return { rows: form.values.sample_types } },
@@ -42,6 +44,7 @@ const listError = computed(() => form.errors.value.sample_types ?? null)
     divided
   >
     <div class="space-y-3">
+      <UiAlert v-if="!canConsult" variant="warning" :message="`${noViewMessage(MODULE_VIEW.samples)} Sin tipo de muestra no se puede crear el examen.`" />
       <UiAlert v-if="catalog.loadError" :message="catalog.loadError" />
       <UiAlert v-if="listError" :message="listError" />
       <UiItemList

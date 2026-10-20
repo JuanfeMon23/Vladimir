@@ -11,8 +11,9 @@
  * El estado viene de `useVersionEditor` (lo crea la página).
  */
 import type { VersionEditorView } from '~/composables/useVersionEditor'
+import type { VersionPermissionTags } from '~/utils/versioning'
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     editor: VersionEditorView
     /** Ruta de vuelta (el listado del módulo; la entidad se abre en modal). */
@@ -22,13 +23,18 @@ withDefaults(
     subtitle?: string
     /** Motivo por el que no se puede publicar ahora (deshabilita Publicar y se muestra al lado). */
     publishBlockedReason?: string | null
+    /** Tags de publicar y retirar; cada botón exige el suyo (`create`/`edit` no se usan aquí). */
+    permissions?: VersionPermissionTags
   }>(),
   {
+    permissions: () => ({}),
     backLabel: 'Volver',
     subtitle: undefined,
     publishBlockedReason: null
   }
 )
+
+const can = useVersionPermissions(() => props.permissions)
 </script>
 
 <template>
@@ -58,7 +64,7 @@ withDefaults(
       <div class="flex flex-wrap items-center gap-3">
         <UiVersionStatusBadge :status="editor.version.status" />
         <UiButton
-          v-if="editor.isDraft"
+          v-if="editor.isDraft && can.publish"
           variant="primary"
           size="sm"
           :loading="editor.publishing"
@@ -67,11 +73,11 @@ withDefaults(
         >
           Publicar
         </UiButton>
-        <span v-if="editor.isDraft && publishBlockedReason" class="text-xs text-text-muted">
+        <span v-if="editor.isDraft && can.publish && publishBlockedReason" class="text-xs text-text-muted">
           {{ publishBlockedReason }}
         </span>
         <UiButton
-          v-if="editor.isPublished"
+          v-if="editor.isPublished && can.retire"
           variant="danger-ghost"
           size="sm"
           @click="editor.retirement.ask(true)"

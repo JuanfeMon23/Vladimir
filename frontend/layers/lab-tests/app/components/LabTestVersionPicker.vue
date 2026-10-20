@@ -15,9 +15,14 @@
  */
 import { useFieldValue, useSetFieldValue } from 'vee-validate'
 import type { UiSelectOption } from '#andromeda/components/ui/UiSelect.vue'
+import type { ModuleView } from '~/utils/moduleAccess'
 import type { LabTestCatalogOption, LabTestVersionOption, LabTestVersionWithOwner } from '../types/lab-tests'
 
 const props = defineProps<{
+  /** Módulo de la entidad: sin su `view` no se consulta nada (se avisa y los controles se deshabilitan). */
+  module: ModuleView
+  /** Solo lectura (sin permiso de editar el examen). */
+  locked?: boolean
   /** Campo del formulario con el id de la versión. */
   name: string
   ownerLabel: string
@@ -30,6 +35,9 @@ const props = defineProps<{
   /** Una versión con su entidad dueña. */
   loadVersion: (versionId: string) => Promise<LabTestVersionWithOwner>
 }>()
+
+const canConsult = useCan(() => props.module.tag)
+const disabled = computed(() => props.locked || !canConsult.value)
 
 const versionId = useFieldValue<string | null>(() => props.name)
 const setVersionId = useSetFieldValue<string | null>(() => props.name)
@@ -91,6 +99,10 @@ async function selectOwner(id: string | null) {
 }
 
 onMounted(async () => {
+  if (!canConsult.value) {
+    loading.value = false
+    return
+  }
   try {
     const current = versionId.value
     const [list, version] = await Promise.all([props.loadOwners(), current ? props.loadVersion(current) : null])
@@ -112,13 +124,14 @@ onMounted(async () => {
 
 <template>
   <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <UiAlert v-if="!canConsult" variant="warning" :message="noViewMessage(module)" class="sm:col-span-2" />
     <UiAlert v-if="loadError" :message="loadError" class="sm:col-span-2" />
     <UiFormField :label="ownerLabel" hint="Opcional">
       <UiSelect
         :model-value="ownerId ?? ''"
         :options="ownerOptions"
         :empty-label="ownerPlaceholder"
-        :disabled="loading"
+        :disabled="loading || disabled"
         @update:model-value="selectOwner($event || null)"
       />
     </UiFormField>
@@ -126,7 +139,7 @@ onMounted(async () => {
       <UiSelect
         :options="versionOptions"
         empty-label="Sin versión"
-        :disabled="loading || !ownerId"
+        :disabled="loading || disabled || !ownerId"
       />
     </UiFormField>
   </div>

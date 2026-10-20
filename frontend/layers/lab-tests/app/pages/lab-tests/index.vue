@@ -3,7 +3,17 @@ import type { UiDataTableColumn } from '#andromeda/components/ui/UiDataTable.vue
 import type { UiSelectOption } from '#andromeda/components/ui/UiSelect.vue'
 import type { LabTestCatalogOption, LabTestRead } from '../../types/lab-tests'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: { tag: LAB_TESTS_TAGS.view } })
+
+const createTag = LAB_TESTS_TAGS.create
+
+// Quien solo consulta ve "Ver"; con algún permiso de cambio, "Ver / Editar".
+const canModify = useCan([
+  LAB_TESTS_TAGS.edit, LAB_TESTS_TAGS.changeStatus, LAB_TESTS_TAGS.setPreconditions,
+  LAB_TESTS_TAGS.setSampleTypes, LAB_TESTS_TAGS.setConsentDocuments
+], 'any')
+// El filtro y la columna de área vienen del catálogo de áreas: exige su `view`.
+const canConsultAreas = useCan(MODULE_VIEW.labAreas.tag)
 
 const labTestsApi = useLabTests()
 const activeFilter = ref<boolean | undefined>(undefined)
@@ -25,6 +35,7 @@ const areaOptions = computed<UiSelectOption[]>(() =>
 const areaName = (areaId: string) => areas.value.find(area => area.id === areaId)?.name ?? '—'
 
 onMounted(async () => {
+  if (!canConsultAreas.value) return
   try {
     areas.value = await labTestsApi.listAreaOptions()
   } catch {
@@ -46,9 +57,15 @@ const columns: UiDataTableColumn<LabTestRead>[] = [
     <UiPageHeader
       title="Exámenes"
       description="Catálogo de exámenes de laboratorio y su configuración."
-      action-label="Nuevo examen"
-      @action="modal.openCreate()"
-    />
+    >
+      <template #actions>
+        <LeoCan :tag="createTag">
+          <UiButton variant="primary" @click="modal.openCreate()">
+            Nuevo examen
+          </UiButton>
+        </LeoCan>
+      </template>
+    </UiPageHeader>
 
     <UiListToolbar
       v-model:search="search"
@@ -61,8 +78,13 @@ const columns: UiDataTableColumn<LabTestRead>[] = [
         active-label="Activos"
         inactive-label="Inactivos"
       />
-      <UiFormField label="Área" field-id="lab-test-area-filter" class="w-64">
-        <UiSelect v-model="areaFilter" :options="areaOptions" empty-label="Todas" />
+      <UiFormField
+        label="Área"
+        field-id="lab-test-area-filter"
+        class="w-64"
+        :hint="canConsultAreas ? undefined : noViewMessage(MODULE_VIEW.labAreas)"
+      >
+        <UiSelect v-model="areaFilter" :options="areaOptions" empty-label="Todas" :disabled="!canConsultAreas" />
       </UiFormField>
     </UiListToolbar>
 
@@ -88,7 +110,7 @@ const columns: UiDataTableColumn<LabTestRead>[] = [
       </template>
       <template #cell-id="{ row }">
         <UiButton variant="ghost" size="sm" @click="modal.openEdit(row)">
-          Ver / Editar
+          {{ canModify ? 'Ver / Editar' : 'Ver' }}
         </UiButton>
       </template>
     </UiDataTable>

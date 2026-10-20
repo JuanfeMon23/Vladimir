@@ -50,9 +50,24 @@ const { submit, isSubmitting, formError } = useZodForm(schema, {
 
 const staffApi = useStaff()
 
+// Al ver/editar, cada grupo de campos exige su permiso (el backend también lo valida).
+const canEdit = useCan(STAFF_TAGS.edit)
+const canChangeStatus = useCan(STAFF_TAGS.changeStatus)
+const readOnly = computed(() => isEdit.value && !canEdit.value && !canChangeStatus.value)
+/** Los datos son de solo lectura al editar sin `edit`. */
+const dataLocked = computed(() => isEdit.value && !canEdit.value)
+
 const onSubmit = submit(async (values) => {
-  if (props.entity) await staffApi.update(props.entity.id, withActivityReason(values, props.entity.is_active))
-  else await staffApi.create(withActivityReason(values, undefined))
+  if (props.entity) {
+    const body = buildGuardedUpdate(values, props.entity, { canEdit: canEdit.value, canChangeStatus: canChangeStatus.value })
+    if (!body) {
+      open.value = false
+      return
+    }
+    await staffApi.update(props.entity.id, body)
+  } else {
+    await staffApi.create(withActivityReason(values, undefined))
+  }
   emit('saved')
   open.value = false
 })
@@ -62,39 +77,39 @@ const onSubmit = submit(async (values) => {
   <UiFormModal
     v-model:open="open"
     :activity="entity ? { entityType: 'staff', entityId: entity.id } : null"
-    :title="isEdit ? 'Editar miembro del personal' : 'Nuevo miembro del personal'"
+    :title="!isEdit ? 'Nuevo miembro del personal' : readOnly ? 'Miembro del personal' : 'Editar miembro del personal'"
     size="lg"
     :submitting="isSubmitting"
     :form-error="formError"
-    :submit-label="isEdit ? 'Guardar cambios' : 'Crear'"
+    :submit-label="readOnly ? 'Cerrar' : isEdit ? 'Guardar cambios' : 'Crear'"
     @submit="onSubmit"
   >
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <UiFormField name="document_type" label="Tipo de documento" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="document_number" label="Número de documento" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="first_name" label="Nombres" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="last_name" label="Apellidos" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="email" label="Correo electrónico">
-        <UiTextInput type="email" />
+        <UiTextInput type="email" :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="phone" label="Teléfono">
-        <UiTextInput type="tel" />
+        <UiTextInput type="tel" :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="job_title" label="Cargo">
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="professional_license" label="Licencia profesional">
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
     </div>
-    <UiActiveField label="Activo" :initial="entity?.is_active" />
+    <UiActiveField v-if="!isEdit || canChangeStatus" label="Activo" :initial="entity?.is_active" />
   </UiFormModal>
 </template>

@@ -3,6 +3,7 @@ import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiRequestError } from '~/composables/useApi'
 import { fakePage } from '~/testing/fakeApi'
+import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS, signInWith } from '~/testing/session'
 import { control, flushAll, hasRow, isShown, rowOf, setChecked, setValue, submitForm } from '~/testing/dom'
 import LabTestSampleTypesEditor from './LabTestSampleTypesEditor.vue'
 
@@ -17,6 +18,7 @@ const EDTA = 'EDTA viejo (EDT · Sangre)'
 const ORINA = 'Orina (ORI · Orina)'
 
 beforeEach(() => {
+  signInWith([...ALL_LAB_TESTS_TAGS, ...LAB_TEST_SELECTOR_VIEW_TAGS])
   fake.reset()
   document.body.innerHTML = ''
   fake.routes['GET /samples'] = fakePage([

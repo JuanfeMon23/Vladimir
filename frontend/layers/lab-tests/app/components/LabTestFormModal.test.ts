@@ -3,6 +3,7 @@ import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiRequestError } from '~/composables/useApi'
 import { fakePage } from '~/testing/fakeApi'
+import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS, signInWith } from '~/testing/session'
 import { button, control, fieldError, flushAll, hasRow, optionLabels, rowOf, section, setChecked, setValue, submitForm } from '~/testing/dom'
 import type { LabTestRead } from '../types/lab-tests'
 import LabTestFormModal from './LabTestFormModal.vue'
@@ -49,6 +50,7 @@ function entity(overrides: Partial<LabTestRead> = {}): LabTestRead {
 }
 
 beforeEach(() => {
+  signInWith([...ALL_LAB_TESTS_TAGS, ...LAB_TEST_SELECTOR_VIEW_TAGS])
   fake.reset()
   document.body.innerHTML = ''
   fake.routes['GET /lab-areas'] = fakePage(AREAS)
@@ -198,13 +200,14 @@ describe('LabTestFormModal: crear', () => {
 })
 
 describe('LabTestFormModal: editar', () => {
-  it('PATCH con los valores del examen y sin activity_reason si el estado no cambió', async () => {
+  it('PATCH con los valores del examen, sin is_active ni activity_reason si el estado no cambió', async () => {
     const { wrapper, dialog, form } = await mountModal(entity())
     await setValue(control(dialog, 'Nombre'), 'Glucosa basal')
     await submitForm(form)
 
     const [body] = fake.bodies('PATCH', '/lab-tests/t1') as Record<string, unknown>[]
-    expect(body).toMatchObject({ code: 'GLU', name: 'Glucosa basal', area_id: 'a2', turnaround_hours: 24, is_active: true })
+    expect(body).toMatchObject({ code: 'GLU', name: 'Glucosa basal', area_id: 'a2', turnaround_hours: 24 })
+    expect(body).not.toHaveProperty('is_active')
     expect(body).not.toHaveProperty('activity_reason')
     expect(body).not.toHaveProperty('sample_types')
     expect(wrapper.emitted('saved')).toHaveLength(1)

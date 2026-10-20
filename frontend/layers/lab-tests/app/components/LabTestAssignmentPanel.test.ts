@@ -1,6 +1,7 @@
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
+import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS, signInWith } from '~/testing/session'
 import { buildLabTestAssignmentRows } from '../utils/assignmentRows'
 import LabTestAssignmentPanel from './LabTestAssignmentPanel.vue'
 
@@ -24,8 +25,15 @@ describe('LabTestAssignmentPanel', () => {
       [{ id: 'a', linkId: 'L-a', isActive: true, sortOrder: 1 }],
       [{ id: 'a', label: 'Tubo rojo', isActive: true }, { id: 'b', label: 'Tubo lila', isActive: true }]
     )
+    signInWith([...ALL_LAB_TESTS_TAGS, ...LAB_TEST_SELECTOR_VIEW_TAGS])
     const wrapper = await mountSuspended(LabTestAssignmentPanel, {
-      props: { title: 'Tipos de muestra', items, activityEntityType: 'lab_test_sample_types' }
+      props: {
+        title: 'Tipos de muestra',
+        items,
+        activityEntityType: 'lab_test_sample_types',
+        catalogModule: { tag: 'vladimir.samples.view', label: 'muestras' },
+        saveTag: 'vladimir.lab-tests.set-sample-types'
+      }
     })
 
     // Solo la fila con asignación tiene el botón.

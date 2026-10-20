@@ -30,6 +30,10 @@ const { submit, isSubmitting, formError } = useZodForm(schema, {
 
 const optionSetsApi = useResultOptionSets()
 
+// Una sola acción (`manage-option-sets`) cubre crear, editar y (des)activar el conjunto y sus opciones.
+const canManage = useCan(RESULT_TEMPLATES_TAGS.manageOptionSets)
+const readOnly = computed(() => props.entity !== null && !canManage.value)
+
 const onSubmit = submit(async (values) => {
   if (props.entity) await optionSetsApi.update(props.entity.id, withActivityReason(values, props.entity.is_active))
   else await optionSetsApi.create(withActivityReason(values, undefined))
@@ -63,35 +67,37 @@ const nextSortOrder = computed(() =>
   <UiFormModal
     v-model:open="open"
     :activity="entity ? { entityType: 'result_option_sets', entityId: entity.id } : null"
-    :title="entity ? 'Editar conjunto de opciones' : 'Nuevo conjunto de opciones'"
+    :title="!entity ? 'Nuevo conjunto de opciones' : readOnly ? 'Conjunto de opciones' : 'Editar conjunto de opciones'"
     :size="entity ? 'lg' : 'md'"
     :submitting="isSubmitting"
     :form-error="formError"
-    :submit-label="entity ? 'Guardar cambios' : 'Crear'"
+    :submit-label="readOnly ? 'Cerrar' : entity ? 'Guardar cambios' : 'Crear'"
     @submit="onSubmit"
   >
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <UiFormField name="code" label="Código" required>
-        <UiTextInput />
+        <UiTextInput :disabled="readOnly" />
       </UiFormField>
       <UiFormField name="name" label="Nombre" required>
-        <UiTextInput />
+        <UiTextInput :disabled="readOnly" />
       </UiFormField>
     </div>
-    <UiActiveField label="Activo" :initial="entity?.is_active" />
+    <UiActiveField v-if="!readOnly" label="Activo" :initial="entity?.is_active" />
 
     <template v-if="entity" #extra>
       <UiSection title="Opciones" description="Valores posibles del resultado, en orden." divided>
         <template #actions>
-          <UiButton
-            variant="secondary"
-            size="sm"
-            :disabled="!entity.is_active"
-            :title="entity.is_active ? undefined : 'Reactiva el conjunto para agregarle opciones.'"
-            @click="options.modal.openCreate()"
-          >
-            Agregar opción
-          </UiButton>
+          <LeoCan :tag="RESULT_TEMPLATES_TAGS.manageOptionSets">
+            <UiButton
+              variant="secondary"
+              size="sm"
+              :disabled="!entity.is_active"
+              :title="entity.is_active ? undefined : 'Reactiva el conjunto para agregarle opciones.'"
+              @click="options.modal.openCreate()"
+            >
+              Agregar opción
+            </UiButton>
+          </LeoCan>
         </template>
 
         <UiAlert v-if="options.error" :message="options.error" />
@@ -110,7 +116,7 @@ const nextSortOrder = computed(() =>
             <UiStatusBadge v-if="item.is_abnormal" variant="warning" label="Anormal" />
             <UiStatusBadge :active="item.is_active" :label="item.is_active ? 'Activa' : 'Inactiva'" />
             <UiButton variant="ghost" size="sm" @click="options.modal.openEdit(item)">
-              Editar
+              {{ readOnly ? 'Ver' : 'Editar' }}
             </UiButton>
           </template>
         </UiItemList>

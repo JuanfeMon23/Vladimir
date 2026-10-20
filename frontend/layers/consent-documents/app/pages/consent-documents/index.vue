@@ -4,7 +4,12 @@ import { CONSENT_DOCUMENT_TYPE_LABELS } from '../../types/consent-documents'
 import type { ConsentDocumentRead } from '../../types/consent-documents'
 import { isGeneralConsent } from '../../utils/consentDocuments'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: { tag: CONSENT_DOCUMENTS_TAGS.view } })
+
+const createTag = CONSENT_DOCUMENTS_TAGS.create
+
+// Quien solo consulta ve "Ver"; con algún permiso de cambio, "Ver / Editar".
+const canModify = useCan([CONSENT_DOCUMENTS_TAGS.edit, CONSENT_DOCUMENTS_TAGS.changeStatus, CONSENT_DOCUMENTS_TAGS.createVersion, CONSENT_DOCUMENTS_TAGS.editVersion, CONSENT_DOCUMENTS_TAGS.publishVersion, CONSENT_DOCUMENTS_TAGS.retireVersion], 'any')
 
 const consentDocumentsApi = useConsentDocuments()
 const activeFilter = ref<boolean | undefined>(undefined)
@@ -33,9 +38,15 @@ const columns: UiDataTableColumn<ConsentDocumentRead>[] = [
     <UiPageHeader
       title="Documentos a firmar"
       description="Gestión de documentos de consentimiento y sus versiones (cada versión lleva su PDF). El consentimiento general se firma antes de cualquier examen."
-      action-label="Nuevo documento"
-      @action="modal.openCreate()"
-    />
+    >
+      <template #actions>
+        <LeoCan :tag="createTag">
+          <UiButton variant="primary" @click="modal.openCreate()">
+            Nuevo documento
+          </UiButton>
+        </LeoCan>
+      </template>
+    </UiPageHeader>
 
     <UiListToolbar
       v-model:search="search"
@@ -75,7 +86,7 @@ const columns: UiDataTableColumn<ConsentDocumentRead>[] = [
       </template>
       <template #cell-id="{ row }">
         <UiButton variant="ghost" size="sm" @click="modal.openEdit(row)">
-          Ver / Editar
+          {{ canModify ? 'Ver / Editar' : 'Ver' }}
         </UiButton>
       </template>
     </UiDataTable>

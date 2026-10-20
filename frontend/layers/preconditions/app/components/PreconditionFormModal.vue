@@ -52,8 +52,8 @@ const isItem = computed(() => (props.entity ? props.entity.kind === 'condition' 
 const isRootEdit = computed(() => props.entity?.kind === 'precondition')
 
 const title = computed(() => {
-  if (isItem.value) return isEdit.value ? 'Editar ítem' : 'Nuevo ítem'
-  return isEdit.value ? 'Editar precondición' : 'Nueva precondición'
+  if (isItem.value) return !isEdit.value ? 'Nuevo ítem' : readOnly.value ? 'Ítem' : 'Editar ítem'
+  return !isEdit.value ? 'Nueva precondición' : readOnly.value ? 'Precondición' : 'Editar precondición'
 })
 const description = computed(() => {
   if (props.parent && !isEdit.value) return `Ítem de «${props.parent.name}».`
@@ -80,9 +80,23 @@ const { submit, isSubmitting, formError } = useZodForm(schema, {
 
 const preconditionsApi = usePreconditions()
 
+// Al ver/editar, cada grupo de campos exige su permiso (el backend también lo valida).
+const canEdit = useCan(PRECONDITIONS_TAGS.edit)
+const canChangeStatus = useCan(PRECONDITIONS_TAGS.changeStatus)
+const readOnly = computed(() => isEdit.value && !canEdit.value && !canChangeStatus.value)
+/** Los datos son de solo lectura al editar sin `edit`. */
+const dataLocked = computed(() => isEdit.value && !canEdit.value)
+const canModify = useCan([PRECONDITIONS_TAGS.edit, PRECONDITIONS_TAGS.changeStatus], 'any')
+
 const onSubmit = submit(async (values) => {
-  if (props.entity) await preconditionsApi.update(props.entity.id, withActivityReason(values, props.entity.is_active))
-  else if (props.parent) await preconditionsApi.createItem(props.parent.id, withActivityReason(values, undefined))
+  if (props.entity) {
+    const body = buildGuardedUpdate(values, props.entity, { canEdit: canEdit.value, canChangeStatus: canChangeStatus.value })
+    if (!body) {
+      open.value = false
+      return
+    }
+    await preconditionsApi.update(props.entity.id, body)
+  } else if (props.parent) await preconditionsApi.createItem(props.parent.id, withActivityReason(values, undefined))
   else await preconditionsApi.create(withActivityReason(values, undefined))
   emit('saved')
   open.value = false
@@ -111,29 +125,29 @@ function onItemSaved() {
     :size="isRootEdit ? 'xl' : 'lg'"
     :submitting="isSubmitting"
     :form-error="formError"
-    :submit-label="isEdit ? 'Guardar cambios' : 'Crear'"
+    :submit-label="readOnly ? 'Cerrar' : isEdit ? 'Guardar cambios' : 'Crear'"
     @submit="onSubmit"
   >
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <UiFormField name="code" label="Código" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="name" label="Nombre" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="category" label="Categoría" required>
-        <UiSelect :options="categoryOptions" placeholder="Seleccionar categoría" />
+        <UiSelect :options="categoryOptions" placeholder="Seleccionar categoría" :disabled="dataLocked" />
       </UiFormField>
       <div class="grid grid-cols-2 gap-3">
         <UiFormField name="duration_value" label="Duración">
-          <UiTextInput type="number" min="0" step="any" />
+          <UiTextInput type="number" min="0" step="any" :disabled="dataLocked" />
         </UiFormField>
         <UiFormField name="duration_unit" label="Unidad">
-          <UiSelect :options="durationUnitOptions" empty-label="Sin unidad" />
+          <UiSelect :options="durationUnitOptions" empty-label="Sin unidad" :disabled="dataLocked" />
         </UiFormField>
       </div>
       <UiFormField name="description" label="Descripción" class="sm:col-span-2">
-        <UiTextarea :rows="2" />
+        <UiTextarea :rows="2" :disabled="dataLocked" />
       </UiFormField>
       <UiFormField
         name="patient_instructions"
@@ -141,23 +155,25 @@ function onItemSaved() {
         class="sm:col-span-2"
         hint="Texto que verá el paciente al preparar el examen."
       >
-        <UiTextarea :rows="3" />
+        <UiTextarea :rows="3" :disabled="dataLocked" />
       </UiFormField>
     </div>
-    <UiActiveField label="Activa" :initial="entity?.is_active" />
+    <UiActiveField v-if="!isEdit || canChangeStatus" label="Activa" :initial="entity?.is_active" />
 
     <template v-if="isRootEdit && entity" #extra>
       <UiSection title="Ítems" description="Condiciones específicas de esta precondición." divided>
         <template #actions>
-          <UiButton
-            variant="secondary"
-            size="sm"
-            :disabled="!entity.is_active"
-            :title="entity.is_active ? undefined : 'Reactiva la precondición para agregarle ítems.'"
-            @click="itemList.modal.openCreate()"
-          >
-            Agregar ítem
-          </UiButton>
+          <LeoCan :tag="PRECONDITIONS_TAGS.addItem">
+            <UiButton
+              variant="secondary"
+              size="sm"
+              :disabled="!entity.is_active"
+              :title="entity.is_active ? undefined : 'Reactiva la precondición para agregarle ítems.'"
+              @click="itemList.modal.openCreate()"
+            >
+              Agregar ítem
+            </UiButton>
+          </LeoCan>
         </template>
 
         <UiAlert v-if="itemList.error" :message="itemList.error" />
@@ -175,7 +191,7 @@ function onItemSaved() {
           <template #trailing="{ item }">
             <UiStatusBadge :active="item.is_active" />
             <UiButton variant="ghost" size="sm" @click="itemList.modal.openEdit(item)">
-              Editar
+              {{ canModify ? 'Editar' : 'Ver' }}
             </UiButton>
           </template>
         </UiItemList>

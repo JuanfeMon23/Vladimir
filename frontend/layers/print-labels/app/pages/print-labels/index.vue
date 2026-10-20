@@ -2,7 +2,12 @@
 import type { UiDataTableColumn } from '~/components/ui/UiDataTable.vue'
 import type { PrintLabelRead } from '../../types/print-labels'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: { tag: PRINT_LABELS_TAGS.view } })
+
+const createTag = PRINT_LABELS_TAGS.create
+
+// Quien solo consulta ve "Ver"; con algún permiso de cambio, "Ver / Editar".
+const canModify = useCan([PRINT_LABELS_TAGS.edit, PRINT_LABELS_TAGS.changeStatus, PRINT_LABELS_TAGS.createVersion, PRINT_LABELS_TAGS.editVersion, PRINT_LABELS_TAGS.publishVersion, PRINT_LABELS_TAGS.retireVersion], 'any')
 
 const printLabelsApi = usePrintLabels()
 const activeFilter = ref<boolean | undefined>(undefined)
@@ -30,9 +35,15 @@ const columns: UiDataTableColumn<PrintLabelRead>[] = [
     <UiPageHeader
       title="Etiquetas de impresión"
       description="Gestión de etiquetas de impresión y sus versiones."
-      action-label="Nueva etiqueta"
-      @action="modal.openCreate()"
-    />
+    >
+      <template #actions>
+        <LeoCan :tag="createTag">
+          <UiButton variant="primary" @click="modal.openCreate()">
+            Nueva etiqueta
+          </UiButton>
+        </LeoCan>
+      </template>
+    </UiPageHeader>
 
     <UiListToolbar
       v-model:search="search"
@@ -66,7 +77,7 @@ const columns: UiDataTableColumn<PrintLabelRead>[] = [
       </template>
       <template #cell-id="{ row }">
         <UiButton variant="ghost" size="sm" @click="modal.openEdit(row)">
-          Ver / Editar
+          {{ canModify ? 'Ver / Editar' : 'Ver' }}
         </UiButton>
       </template>
     </UiDataTable>

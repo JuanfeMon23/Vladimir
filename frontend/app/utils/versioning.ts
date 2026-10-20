@@ -16,6 +16,18 @@ export interface VersionRecord {
   change_notes: string | null
 }
 
+/**
+ * Tags de Leo de las acciones de versionado de un módulo. El núcleo no conoce
+ * los tags de ningún módulo: cada layer pasa los suyos; sin tag, la acción
+ * no se restringe (módulo sin proteger).
+ */
+export interface VersionPermissionTags {
+  create?: string
+  edit?: string
+  publish?: string
+  retire?: string
+}
+
 /** Chip extra de una versión (p. ej. "PDF adjunto"), junto a su estado. */
 export interface VersionBadge {
   label: string

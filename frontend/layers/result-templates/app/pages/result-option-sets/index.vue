@@ -2,7 +2,10 @@
 import type { UiDataTableColumn } from '~/components/ui/UiDataTable.vue'
 import type { ResultOptionSetRead } from '../../types/result-templates'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: { tag: RESULT_TEMPLATES_TAGS.view } })
+
+const manageTag = RESULT_TEMPLATES_TAGS.manageOptionSets
+const canManage = useCan(manageTag)
 
 const optionSetsApi = useResultOptionSets()
 const activeFilter = ref<boolean | undefined>(undefined)
@@ -29,9 +32,15 @@ const columns: UiDataTableColumn<ResultOptionSetRead>[] = [
     <UiPageHeader
       title="Conjuntos de opciones"
       description="Catálogos de opciones para analitos cualitativos y semicuantitativos."
-      action-label="Nuevo conjunto"
-      @action="modal.openCreate()"
-    />
+    >
+      <template #actions>
+        <LeoCan :tag="manageTag">
+          <UiButton variant="primary" @click="modal.openCreate()">
+            Nuevo conjunto
+          </UiButton>
+        </LeoCan>
+      </template>
+    </UiPageHeader>
 
     <UiListToolbar
       v-model:search="search"
@@ -65,7 +74,7 @@ const columns: UiDataTableColumn<ResultOptionSetRead>[] = [
       </template>
       <template #cell-id="{ row }">
         <UiButton variant="ghost" size="sm" @click="modal.openEdit(row)">
-          Ver / Editar
+          {{ canManage ? 'Ver / Editar' : 'Ver' }}
         </UiButton>
       </template>
     </UiDataTable>

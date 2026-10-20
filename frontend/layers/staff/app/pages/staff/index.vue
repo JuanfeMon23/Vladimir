@@ -2,7 +2,12 @@
 import type { UiDataTableColumn } from '~/components/ui/UiDataTable.vue'
 import type { StaffRead } from '../../types/staff'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: { tag: STAFF_TAGS.view } })
+
+const createTag = STAFF_TAGS.create
+
+// Quien solo consulta ve "Ver"; con algún permiso de cambio, "Ver / Editar".
+const canModify = useCan([STAFF_TAGS.edit, STAFF_TAGS.changeStatus], 'any')
 
 const staffApi = useStaff()
 const activeFilter = ref<boolean | undefined>(undefined)
@@ -31,9 +36,15 @@ const columns: UiDataTableColumn<StaffRead>[] = [
     <UiPageHeader
       title="Personal"
       description="Gestión del personal del laboratorio."
-      action-label="Nuevo"
-      @action="modal.openCreate()"
-    />
+    >
+      <template #actions>
+        <LeoCan :tag="createTag">
+          <UiButton variant="primary" @click="modal.openCreate()">
+            Nuevo
+          </UiButton>
+        </LeoCan>
+      </template>
+    </UiPageHeader>
 
     <UiListToolbar
       v-model:search="search"
@@ -62,7 +73,7 @@ const columns: UiDataTableColumn<StaffRead>[] = [
       </template>
       <template #cell-id="{ row }">
         <UiButton variant="ghost" size="sm" @click="modal.openEdit(row)">
-          Ver / Editar
+          {{ canModify ? 'Ver / Editar' : 'Ver' }}
         </UiButton>
       </template>
     </UiDataTable>
