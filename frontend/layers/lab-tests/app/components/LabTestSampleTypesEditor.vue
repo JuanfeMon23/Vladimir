@@ -16,6 +16,8 @@ import type { LabTestAssignmentRow } from '../utils/assignmentRows'
 const props = defineProps<{ labTestId: string }>()
 
 const labTestsApi = useLabTests()
+/** Sin el `view` del módulo del catálogo no se pide nada (el panel avisa el permiso que falta). */
+const canConsult = useCan(MODULE_VIEW.samples.tag)
 
 const schema = z.object({ rows: labTestSampleTypeRowsSchema })
 
@@ -44,7 +46,7 @@ const catalog = useLabTestAssignmentCatalog<LabTestAssignmentRow>(async () => {
     })
   })
   return rows
-}, 'No se pudo cargar el catálogo de tipos de muestra.')
+}, 'No se pudo cargar el catálogo de tipos de muestra.', () => canConsult.value)
 
 const { isSelected, onToggle, updateRows } = useLabTestAssignmentRows(form, emptySampleTypeRow)
 
@@ -65,6 +67,8 @@ const onSubmit = submit(async ({ rows }) => {
 
 <template>
   <LabTestAssignmentPanel
+    :catalog-module="MODULE_VIEW.samples"
+    :save-tag="LAB_TESTS_TAGS.setSampleTypes"
     activity-entity-type="lab_test_sample_types"
     title="Tipos de muestra"
     description="Marca al menos un tipo de muestra (el recipiente); exactamente uno debe ser el preferido."

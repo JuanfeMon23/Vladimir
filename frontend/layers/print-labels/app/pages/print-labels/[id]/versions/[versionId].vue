@@ -11,7 +11,7 @@ import type { PrintLabelRead, PrintLabelVersionRead } from '../../../../types/pr
  * modales). Solo un borrador es editable; publicar/retirar también se puede
  * desde el modal de la etiqueta.
  */
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: { tag: PRINT_LABELS_TAGS.view } })
 
 const route = useRoute()
 const printLabelsApi = usePrintLabels()
@@ -21,6 +21,10 @@ const versionId = route.params.versionId as string
 
 const label = ref<PrintLabelRead | null>(null)
 const saved = ref(false)
+
+// Sin `edit-version` el editor queda en solo lectura.
+const canEditVersion = useCan(PRINT_LABELS_TAGS.editVersion)
+const editable = computed(() => editor.isDraft && canEditVersion.value)
 
 const outputFormatOptions = toSelectOptions(PRINT_LABEL_OUTPUT_FORMAT_LABELS)
 
@@ -106,13 +110,14 @@ onMounted(async () => {
     :editor="editor"
     :back-to="`/print-labels?open=${labelId}`"
     back-label="Volver a la etiqueta"
+    :permissions="PRINT_LABELS_VERSION_PERMISSIONS"
     :subtitle="label ? `Etiqueta: ${label.name} (${label.code})` : undefined"
   >
     <form class="max-w-3xl space-y-5" novalidate @submit.prevent="onSubmit">
       <UiAlert v-if="formError" :message="formError" />
       <UiAlert v-if="saved" variant="success" message="Borrador guardado." />
 
-      <fieldset :disabled="!editor.isDraft" class="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
+      <fieldset :disabled="!editable" class="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
         <UiFormField name="width_mm" label="Ancho (mm)" required>
           <UiTextInput type="number" step="0.01" min="1" />
         </UiFormField>
@@ -147,7 +152,7 @@ onMounted(async () => {
         </UiFormField>
       </fieldset>
 
-      <UiButton v-if="editor.isDraft" type="submit" :loading="isSubmitting">
+      <UiButton v-if="editable" type="submit" :loading="isSubmitting">
         Guardar borrador
       </UiButton>
     </form>

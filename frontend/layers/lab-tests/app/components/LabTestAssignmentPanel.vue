@@ -17,6 +17,7 @@
  * (`UiActivityTimeline` con `activity-entity-type`).
  */
 import type { ActivityEntityType } from '~/types/activity'
+import type { ModuleView } from '~/utils/moduleAccess'
 import type { LabTestAssignmentRow } from '../utils/assignmentRows'
 
 const props = withDefaults(
@@ -25,6 +26,10 @@ const props = withDefaults(
     description?: string
     /** Tabla de la asignación para el historial (`lab_test_preconditions`…). */
     activityEntityType: ActivityEntityType
+    /** Módulo del catálogo a elegir: sin su `view` no se puede consultar ni editar. */
+    catalogModule: ModuleView
+    /** Tag que permite guardar la asignación; sin él la pestaña es de solo lectura. */
+    saveTag: string
     items: T[]
     loading?: boolean
     loadError?: string | null
@@ -51,6 +56,15 @@ const emit = defineEmits<{
   submit: []
 }>()
 
+const canConsult = useCan(() => props.catalogModule.tag)
+const canSave = useCan(() => props.saveTag)
+/** Sin permiso de guardar (o sin catálogo que consultar) los controles quedan deshabilitados. */
+const locked = computed(() => !canSave.value || !canConsult.value)
+const lockedMessage = computed(() => {
+  if (!canConsult.value) return noViewMessage(props.catalogModule)
+  return canSave.value ? null : `${forbiddenMessage(props.saveTag, 'Sin permiso para guardar.')}. Solo puedes consultar.`
+})
+
 const showInactive = ref(false)
 /** Filas con el historial desplegado (por id de asignación). */
 const openActivity = ref(new Set<string>())
@@ -71,6 +85,7 @@ const visibleItems = computed(() => visibleLabTestAssignmentRows(props.items, sh
     </template>
 
     <form class="space-y-4" novalidate @submit.prevent="emit('submit')">
+      <UiAlert v-if="lockedMessage" :variant="canConsult ? 'info' : 'warning'" :message="lockedMessage" />
       <UiAlert v-if="loadError" :message="loadError" />
       <UiAlert v-if="formError" :message="formError" />
       <UiAlert v-if="savedMessage" variant="success" :message="savedMessage" />
@@ -79,11 +94,13 @@ const visibleItems = computed(() => visibleLabTestAssignmentRows(props.items, sh
         :items="visibleItems"
         :row-key="(row: T) => row.id"
         :loading="loading"
-        :empty-message="emptyMessage"
+        :empty-message="canConsult ? emptyMessage : 'Catálogo no disponible.'"
         :inactive="(row: T) => row.elementInactive || !row.selectable"
       >
         <template #default="{ item }">
-          <slot :item="item" />
+          <fieldset :disabled="locked" class="contents">
+            <slot :item="item" />
+          </fieldset>
           <div v-if="item.linkId && openActivity.has(item.linkId)" class="mt-3 pl-7">
             <UiActivityTimeline
               :entity-type="activityEntityType"
@@ -108,7 +125,7 @@ const visibleItems = computed(() => visibleLabTestAssignmentRows(props.items, sh
         </template>
       </UiItemList>
 
-      <UiButton type="submit" :loading="submitting" :disabled="loading || Boolean(loadError)">
+      <UiButton v-if="canSave && canConsult" type="submit" :loading="submitting" :disabled="loading || Boolean(loadError)">
         {{ submitLabel }}
       </UiButton>
     </form>

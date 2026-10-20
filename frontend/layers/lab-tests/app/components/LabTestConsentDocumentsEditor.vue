@@ -18,6 +18,8 @@ import type { LabTestAssignmentCatalogEntry, LabTestAssignmentRow } from '../uti
 const props = defineProps<{ labTestId: string }>()
 
 const labTestsApi = useLabTests()
+/** Sin el `view` del módulo del catálogo no se pide nada (el panel avisa el permiso que falta). */
+const canConsult = useCan(MODULE_VIEW.consentDocuments.tag)
 
 const rowSchema = z.object({
   consent_document_version_id: z.string(),
@@ -78,7 +80,7 @@ const catalog = useLabTestAssignmentCatalog<LabTestAssignmentRow>(async () => {
       : emptyRow(row.id))
   })
   return rows
-}, 'No se pudo cargar el catálogo de documentos a firmar.')
+}, 'No se pudo cargar el catálogo de documentos a firmar.', () => canConsult.value)
 
 const { isSelected, onToggle } = useLabTestAssignmentRows(form, emptyRow)
 
@@ -94,6 +96,8 @@ const onSubmit = submit(async ({ rows }) => {
 
 <template>
   <LabTestAssignmentPanel
+    :catalog-module="MODULE_VIEW.consentDocuments"
+    :save-tag="LAB_TESTS_TAGS.setConsentDocuments"
     activity-entity-type="lab_test_consent_documents"
     title="Documentos a firmar"
     description="Marca las versiones publicadas de los documentos que el paciente debe firmar para este examen."

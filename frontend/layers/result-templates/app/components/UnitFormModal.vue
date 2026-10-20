@@ -26,6 +26,10 @@ const { submit, isSubmitting, formError } = useZodForm(schema, {
   resetOn: open
 })
 
+// Una sola acción (`manage-units`) cubre crear, editar y (des)activar: sin ella, solo lectura.
+const canManage = useCan(RESULT_TEMPLATES_TAGS.manageUnits)
+const readOnly = computed(() => props.entity !== null && !canManage.value)
+
 const onSubmit = submit(async (values) => {
   if (props.entity) await useUnits().update(props.entity.id, withActivityReason(values, props.entity.is_active))
   else await useUnits().create(withActivityReason(values, undefined))
@@ -38,23 +42,23 @@ const onSubmit = submit(async (values) => {
   <UiFormModal
     v-model:open="open"
     :activity="entity ? { entityType: 'units', entityId: entity.id } : null"
-    :title="entity ? 'Editar unidad' : 'Nueva unidad'"
+    :title="!entity ? 'Nueva unidad' : readOnly ? 'Unidad' : 'Editar unidad'"
     :submitting="isSubmitting"
     :form-error="formError"
-    :submit-label="entity ? 'Guardar cambios' : 'Crear'"
+    :submit-label="readOnly ? 'Cerrar' : entity ? 'Guardar cambios' : 'Crear'"
     @submit="onSubmit"
   >
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <UiFormField name="code" label="Código UCUM" required hint="P. ej. mg/dL, 10*3/uL, mmol/L">
-        <UiTextInput />
+        <UiTextInput :disabled="readOnly" />
       </UiFormField>
       <UiFormField name="symbol" label="Símbolo" required hint="Como se imprime en el reporte.">
-        <UiTextInput />
+        <UiTextInput :disabled="readOnly" />
       </UiFormField>
       <UiFormField name="name" label="Nombre" required class="sm:col-span-2">
-        <UiTextInput />
+        <UiTextInput :disabled="readOnly" />
       </UiFormField>
     </div>
-    <UiActiveField label="Activa" :initial="entity?.is_active" />
+    <UiActiveField v-if="!readOnly" label="Activa" :initial="entity?.is_active" />
   </UiFormModal>
 </template>

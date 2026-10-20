@@ -6,7 +6,7 @@
  * confirmación) desde la línea de tiempo. Común a print-labels,
  * result-templates y consent-documents; cada layer solo pasa su `api`.
  */
-import type { VersionBadge, VersionRecord } from '~/utils/versioning'
+import type { VersionBadge, VersionPermissionTags, VersionRecord } from '~/utils/versioning'
 
 export interface UiVersionSectionApi {
   list: () => Promise<VersionRecord[]>
@@ -35,13 +35,17 @@ const props = withDefaults(
     api: UiVersionSectionApi
     title?: string
     description?: string
+    /** Tags de las acciones de versionado; cada botón exige el suyo. */
+    permissions?: VersionPermissionTags
   }>(),
   {
+    permissions: () => ({}),
     title: 'Versiones',
     description: 'El contenido se edita por versión; solo un borrador es editable.'
   }
 )
 
+const can = useVersionPermissions(() => props.permissions)
 const versions = ref<VersionRecord[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -112,6 +116,7 @@ onMounted(load)
   <UiSection :title="title" :description="description" divided>
     <template #actions>
       <UiButton
+        v-if="can.create"
         size="sm"
         :loading="creating"
         :disabled="loading || hasDraft"
@@ -132,10 +137,10 @@ onMounted(load)
     <UiVersionTimeline v-else :versions="entries">
       <template #actions="{ version }">
         <UiButton :to="api.editorPath(version.id)" variant="ghost" size="sm">
-          {{ version.status === 'draft' ? 'Editar' : 'Ver' }}
+          {{ version.status === 'draft' && can.edit ? 'Editar' : 'Ver' }}
         </UiButton>
         <UiButton
-          v-if="version.status === 'draft'"
+          v-if="version.status === 'draft' && can.publish"
           variant="secondary"
           size="sm"
           :loading="publishingId === version.id"
@@ -146,7 +151,7 @@ onMounted(load)
           Publicar
         </UiButton>
         <UiButton
-          v-if="version.status === 'published'"
+          v-if="version.status === 'published' && can.retire"
           variant="danger-ghost"
           size="sm"
           @click="retirement.ask(version.id)"

@@ -5,25 +5,25 @@ const route = useRoute()
 interface NavItem {
   label: string
   to: string
-  /** Tag de Leo que lo habilita; sin tag, siempre visible (módulo aún sin proteger). */
-  tag?: string
+  /** Tag de Leo que lo habilita (los 8 módulos están protegidos: todo ítem lleva uno). */
+  tag: string
 }
 
 // Módulos de negocio disponibles en el panel. Cada entrada nueva se agrega
 // aquí a medida que se incorpora un módulo (layer) nuevo.
 // `/_design` (referencia viva del sistema de diseño) queda fuera a propósito.
 const navItems: NavItem[] = [
-  { label: 'Personal', to: '/staff' },
+  { label: 'Personal', to: '/staff', tag: STAFF_TAGS.view },
   { label: 'Áreas', to: '/lab-areas', tag: LAB_AREAS_TAGS.view },
-  { label: 'Exámenes', to: '/lab-tests' },
-  { label: 'Precondiciones', to: '/preconditions' },
-  { label: 'Muestras', to: '/samples' },
-  { label: 'Etiquetas de impresión', to: '/print-labels' },
-  { label: 'Analitos', to: '/analytes' },
-  { label: 'Unidades de medida', to: '/units' },
-  { label: 'Conjuntos de opciones', to: '/result-option-sets' },
-  { label: 'Plantillas de resultados', to: '/result-templates' },
-  { label: 'Documentos a firmar', to: '/consent-documents' }
+  { label: 'Exámenes', to: '/lab-tests', tag: LAB_TESTS_TAGS.view },
+  { label: 'Precondiciones', to: '/preconditions', tag: PRECONDITIONS_TAGS.view },
+  { label: 'Muestras', to: '/samples', tag: SAMPLES_TAGS.view },
+  { label: 'Etiquetas de impresión', to: '/print-labels', tag: PRINT_LABELS_TAGS.view },
+  { label: 'Analitos', to: '/analytes', tag: RESULT_TEMPLATES_TAGS.view },
+  { label: 'Unidades de medida', to: '/units', tag: RESULT_TEMPLATES_TAGS.view },
+  { label: 'Conjuntos de opciones', to: '/result-option-sets', tag: RESULT_TEMPLATES_TAGS.view },
+  { label: 'Plantillas de resultados', to: '/result-templates', tag: RESULT_TEMPLATES_TAGS.view },
+  { label: 'Documentos a firmar', to: '/consent-documents', tag: CONSENT_DOCUMENTS_TAGS.view }
 ]
 
 const leoSession = useLeoSession()

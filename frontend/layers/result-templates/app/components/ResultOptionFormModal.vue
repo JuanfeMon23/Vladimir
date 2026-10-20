@@ -36,6 +36,9 @@ const { submit, isSubmitting, formError } = useZodForm(schema, {
   resetOn: open
 })
 
+const canManage = useCan(RESULT_TEMPLATES_TAGS.manageOptionSets)
+const readOnly = computed(() => props.entity !== null && !canManage.value)
+
 const onSubmit = submit(async (values) => {
   const api = useResultOptionSets()
   if (props.entity) await api.updateOption(props.entity.id, withActivityReason(values, props.entity.is_active))
@@ -49,29 +52,29 @@ const onSubmit = submit(async (values) => {
   <UiFormModal
     v-model:open="open"
     :activity="entity ? { entityType: 'result_options', entityId: entity.id } : null"
-    :title="entity ? 'Editar opción' : 'Nueva opción'"
+    :title="!entity ? 'Nueva opción' : readOnly ? 'Opción' : 'Editar opción'"
     :description="`Conjunto «${optionSet.name}».`"
     :submitting="isSubmitting"
     :form-error="formError"
-    :submit-label="entity ? 'Guardar cambios' : 'Agregar'"
+    :submit-label="readOnly ? 'Cerrar' : entity ? 'Guardar cambios' : 'Agregar'"
     @submit="onSubmit"
   >
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1fr_8rem]">
       <UiFormField name="code" label="Código" required>
-        <UiTextInput />
+        <UiTextInput :disabled="readOnly" />
       </UiFormField>
       <UiFormField name="label" label="Etiqueta" required>
-        <UiTextInput />
+        <UiTextInput :disabled="readOnly" />
       </UiFormField>
       <UiFormField name="sort_order" label="Orden" required>
-        <UiTextInput type="number" step="1" min="0" />
+        <UiTextInput type="number" step="1" min="0" :disabled="readOnly" />
       </UiFormField>
     </div>
     <div class="flex flex-wrap gap-6">
       <UiFormField name="is_abnormal">
-        <UiCheckbox label="Anormal" description="Se resalta como resultado fuera de lo esperado." />
+        <UiCheckbox label="Anormal" description="Se resalta como resultado fuera de lo esperado." :disabled="readOnly" />
       </UiFormField>
-      <UiActiveField label="Activa" :initial="entity?.is_active" />
+      <UiActiveField v-if="!readOnly" label="Activa" :initial="entity?.is_active" />
     </div>
   </UiFormModal>
 </template>

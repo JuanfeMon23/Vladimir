@@ -77,15 +77,32 @@ const { submit, isSubmitting, formError } = useZodForm(schema, {
   resetOn: open
 })
 
+const isEdit = computed(() => props.entity !== null)
+
+// Al ver/editar, cada grupo de campos exige su permiso (el backend también lo valida).
+const canEdit = useCan(LAB_TESTS_TAGS.edit)
+const canChangeStatus = useCan(LAB_TESTS_TAGS.changeStatus)
+const readOnly = computed(() => isEdit.value && !canEdit.value && !canChangeStatus.value)
+/** Los datos son de solo lectura al editar sin `edit`. */
+const dataLocked = computed(() => isEdit.value && !canEdit.value)
+
 const onSubmit = submit(async (values) => {
   const { sample_types: sampleTypes, ...fields } = values
-  if (props.entity) await labTestsApi.update(props.entity.id, withActivityReason(fields, props.entity.is_active))
-  else await labTestsApi.create({ ...withActivityReason(fields, undefined), sample_types: labTestSampleTypesPayload(sampleTypes) })
+  if (props.entity) {
+    const body = buildGuardedUpdate(fields, props.entity, { canEdit: canEdit.value, canChangeStatus: canChangeStatus.value })
+    if (!body) {
+      open.value = false
+      return
+    }
+    await labTestsApi.update(props.entity.id, body)
+  } else await labTestsApi.create({ ...withActivityReason(fields, undefined), sample_types: labTestSampleTypesPayload(sampleTypes) })
   emit('saved')
   open.value = false
 })
 
-// Áreas: las activas, más la actual del examen aunque esté inactiva.
+// Áreas: las activas, más la actual del examen aunque esté inactiva. Sin el
+// `view` de áreas no se pide el catálogo: se avisa y el selector se deshabilita.
+const canConsultAreas = useCan(MODULE_VIEW.labAreas.tag)
 const areas = ref<LabTestCatalogOption[]>([])
 const areasError = ref<string | null>(null)
 const areaOptions = computed<UiSelectOption[]>(() =>
@@ -93,7 +110,7 @@ const areaOptions = computed<UiSelectOption[]>(() =>
 )
 
 watch(open, async (isOpen) => {
-  if (!isOpen) return
+  if (!isOpen || !canConsultAreas.value) return
   areasError.value = null
   try {
     areas.value = await labTestsApi.listAreaOptions()
@@ -107,50 +124,53 @@ watch(open, async (isOpen) => {
   <UiFormModal
     v-model:open="open"
     :activity="entity ? { entityType: 'lab_tests', entityId: entity.id } : null"
-    :title="entity ? `Examen: ${entity.name}` : 'Nuevo examen'"
+    :title="!entity ? 'Nuevo examen' : readOnly ? `Examen: ${entity.name} (solo lectura)` : `Examen: ${entity.name}`"
     :size="entity ? 'xl' : 'lg'"
     :submitting="isSubmitting"
     :form-error="formError"
-    :submit-label="entity ? 'Guardar cambios' : 'Crear'"
+    :submit-label="readOnly ? 'Cerrar' : entity ? 'Guardar cambios' : 'Crear'"
     :tabs="entity ? TABS : undefined"
     tabs-label="Secciones del examen"
     @submit="onSubmit"
   >
+    <UiAlert v-if="!canConsultAreas" variant="warning" :message="noViewMessage(MODULE_VIEW.labAreas)" />
     <UiAlert v-if="areasError" :message="areasError" />
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <UiFormField name="code" label="Código" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="name" label="Nombre" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="abbreviation" label="Abreviatura">
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="area_id" label="Área" required>
-        <UiSelect :options="areaOptions" placeholder="Seleccionar área" />
+        <UiSelect :options="areaOptions" placeholder="Seleccionar área" :disabled="dataLocked || !canConsultAreas" />
       </UiFormField>
       <UiFormField name="method" label="Método">
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="turnaround_hours" label="Tiempo de entrega (horas)">
-        <UiTextInput type="number" min="0" step="1" />
+        <UiTextInput type="number" min="0" step="1" :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="loinc_code" label="Código LOINC">
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="cups_code" label="Código CUPS">
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="description" label="Descripción" class="sm:col-span-2">
-        <UiTextarea :rows="2" />
+        <UiTextarea :rows="2" :disabled="dataLocked" />
       </UiFormField>
     </div>
-    <UiActiveField label="Activo" :initial="entity?.is_active" />
+    <UiActiveField v-if="!isEdit || canChangeStatus" label="Activo" :initial="entity?.is_active" />
 
     <UiSection title="Etiqueta de impresión" description="Versión publicada que se imprime para este examen." divided>
       <LabTestVersionPicker
         name="print_label_version_id"
+        :module="MODULE_VIEW.printLabels"
+        :locked="dataLocked"
         owner-label="Etiqueta"
         owner-placeholder="Sin etiqueta"
         empty-versions-hint="Esta etiqueta no tiene versiones publicadas."
@@ -163,6 +183,8 @@ watch(open, async (isOpen) => {
     <UiSection title="Plantilla de resultados" description="Versión publicada con la que se reportan los resultados." divided>
       <LabTestVersionPicker
         name="result_template_version_id"
+        :module="MODULE_VIEW.resultTemplates"
+        :locked="dataLocked"
         owner-label="Plantilla"
         owner-placeholder="Sin plantilla"
         empty-versions-hint="Esta plantilla no tiene versiones publicadas."

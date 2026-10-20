@@ -16,6 +16,8 @@ import type { LabTestAssignmentCatalogEntry, LabTestAssignmentRow } from '../uti
 const props = defineProps<{ labTestId: string }>()
 
 const labTestsApi = useLabTests()
+/** Sin el `view` del módulo del catálogo no se pide nada (el panel avisa el permiso que falta). */
+const canConsult = useCan(MODULE_VIEW.preconditions.tag)
 const durationUnitOptions = toSelectOptions(LAB_TEST_DURATION_UNIT_LABELS)
 
 const rowSchema = z.object({
@@ -72,7 +74,7 @@ const catalog = useLabTestAssignmentCatalog<LabTestAssignmentRow>(async () => {
     })
   })
   return rows
-}, 'No se pudo cargar el catálogo de precondiciones.')
+}, 'No se pudo cargar el catálogo de precondiciones.', () => canConsult.value)
 
 function toAssignedRow(item: LabTestPreconditionRead): RowValues {
   return {
@@ -100,6 +102,8 @@ const onSubmit = submit(async ({ rows }) => {
 
 <template>
   <LabTestAssignmentPanel
+    :catalog-module="MODULE_VIEW.preconditions"
+    :save-tag="LAB_TESTS_TAGS.setPreconditions"
     activity-entity-type="lab_test_preconditions"
     title="Precondiciones"
     description="Marca las precondiciones del examen; los overrides reemplazan el valor del catálogo solo para este examen."

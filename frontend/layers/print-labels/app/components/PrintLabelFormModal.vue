@@ -34,9 +34,22 @@ const { submit, isSubmitting, formError } = useZodForm(schema, {
 
 const printLabelsApi = usePrintLabels()
 
+// Al ver/editar, cada grupo de campos exige su permiso (el backend también lo valida).
+const isEdit = computed(() => props.entity !== null)
+const canEdit = useCan(PRINT_LABELS_TAGS.edit)
+const canChangeStatus = useCan(PRINT_LABELS_TAGS.changeStatus)
+const readOnly = computed(() => isEdit.value && !canEdit.value && !canChangeStatus.value)
+const dataLocked = computed(() => isEdit.value && !canEdit.value)
+
 const onSubmit = submit(async (values) => {
-  if (props.entity) await printLabelsApi.update(props.entity.id, withActivityReason(values, props.entity.is_active))
-  else await printLabelsApi.create(withActivityReason(values, undefined))
+  if (props.entity) {
+    const body = buildGuardedUpdate(values, props.entity, { canEdit: canEdit.value, canChangeStatus: canChangeStatus.value })
+    if (!body) {
+      open.value = false
+      return
+    }
+    await printLabelsApi.update(props.entity.id, body)
+  } else await printLabelsApi.create(withActivityReason(values, undefined))
   emit('saved')
   open.value = false
 })
@@ -58,28 +71,28 @@ const versionsApi = computed<UiVersionSectionApi | null>(() => {
   <UiFormModal
     v-model:open="open"
     :activity="entity ? { entityType: 'print_labels', entityId: entity.id } : null"
-    :title="entity ? 'Editar etiqueta' : 'Nueva etiqueta'"
+    :title="!entity ? 'Nueva etiqueta' : readOnly ? 'Etiqueta' : 'Editar etiqueta'"
     :size="entity ? 'lg' : 'md'"
     :submitting="isSubmitting"
     :form-error="formError"
-    :submit-label="entity ? 'Guardar cambios' : 'Crear'"
+    :submit-label="readOnly ? 'Cerrar' : entity ? 'Guardar cambios' : 'Crear'"
     @submit="onSubmit"
   >
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <UiFormField name="code" label="Código" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="name" label="Nombre" required>
-        <UiTextInput />
+        <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="description" label="Descripción" class="sm:col-span-2">
-        <UiTextarea :rows="2" />
+        <UiTextarea :rows="2" :disabled="dataLocked" />
       </UiFormField>
     </div>
-    <UiActiveField label="Activa" :initial="entity?.is_active" />
+    <UiActiveField v-if="!isEdit || canChangeStatus" label="Activa" :initial="entity?.is_active" />
 
     <template v-if="versionsApi" #extra>
-      <UiVersionSection :api="versionsApi" />
+      <UiVersionSection :api="versionsApi" :permissions="PRINT_LABELS_VERSION_PERMISSIONS" />
     </template>
   </UiFormModal>
 </template>

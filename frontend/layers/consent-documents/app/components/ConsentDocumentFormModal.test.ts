@@ -3,6 +3,7 @@ import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiRequestError } from '~/composables/useApi'
 import { fakePage } from '~/testing/fakeApi'
+import { ALL_CONSENT_DOCUMENTS_TAGS, signInWith } from '~/testing/session'
 import { control, fieldError, flushAll, optionLabels, setChecked, setValue, submitForm } from '~/testing/dom'
 import type { ConsentDocumentRead } from '../types/consent-documents'
 import ConsentDocumentFormModal from './ConsentDocumentFormModal.vue'
@@ -29,6 +30,7 @@ function entity(overrides: Partial<ConsentDocumentRead> = {}): ConsentDocumentRe
 }
 
 beforeEach(() => {
+  signInWith(ALL_CONSENT_DOCUMENTS_TAGS)
   fake.reset()
   document.body.innerHTML = ''
   fake.routes['GET /consent-documents/d1/versions'] = fakePage([])

@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import type { SampleRead, SampleTypeRead } from '../../types/samples'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: { tag: SAMPLES_TAGS.view } })
+
+const createTag = SAMPLES_TAGS.create
+
+// Quien solo consulta ve "Ver"; con algún permiso de cambio, "Ver / Editar".
+const canModify = useCan([SAMPLES_TAGS.edit, SAMPLES_TAGS.changeStatus, SAMPLES_TAGS.addType], 'any')
 
 const samplesApi = useSamples()
 const activeFilter = ref<boolean | undefined>(undefined)
@@ -21,9 +26,15 @@ const modal = useEntityModal<SampleRead>()
     <UiPageHeader
       title="Muestras"
       description="Muestras (contenedores) y sus tipos (tubo/tapa, aditivo, volumen)."
-      action-label="Nueva muestra"
-      @action="modal.openCreate()"
-    />
+    >
+      <template #actions>
+        <LeoCan :tag="createTag">
+          <UiButton variant="primary" @click="modal.openCreate()">
+            Nueva muestra
+          </UiButton>
+        </LeoCan>
+      </template>
+    </UiPageHeader>
 
     <UiListToolbar
       v-model:search="search"
@@ -79,7 +90,7 @@ const modal = useEntityModal<SampleRead>()
             Tipos de muestra
           </h4>
           <UiButton variant="ghost" size="sm" @click="modal.openEdit(sample)">
-            Ver / Editar
+            {{ canModify ? 'Ver / Editar' : 'Ver' }}
           </UiButton>
         </div>
 

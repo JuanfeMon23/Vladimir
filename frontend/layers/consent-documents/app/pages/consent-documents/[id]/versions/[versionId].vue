@@ -12,7 +12,7 @@ import { describeConsentPublishErrors } from '../../../../utils/consentDocuments
  * regla de modales). Solo un borrador es editable. El PDF se adjunta, ve y
  * descarga en `ConsentDocumentFileSection`; sin PDF no se puede publicar.
  */
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: { tag: CONSENT_DOCUMENTS_TAGS.view } })
 
 const route = useRoute()
 const consentDocumentsApi = useConsentDocuments()
@@ -22,6 +22,10 @@ const versionId = route.params.versionId as string
 
 const consentDocument = ref<ConsentDocumentRead | null>(null)
 const saved = ref(false)
+
+// Sin `edit-version` el editor (texto, firmante y PDF) queda en solo lectura.
+const canEditVersion = useCan(CONSENT_DOCUMENTS_TAGS.editVersion)
+const editable = computed(() => editor.isDraft && canEditVersion.value)
 
 const PUBLISH_BLOCKED_NO_FILE = 'Adjunta el PDF antes de publicar.'
 
@@ -75,6 +79,7 @@ onMounted(async () => {
     :editor="editor"
     :back-to="`/consent-documents?open=${documentId}`"
     back-label="Volver al documento"
+    :permissions="CONSENT_DOCUMENTS_VERSION_PERMISSIONS"
     :subtitle="consentDocument ? `Documento: ${consentDocument.name} (${consentDocument.code})` : undefined"
     :publish-blocked-reason="editor.version && !editor.version.has_file ? PUBLISH_BLOCKED_NO_FILE : null"
   >
@@ -91,7 +96,7 @@ onMounted(async () => {
         v-if="editor.version"
         :version="editor.version"
         :document-code="consentDocument?.code ?? 'documento'"
-        :editable="editor.isDraft"
+        :editable="editable"
         @changed="editor.patchVersion"
       />
 
@@ -99,7 +104,7 @@ onMounted(async () => {
         <UiAlert v-if="formError" :message="formError" />
         <UiAlert v-if="saved" variant="success" message="Borrador guardado." />
 
-        <fieldset :disabled="!editor.isDraft" class="grid min-w-0 grid-cols-1 gap-4">
+        <fieldset :disabled="!editable" class="grid min-w-0 grid-cols-1 gap-4">
           <UiFormField name="signer" label="Firmante" required>
             <UiSelect :options="signerOptions" placeholder="Seleccionar firmante" />
           </UiFormField>
@@ -116,7 +121,7 @@ onMounted(async () => {
           </UiFormField>
         </fieldset>
 
-        <UiButton v-if="editor.isDraft" type="submit" :loading="isSubmitting">
+        <UiButton v-if="editable" type="submit" :loading="isSubmitting">
           Guardar borrador
         </UiButton>
       </form>

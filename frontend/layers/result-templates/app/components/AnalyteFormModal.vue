@@ -46,6 +46,10 @@ watch(open, async (isOpen) => {
   }
 }, { immediate: true })
 
+// Una sola acción (`manage-analytes`) cubre crear, editar y (des)activar: sin ella, solo lectura.
+const canManage = useCan(RESULT_TEMPLATES_TAGS.manageAnalytes)
+const readOnly = computed(() => props.entity !== null && !canManage.value)
+
 const onSubmit = submit(async (values) => {
   if (props.entity) await useAnalytes().update(props.entity.id, withActivityReason(values, props.entity.is_active))
   else await useAnalytes().create(withActivityReason(values, undefined))
@@ -58,31 +62,31 @@ const onSubmit = submit(async (values) => {
   <UiFormModal
     v-model:open="open"
     :activity="entity ? { entityType: 'analytes', entityId: entity.id } : null"
-    :title="entity ? 'Editar analito' : 'Nuevo analito'"
+    :title="!entity ? 'Nuevo analito' : readOnly ? 'Analito' : 'Editar analito'"
     size="lg"
     :submitting="isSubmitting"
     :form-error="formError"
-    :submit-label="entity ? 'Guardar cambios' : 'Crear'"
+    :submit-label="readOnly ? 'Cerrar' : entity ? 'Guardar cambios' : 'Crear'"
     @submit="onSubmit"
   >
     <UiAlert v-if="unitsError" :message="unitsError" />
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <UiFormField name="code" label="Código" required>
-        <UiTextInput />
+        <UiTextInput :disabled="readOnly" />
       </UiFormField>
       <UiFormField name="name" label="Nombre" required>
-        <UiTextInput />
+        <UiTextInput :disabled="readOnly" />
       </UiFormField>
       <UiFormField name="loinc_code" label="Código LOINC">
-        <UiTextInput />
+        <UiTextInput :disabled="readOnly" />
       </UiFormField>
       <UiFormField name="default_unit_id" label="Unidad por defecto (UCUM)">
-        <UiSelect :options="unitOptions" empty-label="Sin unidad" />
+        <UiSelect :options="unitOptions" empty-label="Sin unidad" :disabled="readOnly" />
       </UiFormField>
       <UiFormField name="description" label="Descripción" class="sm:col-span-2">
-        <UiTextarea :rows="2" />
+        <UiTextarea :rows="2" :disabled="readOnly" />
       </UiFormField>
     </div>
-    <UiActiveField label="Activo" :initial="entity?.is_active" />
+    <UiActiveField v-if="!readOnly" label="Activo" :initial="entity?.is_active" />
   </UiFormModal>
 </template>

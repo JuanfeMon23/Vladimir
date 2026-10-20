@@ -2,7 +2,12 @@
 import type { UiDataTableColumn } from '~/components/ui/UiDataTable.vue'
 import type { ResultTemplateRead } from '../../types/result-templates'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: { tag: RESULT_TEMPLATES_TAGS.view } })
+
+const createTag = RESULT_TEMPLATES_TAGS.create
+
+// Quien solo consulta ve "Ver"; con algún permiso de cambio o de versionado, "Ver / Editar".
+const canModify = useCan([RESULT_TEMPLATES_TAGS.edit, RESULT_TEMPLATES_TAGS.changeStatus, RESULT_TEMPLATES_TAGS.createVersion, RESULT_TEMPLATES_TAGS.editVersion, RESULT_TEMPLATES_TAGS.publishVersion, RESULT_TEMPLATES_TAGS.retireVersion, RESULT_TEMPLATES_TAGS.editContent], 'any')
 
 const resultTemplatesApi = useResultTemplates()
 const activeFilter = ref<boolean | undefined>(undefined)
@@ -30,9 +35,15 @@ const columns: UiDataTableColumn<ResultTemplateRead>[] = [
     <UiPageHeader
       title="Plantillas de resultados"
       description="Gestión de plantillas de resultados y sus versiones."
-      action-label="Nueva plantilla"
-      @action="modal.openCreate()"
-    />
+    >
+      <template #actions>
+        <LeoCan :tag="createTag">
+          <UiButton variant="primary" @click="modal.openCreate()">
+            Nueva plantilla
+          </UiButton>
+        </LeoCan>
+      </template>
+    </UiPageHeader>
 
     <UiListToolbar
       v-model:search="search"
@@ -66,7 +77,7 @@ const columns: UiDataTableColumn<ResultTemplateRead>[] = [
       </template>
       <template #cell-id="{ row }">
         <UiButton variant="ghost" size="sm" @click="modal.openEdit(row)">
-          Ver / Editar
+          {{ canModify ? 'Ver / Editar' : 'Ver' }}
         </UiButton>
       </template>
     </UiDataTable>

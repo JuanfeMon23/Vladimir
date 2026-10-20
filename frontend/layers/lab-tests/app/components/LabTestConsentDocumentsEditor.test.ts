@@ -3,6 +3,7 @@ import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiRequestError } from '~/composables/useApi'
 import { fakePage } from '~/testing/fakeApi'
+import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS, signInWith } from '~/testing/session'
 import { button, click, control, flushAll, hasRow, rowOf, setChecked, submitForm } from '~/testing/dom'
 import LabTestConsentDocumentsEditor from './LabTestConsentDocumentsEditor.vue'
 
@@ -39,6 +40,7 @@ const VERSIONS: Record<string, { id: string, version_number: number, status: 'dr
 }
 
 beforeEach(() => {
+  signInWith([...ALL_LAB_TESTS_TAGS, ...LAB_TEST_SELECTOR_VIEW_TAGS])
   fake.reset()
   document.body.innerHTML = ''
   fake.routes['GET /consent-documents'] = fakePage(DOCUMENTS)

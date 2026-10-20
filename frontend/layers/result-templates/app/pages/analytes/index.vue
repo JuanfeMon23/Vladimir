@@ -2,7 +2,10 @@
 import type { UiDataTableColumn } from '~/components/ui/UiDataTable.vue'
 import type { AnalyteRead } from '../../types/result-templates'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: { tag: RESULT_TEMPLATES_TAGS.view } })
+
+const manageTag = RESULT_TEMPLATES_TAGS.manageAnalytes
+const canManage = useCan(manageTag)
 
 const analytesApi = useAnalytes()
 const activeFilter = ref<boolean | undefined>(undefined)
@@ -30,9 +33,15 @@ const columns: UiDataTableColumn<AnalyteRead>[] = [
     <UiPageHeader
       title="Analitos"
       description="Catálogo de analitos disponibles para plantillas de resultados."
-      action-label="Nuevo analito"
-      @action="modal.openCreate()"
-    />
+    >
+      <template #actions>
+        <LeoCan :tag="manageTag">
+          <UiButton variant="primary" @click="modal.openCreate()">
+            Nuevo analito
+          </UiButton>
+        </LeoCan>
+      </template>
+    </UiPageHeader>
 
     <UiListToolbar
       v-model:search="search"
@@ -69,7 +78,7 @@ const columns: UiDataTableColumn<AnalyteRead>[] = [
       </template>
       <template #cell-id="{ row }">
         <UiButton variant="ghost" size="sm" @click="modal.openEdit(row)">
-          Ver / Editar
+          {{ canManage ? 'Ver / Editar' : 'Ver' }}
         </UiButton>
       </template>
     </UiDataTable>

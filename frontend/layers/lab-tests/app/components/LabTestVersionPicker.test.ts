@@ -5,6 +5,7 @@ import { defineComponent, h } from 'vue'
 import { z } from 'zod'
 import { ApiRequestError } from '~/composables/useApi'
 import { control, flushAll, optionLabels, setValue } from '~/testing/dom'
+import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS, signInWith } from '~/testing/session'
 import type { LabTestCatalogOption, LabTestVersionOption, LabTestVersionWithOwner } from '../types/lab-tests'
 import LabTestVersionPicker from './LabTestVersionPicker.vue'
 
@@ -46,6 +47,7 @@ async function loadVersion(versionId: string): Promise<LabTestVersionWithOwner> 
 }
 
 beforeEach(() => {
+  signInWith([...ALL_LAB_TESTS_TAGS, ...LAB_TEST_SELECTOR_VIEW_TAGS])
   calls.published.mockReset()
   calls.version.mockReset()
   versionFailure = null
@@ -59,6 +61,7 @@ async function mountPicker(initial: string | null) {
       form = useZodForm(z.object({ version_id: zOptionalId() }), { initialValues: { version_id: initial ?? '' } })
       return () => h(LabTestVersionPicker, {
         name: 'version_id',
+        module: { tag: 'vladimir.print-labels.view', label: 'etiquetas de impresión' },
         ownerLabel: 'Etiqueta',
         ownerPlaceholder: 'Sin etiqueta',
         emptyVersionsHint: 'Esta etiqueta no tiene versiones publicadas.',

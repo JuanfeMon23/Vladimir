@@ -2,7 +2,10 @@
 import type { UiDataTableColumn } from '~/components/ui/UiDataTable.vue'
 import type { UnitRead } from '../../types/result-templates'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: { tag: RESULT_TEMPLATES_TAGS.view } })
+
+const manageTag = RESULT_TEMPLATES_TAGS.manageUnits
+const canManage = useCan(manageTag)
 
 const unitsApi = useUnits()
 const activeFilter = ref<boolean | undefined>(undefined)
@@ -30,9 +33,15 @@ const columns: UiDataTableColumn<UnitRead>[] = [
     <UiPageHeader
       title="Unidades de medida"
       description="Catálogo UCUM de unidades para analitos y plantillas de resultados."
-      action-label="Nueva unidad"
-      @action="modal.openCreate()"
-    />
+    >
+      <template #actions>
+        <LeoCan :tag="manageTag">
+          <UiButton variant="primary" @click="modal.openCreate()">
+            Nueva unidad
+          </UiButton>
+        </LeoCan>
+      </template>
+    </UiPageHeader>
 
     <UiListToolbar
       v-model:search="search"
@@ -69,7 +78,7 @@ const columns: UiDataTableColumn<UnitRead>[] = [
       </template>
       <template #cell-id="{ row }">
         <UiButton variant="ghost" size="sm" @click="modal.openEdit(row)">
-          Ver / Editar
+          {{ canManage ? 'Ver / Editar' : 'Ver' }}
         </UiButton>
       </template>
     </UiDataTable>

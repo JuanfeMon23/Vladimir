@@ -15,7 +15,7 @@ import type {
  * que nada de lo que usa esté desactivado (`details.inactive`); ambos se
  * listan en español bajo el error.
  */
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: { tag: RESULT_TEMPLATES_TAGS.view } })
 
 const route = useRoute()
 const resultTemplatesApi = useResultTemplates()
@@ -25,6 +25,13 @@ const versionId = route.params.versionId as string
 
 const template = ref<ResultTemplateRead | null>(null)
 const saved = ref(false)
+
+// `edit-version`: ajustes del reporte y notas; `edit-content`: secciones, analitos y rangos.
+// Sin ellos, el editor (o esa parte) queda en solo lectura.
+const canEditVersion = useCan(RESULT_TEMPLATES_TAGS.editVersion)
+const canEditContent = useCan(RESULT_TEMPLATES_TAGS.editContent)
+const generalEditable = computed(() => editor.isDraft && canEditVersion.value)
+const contentEditable = computed(() => editor.isDraft && canEditContent.value)
 const showPreview = ref(false)
 
 const content = useResultTemplateVersionContent(templateId, versionId)
@@ -93,6 +100,7 @@ onMounted(async () => {
     :editor="editor"
     :back-to="`/result-templates?open=${templateId}`"
     back-label="Volver a la plantilla"
+    :permissions="RESULT_TEMPLATES_VERSION_PERMISSIONS"
     :subtitle="template ? `Plantilla: ${template.name} (${template.code})` : undefined"
   >
     <template #action-error="{ details }">
@@ -109,7 +117,7 @@ onMounted(async () => {
           <UiAlert v-if="formError" :message="formError" />
           <UiAlert v-if="saved" variant="success" message="Borrador guardado." />
 
-          <fieldset :disabled="!editor.isDraft" class="grid min-w-0 grid-cols-1 gap-4">
+          <fieldset :disabled="!generalEditable" class="grid min-w-0 grid-cols-1 gap-4">
             <UiFormField
               name="report_settings"
               label="Configuración del reporte (JSON)"
@@ -122,7 +130,7 @@ onMounted(async () => {
             </UiFormField>
           </fieldset>
 
-          <UiButton v-if="editor.isDraft" type="submit" :loading="isSubmitting">
+          <UiButton v-if="generalEditable" type="submit" :loading="isSubmitting">
             Guardar datos generales
           </UiButton>
         </form>
@@ -130,8 +138,8 @@ onMounted(async () => {
 
       <UiAlert v-if="content.catalogError" :message="content.catalogError" />
 
-      <ResultTemplateSectionsPanel :content="content" :editable="editor.isDraft" />
-      <ResultTemplateAnalytesPanel :content="content" :editable="editor.isDraft" />
+      <ResultTemplateSectionsPanel :content="content" :editable="contentEditable" />
+      <ResultTemplateAnalytesPanel :content="content" :editable="contentEditable" />
 
       <UiSection title="Vista previa del reporte" description="Cómo se vería el reporte con la configuración actual (solo lectura)." divided>
         <template #actions>

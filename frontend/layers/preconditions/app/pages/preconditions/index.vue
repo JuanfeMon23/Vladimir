@@ -2,7 +2,13 @@
 import { preconditionCategoryLabel } from '../../types/preconditions'
 import type { PreconditionRead } from '../../types/preconditions'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: { tag: PRECONDITIONS_TAGS.view } })
+
+const createTag = PRECONDITIONS_TAGS.create
+
+// Quien solo consulta ve "Ver"; con algún permiso de cambio, "Ver / Editar".
+const canModify = useCan([PRECONDITIONS_TAGS.edit, PRECONDITIONS_TAGS.changeStatus, PRECONDITIONS_TAGS.addItem], 'any')
+const canModifyItem = useCan([PRECONDITIONS_TAGS.edit, PRECONDITIONS_TAGS.changeStatus], 'any')
 
 const preconditionsApi = usePreconditions()
 const activeFilter = ref<boolean | undefined>(undefined)
@@ -22,9 +28,15 @@ const modal = useEntityModal<PreconditionRead>()
     <UiPageHeader
       title="Precondiciones"
       description="Precondiciones de examen y sus ítems (condiciones específicas)."
-      action-label="Nueva precondición"
-      @action="modal.openCreate()"
-    />
+    >
+      <template #actions>
+        <LeoCan :tag="createTag">
+          <UiButton variant="primary" @click="modal.openCreate()">
+            Nueva precondición
+          </UiButton>
+        </LeoCan>
+      </template>
+    </UiPageHeader>
 
     <UiListToolbar
       v-model:search="search"
@@ -80,7 +92,7 @@ const modal = useEntityModal<PreconditionRead>()
             Ítems
           </h4>
           <UiButton variant="ghost" size="sm" @click="modal.openEdit(root)">
-            Ver / Editar
+            {{ canModify ? 'Ver / Editar' : 'Ver' }}
           </UiButton>
         </div>
 
@@ -96,7 +108,7 @@ const modal = useEntityModal<PreconditionRead>()
           <template #trailing="{ item }">
             <UiStatusBadge :active="item.is_active" />
             <UiButton variant="ghost" size="sm" @click="modal.openEdit(item)">
-              Editar
+              {{ canModifyItem ? 'Editar' : 'Ver' }}
             </UiButton>
           </template>
         </UiItemList>
