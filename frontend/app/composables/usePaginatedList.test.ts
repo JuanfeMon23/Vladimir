@@ -3,6 +3,7 @@ import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { defineComponent, type UnwrapNestedRefs } from 'vue'
 import type { Page } from '~/types/api'
+import { signInWith } from '~/testing/session'
 import { invalidateCaches } from '~/utils/requestCache'
 import { ApiRequestError, useApi } from './useApi'
 import { usePaginatedList } from './usePaginatedList'
@@ -12,9 +13,11 @@ enableAutoUnmount(afterEach)
 
 // Solo para la mutación del test de invalidación entre recursos.
 const fetchMock = vi.hoisted(() => vi.fn(async () => ({})))
-mockNuxtImport('$fetch', () => fetchMock)
+mockNuxtImport('useLeoApi', () => () => fetchMock)
 
 beforeEach(() => {
+  // La navegación pasa por el middleware de leo-client: requiere sesión.
+  signInWith([])
   invalidateCaches()
   clearNuxtData()
 })

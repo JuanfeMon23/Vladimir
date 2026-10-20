@@ -1,7 +1,15 @@
+import type { LeoRequestOptions } from '#leo-client/lib/transport'
 import type { ApiError } from '~/types/api'
 
-/** Opciones aceptadas por `$fetch`, sin el `method` (lo fija cada verbo). */
-type FetchOptions = Omit<NonNullable<Parameters<typeof $fetch>[1]>, 'method' | 'body'>
+/** Query string de una llamada (`params` es alias de `query`). */
+type QueryParams = object
+
+/** Opciones de una llamada (el `method` y el `body` los fija cada verbo). */
+interface FetchOptions {
+  query?: QueryParams
+  params?: QueryParams
+  signal?: AbortSignal
+}
 
 /**
  * Opciones de una llamada: las de `$fetch` más `cacheTtl` (ms), solo para GET:
@@ -35,7 +43,13 @@ function toApiError(err: unknown): ApiRequestError {
     const fetchErr = err as { data?: unknown, status?: number, statusText?: string }
     const data = fetchErr.data
     if (data && typeof data === 'object' && 'code' in data && 'message' in data) {
-      return new ApiRequestError(data as ApiError, fetchErr.status)
+      const apiError = data as ApiError
+      // 403 de un tag de acción (`leo_sdk`: details.action): se nombra el permiso.
+      if (fetchErr.status === 403 && apiError.code === 'forbidden') {
+        const action = (apiError.details as { action?: string } | null | undefined)?.action
+        return new ApiRequestError({ ...apiError, message: forbiddenMessage(action, apiError.message) }, fetchErr.status)
+      }
+      return new ApiRequestError(apiError, fetchErr.status)
     }
     // 422 de validación de schema de FastAPI (RequestValidationError):
     // `{ detail: [{ loc, msg, type }] }`. Se normaliza a ApiRequestError con
@@ -73,10 +87,13 @@ function toApiError(err: unknown): ApiRequestError {
 
 /**
  * Cliente HTTP del núcleo. Todas las llamadas a la API pasan por aquí,
- * envueltas en los composables de cada módulo (useStaff, etc.).
+ * envueltas en los composables de cada módulo (useStaff, etc.). Van por el
+ * solicitante firmado de leo-client (`useLeoApi`: cookie + DPoP); un 401 de
+ * sesión lleva al login (lo hace leo-client) y un 403 trae el permiso faltante.
  */
 export function useApi() {
   const config = useRuntimeConfig()
+  const leoApi = useLeoApi()
 
   async function request<T>(
     path: string,
@@ -87,12 +104,11 @@ export function useApi() {
     const { cacheTtl, ...fetchOptions } = options
     const send = async () => {
       try {
-        return await $fetch<T>(path, {
-          baseURL: resolveApiBase(config, import.meta.server),
-          method,
-          body: body as BodyInit | Record<string, unknown> | null | undefined,
-          ...fetchOptions
-        })
+        const { query, params, signal } = fetchOptions
+        return await leoApi<T>(
+          toLeoPath(resolveApiBase(config, false), config.public.leo.apiBase, path),
+          { method, body, query: (query ?? params) as LeoRequestOptions['query'], signal }
+        )
       } catch (err) {
         throw toApiError(err)
       }

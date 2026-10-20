@@ -4,7 +4,7 @@ import { invalidateCaches } from '~/utils/requestCache'
 import { ApiRequestError, useApi } from './useApi'
 
 const fetchMock = vi.hoisted(() => vi.fn())
-mockNuxtImport('$fetch', () => fetchMock)
+mockNuxtImport('useLeoApi', () => () => fetchMock)
 
 beforeEach(() => {
   fetchMock.mockReset()
@@ -29,23 +29,28 @@ async function errorOf(call: () => Promise<unknown>): Promise<ApiRequestError> {
 }
 
 describe('useApi', () => {
-  it('usa apiBase como baseURL y el verbo de cada método', async () => {
+  it('envía por leo-client la ruta con el prefijo de la API y el verbo de cada método', async () => {
     fetchMock.mockResolvedValue({ ok: true })
     const api = useApi()
-    const base = useRuntimeConfig().public.apiBase
     await api.get('/staff')
     await api.post('/staff', { a: 1 })
     await api.patch('/staff/1', { a: 2 })
     await api.put('/staff/1', { a: 3 })
     await api.delete('/staff/1')
-    const calls = fetchMock.mock.calls.map(([path, opts]) => [path, opts.method, opts.body, opts.baseURL])
+    const calls = fetchMock.mock.calls.map(([path, opts]) => [path, opts.method, opts.body])
     expect(calls).toEqual([
-      ['/staff', 'GET', undefined, base],
-      ['/staff', 'POST', { a: 1 }, base],
-      ['/staff/1', 'PATCH', { a: 2 }, base],
-      ['/staff/1', 'PUT', { a: 3 }, base],
-      ['/staff/1', 'DELETE', undefined, base]
+      ['/api/v1/staff', 'GET', undefined],
+      ['/api/v1/staff', 'POST', { a: 1 }],
+      ['/api/v1/staff/1', 'PATCH', { a: 2 }],
+      ['/api/v1/staff/1', 'PUT', { a: 3 }],
+      ['/api/v1/staff/1', 'DELETE', undefined]
     ])
+  })
+
+  it('`params` se envía como query', async () => {
+    fetchMock.mockResolvedValue({})
+    await useApi().get('/staff', { params: { active: true } })
+    expect(fetchMock.mock.calls[0]![1].query).toEqual({ active: true })
   })
 
   it('pasa los query params y devuelve la respuesta', async () => {
@@ -59,6 +64,24 @@ describe('useApi', () => {
     failWith({ status: 409, data: { code: 'conflict', message: 'Código duplicado.', details: { code: 'HEM' } } })
     const err = await errorOf(() => useApi().post('/staff', {}))
     expect(err).toMatchObject({ code: 'conflict', message: 'Código duplicado.', details: { code: 'HEM' }, status: 409 })
+  })
+
+  it('un 403 forbidden de un tag conocido nombra el permiso faltante', async () => {
+    failWith({ status: 403, data: { code: 'forbidden', message: 'No tienes permiso para realizar esta acción.', details: { action: 'vladimir.lab-areas.create' } } })
+    const err = await errorOf(() => useApi().post('/lab-areas', {}))
+    expect(err).toMatchObject({ code: 'forbidden', status: 403, message: 'No tienes permiso para: Crear áreas de laboratorio' })
+  })
+
+  it('un 403 forbidden de un tag desconocido conserva el mensaje del backend', async () => {
+    failWith({ status: 403, data: { code: 'forbidden', message: 'No tienes permiso para realizar esta acción.', details: { action: 'vladimir.x.y' } } })
+    const err = await errorOf(() => useApi().get('/x'))
+    expect(err.message).toBe('No tienes permiso para realizar esta acción.')
+  })
+
+  it('un 401 de sesión conserva su código legible', async () => {
+    failWith({ status: 401, data: { code: 'session_expired', message: 'Tu sesión expiró. Inicia sesión de nuevo.' } })
+    const err = await errorOf(() => useApi().get('/staff'))
+    expect(err).toMatchObject({ code: 'session_expired', status: 401, message: 'Tu sesión expiró. Inicia sesión de nuevo.' })
   })
 
   it('un 404 con AppError conserva su código', async () => {
@@ -125,7 +148,7 @@ describe('useApi', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2)
     })
 
-    it('cacheTtl no viaja a $fetch', async () => {
+    it('cacheTtl no viaja al solicitante de leo-client', async () => {
       fetchMock.mockResolvedValue({})
       await useApi().get('/units', { cacheTtl: 1000 })
       expect(fetchMock.mock.calls[0]![1]).not.toHaveProperty('cacheTtl')

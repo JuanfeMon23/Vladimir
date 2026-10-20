@@ -19,6 +19,8 @@ const emit = defineEmits<{
 }>()
 
 const labAreasApi = useLabAreas()
+const assignTag = LAB_AREAS_TAGS.assignManager
+const canAssign = useCan(assignTag)
 
 const manager = ref<ManagerAssignmentRead | null>(props.currentManager)
 
@@ -82,7 +84,7 @@ function formatDate(value: string | null) {
 
 onMounted(() => {
   fetchHistory()
-  fetchStaff()
+  if (canAssign.value) fetchStaff()
 })
 </script>
 
@@ -96,26 +98,28 @@ onMounted(() => {
         </p>
       </template>
 
-      <UiAlert v-if="staffError" :message="staffError" />
+      <LeoCan :tag="assignTag">
+        <UiAlert v-if="staffError" :message="staffError" />
 
-      <form class="space-y-3" novalidate @submit.prevent="onAssign">
-        <UiAlert v-if="formError" :message="formError" />
-        <div class="grid grid-cols-1 items-start gap-3 sm:grid-cols-[1fr_1fr_auto]">
-          <UiFormField name="staff_id" label="Nuevo encargado" required>
-            <UiSelect
-              :options="staffOptions"
-              :placeholder="staffLoading ? 'Cargando personal…' : 'Seleccionar personal activo'"
-              :disabled="staffLoading"
-            />
-          </UiFormField>
-          <UiFormField name="notes" label="Notas">
-            <UiTextInput />
-          </UiFormField>
-          <UiButton type="submit" class="sm:mt-6.5" :loading="isSubmitting">
-            Asignar
-          </UiButton>
-        </div>
-      </form>
+        <form class="space-y-3" novalidate @submit.prevent="onAssign">
+          <UiAlert v-if="formError" :message="formError" />
+          <div class="grid grid-cols-1 items-start gap-3 sm:grid-cols-[1fr_1fr_auto]">
+            <UiFormField name="staff_id" label="Nuevo encargado" required>
+              <UiSelect
+                :options="staffOptions"
+                :placeholder="staffLoading ? 'Cargando personal…' : 'Seleccionar personal activo'"
+                :disabled="staffLoading"
+              />
+            </UiFormField>
+            <UiFormField name="notes" label="Notas">
+              <UiTextInput />
+            </UiFormField>
+            <UiButton type="submit" class="sm:mt-6.5" :loading="isSubmitting">
+              Asignar
+            </UiButton>
+          </div>
+        </form>
+      </LeoCan>
     </UiSection>
 
     <UiSection title="Historial de encargados">

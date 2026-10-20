@@ -2,7 +2,12 @@
 import type { UiDataTableColumn } from '~/components/ui/UiDataTable.vue'
 import type { LabAreaRead } from '../../types/lab-areas'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: { tag: LAB_AREAS_TAGS.view } })
+
+const createTag = LAB_AREAS_TAGS.create
+
+// Quien solo consulta ve "Ver"; con algún permiso de cambio, "Ver / Editar".
+const canModify = useCan([LAB_AREAS_TAGS.edit, LAB_AREAS_TAGS.changeStatus, LAB_AREAS_TAGS.assignManager], 'any')
 
 const labAreasApi = useLabAreas()
 const activeFilter = ref<boolean | undefined>(undefined)
@@ -30,9 +35,15 @@ const columns: UiDataTableColumn<LabAreaRead>[] = [
     <UiPageHeader
       title="Áreas"
       description="Gestión de las áreas del laboratorio y su encargado."
-      action-label="Nueva"
-      @action="modal.openCreate()"
-    />
+    >
+      <template #actions>
+        <LeoCan :tag="createTag">
+          <UiButton variant="primary" @click="modal.openCreate()">
+            Nueva
+          </UiButton>
+        </LeoCan>
+      </template>
+    </UiPageHeader>
 
     <UiListToolbar
       v-model:search="search"
@@ -74,7 +85,7 @@ const columns: UiDataTableColumn<LabAreaRead>[] = [
       </template>
       <template #cell-id="{ row }">
         <UiButton variant="ghost" size="sm" @click="modal.openEdit(row)">
-          Ver / Editar
+          {{ canModify ? 'Ver / Editar' : 'Ver' }}
         </UiButton>
       </template>
     </UiDataTable>

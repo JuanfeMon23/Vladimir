@@ -41,9 +41,22 @@ const { submit, isSubmitting, formError } = useZodForm(schema, {
 
 const labAreasApi = useLabAreas()
 
+// Al ver/editar, cada grupo de campos exige su permiso (el backend también lo valida).
+const canEdit = useCan(LAB_AREAS_TAGS.edit)
+const canChangeStatus = useCan(LAB_AREAS_TAGS.changeStatus)
+const readOnly = computed(() => isEdit.value && !canEdit.value && !canChangeStatus.value)
+
 const onSubmit = submit(async (values) => {
-  if (props.entity) await labAreasApi.update(props.entity.id, withActivityReason(values, props.entity.is_active))
-  else await labAreasApi.create(withActivityReason(values, undefined))
+  if (props.entity) {
+    const body = buildLabAreaUpdate(values, props.entity, { canEdit: canEdit.value, canChangeStatus: canChangeStatus.value })
+    if (!body) {
+      open.value = false
+      return
+    }
+    await labAreasApi.update(props.entity.id, body)
+  } else {
+    await labAreasApi.create(withActivityReason(values, undefined))
+  }
   emit('saved')
   open.value = false
 })
@@ -53,25 +66,25 @@ const onSubmit = submit(async (values) => {
   <UiFormModal
     v-model:open="open"
     :activity="entity ? { entityType: 'lab_areas', entityId: entity.id } : null"
-    :title="isEdit ? 'Editar área' : 'Nueva área'"
+    :title="!isEdit ? 'Nueva área' : readOnly ? 'Área' : 'Editar área'"
     :size="isEdit ? 'xl' : 'md'"
     :submitting="isSubmitting"
     :form-error="formError"
-    :submit-label="isEdit ? 'Guardar cambios' : 'Crear'"
+    :submit-label="readOnly ? 'Cerrar' : isEdit ? 'Guardar cambios' : 'Crear'"
     @submit="onSubmit"
   >
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <UiFormField name="code" label="Código" required>
-        <UiTextInput />
+        <UiTextInput :disabled="isEdit && !canEdit" />
       </UiFormField>
       <UiFormField name="name" label="Nombre" required>
-        <UiTextInput />
+        <UiTextInput :disabled="isEdit && !canEdit" />
       </UiFormField>
       <UiFormField name="description" label="Descripción" class="sm:col-span-2">
-        <UiTextarea :rows="3" />
+        <UiTextarea :rows="3" :disabled="isEdit && !canEdit" />
       </UiFormField>
     </div>
-    <UiActiveField label="Activa" :initial="entity?.is_active" />
+    <UiActiveField v-if="!isEdit || canChangeStatus" label="Activa" :initial="entity?.is_active" />
 
     <template v-if="entity" #extra>
       <LabAreaManagerPanel :area-id="entity.id" :current-manager="entity.current_manager" @changed="emit('saved')" />

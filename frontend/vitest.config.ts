@@ -11,12 +11,22 @@ import { defineVitestConfig } from '@nuxt/test-utils/config'
  */
 export default defineVitestConfig({
   test: {
+    // La caché de módulos en disco de Vitest 5 corrompe corridas repetidas con Nuxt.
+    fsModuleCache: false,
     environment: 'nuxt',
     environmentOptions: {
       nuxt: {
         domEnvironment: 'happy-dom',
         // Valor falso propio de los tests: no dependen de `frontend/.env`.
-        overrides: { runtimeConfig: { public: { apiBase: 'http://api.test/api/v1' } } }
+        overrides: {
+          runtimeConfig: {
+            public: {
+              apiBase: 'http://api.test/api/v1',
+              // leo-client en `bff` contra una API falsa (apiBase cuelga de leo.apiBase).
+              leo: { transport: 'bff', apiBase: 'http://api.test', publicUrl: 'http://api.test', appSlug: 'vladimir', appName: 'Vladimir' }
+            }
+          }
+        }
       }
     },
     include: ['app/**/*.test.ts', 'layers/**/*.test.ts']
