@@ -51,7 +51,7 @@ async function mountModal(tags: string[], entity: LabAreaRead | null = AREA) {
 
 describe('ruta y menú de lab-areas', () => {
   it('la página exige el tag view', () => {
-    expect(useRouter().resolve('/lab-areas').meta.leo?.tag).toBe(VIEW)
+    expect((useRouter().resolve('/lab-areas').meta as { leo?: { tag?: string } }).leo?.tag).toBe(VIEW)
   })
 
   it('el ítem "Áreas" aparece con view', async () => {

@@ -107,7 +107,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.20.0" },
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "fastapi", specifier = ">=0.142.2" },
-    { name = "leo-sdk", editable = "../../leo/sdk/python" },
+    { name = "leo-sdk", git = "https://github.com/JuanfeMon23/Leo.git?subdirectory=sdk%2Fpython&tag=v0.1.0" },
     { name = "pydantic-settings", specifier = ">=2.15.0" },
     { name = "python-dotenv", specifier = ">=1.2.3" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2" },
@@ -446,34 +446,13 @@ wheels = [
 [[package]]
 name = "leo-sdk"
 version = "0.1.0"
-source = { editable = "../../leo/sdk/python" }
+source = { git = "https://github.com/JuanfeMon23/Leo.git?subdirectory=sdk%2Fpython&tag=v0.1.0#3573c439774deca1ec47dc27f96302ce348d766d" }
 dependencies = [
     { name = "cryptography" },
     { name = "fastapi" },
     { name = "httpx" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "cryptography", specifier = ">=50.0.2" },
-    { name = "fastapi", specifier = ">=0.149.0" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "pydantic", specifier = ">=2.14.1" },
-    { name = "pydantic-settings", specifier = ">=2.16.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "alembic", specifier = ">=1.20.0" },
-    { name = "argon2-cffi", specifier = ">=25.1.0" },
-    { name = "asyncpg", specifier = ">=0.32.0" },
-    { name = "pytest", specifier = ">=9.1.1" },
-    { name = "pytest-asyncio", specifier = ">=1.4.0" },
-    { name = "python-dotenv", specifier = ">=1.2.4" },
-    { name = "ruff", specifier = ">=0.17.1" },
-    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.1.5" },
 ]
 
 [[package]]
