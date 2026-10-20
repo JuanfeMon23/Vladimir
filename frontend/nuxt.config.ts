@@ -3,15 +3,12 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   // Sistema de diseño compartido (Andromeda) + sesión SSO y permisos del
-  // ecosistema (leo-client). Andromeda va primero: los componentes de
-  // leo-client usan sus Ui* y tokens.
-  // PENDIENTE: leo-client se toma por ruta local al repo de Leo (hermano de
-  // este proyecto); la forma de distribución final (dependencia git o paquete)
-  // está por definir.
-  extends: ['andromeda', '../../leo/client'],
+  // ecosistema (leo-client, dependencia git fijada a una etiqueta del repo de
+  // Leo). Andromeda va primero: los componentes de leo-client usan sus Ui* y tokens.
+  extends: ['andromeda', 'leo-client'],
   typescript: {
-    // Las pruebas de leo-client (otro repo, otra versión de vue-router) no se chequean desde aquí.
-    tsConfig: { exclude: ['../../../leo/client/**/*.test.ts'] }
+    // La config de la capa leo-client (dependencia) no se chequea desde aquí.
+    tsConfig: { exclude: ['../node_modules/leo-client/**', '../node_modules/.pnpm/leo-client*/**'] }
   },
   runtimeConfig: {
     // Base de la API solo para el servidor (SSR); si está vacía se usa la pública.

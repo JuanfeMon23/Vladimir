@@ -32,4 +32,4 @@ line-length = 88
 extend-exclude = ["migrations"]
 
 [tool.uv.sources]
-leo-sdk = { path = "../../leo/sdk/python", editable = true }
+leo-sdk = { git = "https://github.com/JuanfeMon23/Leo.git", subdirectory = "sdk/python", tag = "v0.1.0" }
