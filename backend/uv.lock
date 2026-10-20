@@ -107,7 +107,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.20.0" },
     { name = "asyncpg", specifier = ">=0.31.0" },
     { name = "fastapi", specifier = ">=0.142.2" },
-    { name = "leo-sdk", git = "https://github.com/JuanfeMon23/Leo.git?subdirectory=sdk%2Fpython&tag=v0.1.0" },
+    { name = "leo-sdk", git = "https://github.com/JuanfeMon23/Leo.git?subdirectory=sdk%2Fpython&tag=v0.2.0" },
     { name = "pydantic-settings", specifier = ">=2.15.0" },
     { name = "python-dotenv", specifier = ">=1.2.3" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2" },
@@ -445,8 +445,8 @@ wheels = [
 
 [[package]]
 name = "leo-sdk"
-version = "0.1.0"
-source = { git = "https://github.com/JuanfeMon23/Leo.git?subdirectory=sdk%2Fpython&tag=v0.1.0#3573c439774deca1ec47dc27f96302ce348d766d" }
+version = "0.2.0"
+source = { git = "https://github.com/JuanfeMon23/Leo.git?subdirectory=sdk%2Fpython&tag=v0.2.0#a831bdaf9cf6331fb837dd86e10453002b30c602" }
 dependencies = [
     { name = "cryptography" },
     { name = "fastapi" },
