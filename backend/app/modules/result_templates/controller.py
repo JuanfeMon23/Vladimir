@@ -345,6 +345,11 @@ async def create_option(
     return ResultOptionRead.model_validate(option)
 
 
+async def get_option(session: AsyncSession, option_id: UUID) -> ResultOptionRead:
+    option = await get_or_404(session, ResultOption, option_id, "una opcion")
+    return ResultOptionRead.model_validate(option)
+
+
 async def update_option(
     session: AsyncSession, option_id: UUID, data: ResultOptionUpdate
 ) -> ResultOptionRead:
@@ -660,6 +665,7 @@ versioning = VersioningService(
 # publicar y clonado profundo del contenido).
 list_versions = versioning.list_versions
 get_version_with_owner = versioning.read_with_owner
+get_version = versioning.read_version
 create_version = versioning.create_version
 update_version = versioning.update_version
 publish_version = versioning.publish_version
@@ -678,6 +684,13 @@ async def get_section_or_404(
     if section is None or section.version_id != version_id:
         raise not_found("una seccion", section_id)
     return section
+
+
+async def get_section(
+    session: AsyncSession, version_id: UUID, section_id: UUID
+) -> ResultTemplateSectionRead:
+    section = await get_section_or_404(session, version_id, section_id)
+    return ResultTemplateSectionRead.model_validate(section)
 
 
 async def list_sections(
@@ -846,6 +859,15 @@ async def _validate_formula(
     problems = formula_problems(node, [*others, node])
     if problems:
         raise ResultTemplateAnalyteFormulaError([p.as_dict() for p in problems])
+
+
+async def get_template_analyte(
+    session: AsyncSession, version_id: UUID, template_analyte_id: UUID
+) -> ResultTemplateAnalyteRead:
+    template_analyte = await get_template_analyte_or_404(
+        session, version_id, template_analyte_id
+    )
+    return (await _template_analyte_reads(session, [template_analyte]))[0]
 
 
 async def list_template_analytes(
@@ -1018,6 +1040,15 @@ def _range_values(reference_range: ReferenceRange) -> dict[str, Any]:
     return {
         field: getattr(reference_range, field) for field in (*_RANGE_COPY, "is_active")
     }
+
+
+async def get_reference_range(
+    session: AsyncSession, template_analyte_id: UUID, reference_range_id: UUID
+) -> ReferenceRangeRead:
+    reference_range = await get_reference_range_or_404(
+        session, template_analyte_id, reference_range_id
+    )
+    return ReferenceRangeRead.model_validate(reference_range)
 
 
 async def list_reference_ranges(

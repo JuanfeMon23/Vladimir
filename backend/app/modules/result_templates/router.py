@@ -15,7 +15,8 @@ se desactivan con `is_active` en su PATCH (solo en borrador).
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
+from leo_sdk import LeoUser
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -29,9 +30,35 @@ from app.core.dependencies import (
     search_filter,
     version_status_param,
 )
+from app.core.leo import audit_patch, auth, authorize_patch, record_audit, snapshot
 from app.core.schemas import Page, error_responses
 from app.core.versioning import RETIRE_VERSION_RESPONSES, VersionStatus
 from app.modules.result_templates import controller
+from app.modules.result_templates.permissions import (
+    CHANGE_STATUS,
+    CHANGE_STATUS_CHECK,
+    CREATE,
+    CREATE_VERSION,
+    EDIT,
+    EDIT_CHECK,
+    EDIT_CONTENT,
+    EDIT_VERSION,
+    MANAGE_ANALYTES,
+    MANAGE_OPTION_SETS,
+    MANAGE_UNITS,
+    PUBLISH_VERSION,
+    RETIRE_VERSION,
+    CanCreate,
+    CanCreateVersion,
+    CanEditContent,
+    CanEditVersion,
+    CanManageAnalytes,
+    CanManageOptionSets,
+    CanManageUnits,
+    CanPublishVersion,
+    CanRetireVersion,
+    CanView,
+)
 from app.modules.result_templates.schemas import (
     AnalyteCreate,
     AnalyteRead,
@@ -83,6 +110,7 @@ IncludeInactiveDep = Annotated[bool, Depends(include_inactive_param)]
 
 @units_router.get("", response_model=Page[UnitRead])
 async def list_units(
+    _user: CanView,
     session: SessionDep,
     pagination: PaginationDep,
     active_filter: ActiveFilterDep,
@@ -98,21 +126,44 @@ async def list_units(
     status_code=status.HTTP_201_CREATED,
     responses=error_responses(409, 422),
 )
-async def create_unit(data: UnitCreate, session: SessionDep) -> UnitRead:
-    return await controller.create_unit(session, data)
+async def create_unit(
+    user: CanManageUnits, data: UnitCreate, session: SessionDep
+) -> UnitRead:
+    created = await controller.create_unit(session, data)
+    await record_audit(
+        MANAGE_UNITS,
+        user,
+        entity_type="unit",
+        entity_id=created.id,
+        after=snapshot(created),
+    )
+    return created
 
 
 @units_router.get("/{unit_id}", response_model=UnitRead, responses=error_responses(404))
-async def get_unit(unit_id: UUID, session: SessionDep) -> UnitRead:
+async def get_unit(_user: CanView, unit_id: UUID, session: SessionDep) -> UnitRead:
     return await controller.get_unit(session, unit_id)
 
 
 @units_router.patch(
     "/{unit_id}", response_model=UnitRead, responses=error_responses(404, 409, 422)
 )
-async def update_unit(unit_id: UUID, data: UnitUpdate, session: SessionDep) -> UnitRead:
+async def update_unit(
+    user: CanManageUnits, unit_id: UUID, data: UnitUpdate, session: SessionDep
+) -> UnitRead:
     """`is_active` + `activity_reason` (des)activa con motivo."""
-    return await controller.update_unit(session, unit_id, data)
+    before = snapshot(await controller.get_unit(session, unit_id))
+    updated = await controller.update_unit(session, unit_id, data)
+    await record_audit(
+        MANAGE_UNITS,
+        user,
+        entity_type="unit",
+        entity_id=unit_id,
+        before=before,
+        after=snapshot(updated),
+        reason=data.activity_reason,
+    )
+    return updated
 
 
 # --------------------------------------------------------------------------
@@ -122,6 +173,7 @@ async def update_unit(unit_id: UUID, data: UnitUpdate, session: SessionDep) -> U
 
 @analytes_router.get("", response_model=Page[AnalyteRead])
 async def list_analytes(
+    _user: CanView,
     session: SessionDep,
     pagination: PaginationDep,
     active_filter: ActiveFilterDep,
@@ -136,14 +188,26 @@ async def list_analytes(
     status_code=status.HTTP_201_CREATED,
     responses=error_responses(409, 422),
 )
-async def create_analyte(data: AnalyteCreate, session: SessionDep) -> AnalyteRead:
-    return await controller.create_analyte(session, data)
+async def create_analyte(
+    user: CanManageAnalytes, data: AnalyteCreate, session: SessionDep
+) -> AnalyteRead:
+    created = await controller.create_analyte(session, data)
+    await record_audit(
+        MANAGE_ANALYTES,
+        user,
+        entity_type="analyte",
+        entity_id=created.id,
+        after=snapshot(created, "default_unit", "default_unit_detail"),
+    )
+    return created
 
 
 @analytes_router.get(
     "/{analyte_id}", response_model=AnalyteRead, responses=error_responses(404)
 )
-async def get_analyte(analyte_id: UUID, session: SessionDep) -> AnalyteRead:
+async def get_analyte(
+    _user: CanView, analyte_id: UUID, session: SessionDep
+) -> AnalyteRead:
     return await controller.get_analyte(session, analyte_id)
 
 
@@ -153,9 +217,24 @@ async def get_analyte(analyte_id: UUID, session: SessionDep) -> AnalyteRead:
     responses=error_responses(404, 409, 422),
 )
 async def update_analyte(
-    analyte_id: UUID, data: AnalyteUpdate, session: SessionDep
+    user: CanManageAnalytes, analyte_id: UUID, data: AnalyteUpdate, session: SessionDep
 ) -> AnalyteRead:
-    return await controller.update_analyte(session, analyte_id, data)
+    before = snapshot(
+        await controller.get_analyte(session, analyte_id),
+        "default_unit",
+        "default_unit_detail",
+    )
+    updated = await controller.update_analyte(session, analyte_id, data)
+    await record_audit(
+        MANAGE_ANALYTES,
+        user,
+        entity_type="analyte",
+        entity_id=analyte_id,
+        before=before,
+        after=snapshot(updated, "default_unit", "default_unit_detail"),
+        reason=data.activity_reason,
+    )
+    return updated
 
 
 # --------------------------------------------------------------------------
@@ -165,6 +244,7 @@ async def update_analyte(
 
 @result_option_sets_router.get("", response_model=Page[ResultOptionSetRead])
 async def list_result_option_sets(
+    _user: CanView,
     session: SessionDep,
     pagination: PaginationDep,
     active_filter: ActiveFilterDep,
@@ -180,9 +260,17 @@ async def list_result_option_sets(
     responses=error_responses(409, 422),
 )
 async def create_result_option_set(
-    data: ResultOptionSetCreate, session: SessionDep
+    user: CanManageOptionSets, data: ResultOptionSetCreate, session: SessionDep
 ) -> ResultOptionSetRead:
-    return await controller.create_option_set(session, data)
+    created = await controller.create_option_set(session, data)
+    await record_audit(
+        MANAGE_OPTION_SETS,
+        user,
+        entity_type="result_option_set",
+        entity_id=created.id,
+        after=snapshot(created),
+    )
+    return created
 
 
 @result_option_sets_router.get(
@@ -191,7 +279,7 @@ async def create_result_option_set(
     responses=error_responses(404),
 )
 async def get_result_option_set(
-    option_set_id: UUID, session: SessionDep
+    _user: CanView, option_set_id: UUID, session: SessionDep
 ) -> ResultOptionSetRead:
     return await controller.get_option_set(session, option_set_id)
 
@@ -202,9 +290,23 @@ async def get_result_option_set(
     responses=error_responses(404, 409, 422),
 )
 async def update_result_option_set(
-    option_set_id: UUID, data: ResultOptionSetUpdate, session: SessionDep
+    user: CanManageOptionSets,
+    option_set_id: UUID,
+    data: ResultOptionSetUpdate,
+    session: SessionDep,
 ) -> ResultOptionSetRead:
-    return await controller.update_option_set(session, option_set_id, data)
+    before = snapshot(await controller.get_option_set(session, option_set_id))
+    updated = await controller.update_option_set(session, option_set_id, data)
+    await record_audit(
+        MANAGE_OPTION_SETS,
+        user,
+        entity_type="result_option_set",
+        entity_id=option_set_id,
+        before=before,
+        after=snapshot(updated),
+        reason=data.activity_reason,
+    )
+    return updated
 
 
 @result_option_sets_router.get(
@@ -213,6 +315,7 @@ async def update_result_option_set(
     responses=error_responses(404),
 )
 async def list_result_options(
+    _user: CanView,
     option_set_id: UUID,
     session: SessionDep,
     pagination: PaginationDep,
@@ -231,9 +334,20 @@ async def list_result_options(
     responses=error_responses(404, 409, 422),
 )
 async def create_result_option(
-    option_set_id: UUID, data: ResultOptionCreate, session: SessionDep
+    user: CanManageOptionSets,
+    option_set_id: UUID,
+    data: ResultOptionCreate,
+    session: SessionDep,
 ) -> ResultOptionRead:
-    return await controller.create_option(session, option_set_id, data)
+    created = await controller.create_option(session, option_set_id, data)
+    await record_audit(
+        MANAGE_OPTION_SETS,
+        user,
+        entity_type="result_option",
+        entity_id=created.id,
+        after=snapshot(created),
+    )
+    return created
 
 
 @result_options_router.patch(
@@ -242,9 +356,23 @@ async def create_result_option(
     responses=error_responses(404, 409, 422),
 )
 async def update_result_option(
-    option_id: UUID, data: ResultOptionUpdate, session: SessionDep
+    user: CanManageOptionSets,
+    option_id: UUID,
+    data: ResultOptionUpdate,
+    session: SessionDep,
 ) -> ResultOptionRead:
-    return await controller.update_option(session, option_id, data)
+    before = snapshot(await controller.get_option(session, option_id))
+    updated = await controller.update_option(session, option_id, data)
+    await record_audit(
+        MANAGE_OPTION_SETS,
+        user,
+        entity_type="result_option",
+        entity_id=option_id,
+        before=before,
+        after=snapshot(updated),
+        reason=data.activity_reason,
+    )
+    return updated
 
 
 # --------------------------------------------------------------------------
@@ -254,6 +382,7 @@ async def update_result_option(
 
 @result_templates_router.get("", response_model=Page[ResultTemplateRead])
 async def list_result_templates(
+    _user: CanView,
     session: SessionDep,
     pagination: PaginationDep,
     active_filter: ActiveFilterDep,
@@ -269,16 +398,24 @@ async def list_result_templates(
     responses=error_responses(409, 422),
 )
 async def create_result_template(
-    data: ResultTemplateCreate, session: SessionDep
+    user: CanCreate, data: ResultTemplateCreate, session: SessionDep
 ) -> ResultTemplateRead:
-    return await controller.create_template(session, data)
+    created = await controller.create_template(session, data)
+    await record_audit(
+        CREATE,
+        user,
+        entity_type="result_template",
+        entity_id=created.id,
+        after=snapshot(created),
+    )
+    return created
 
 
 @result_templates_router.get(
     "/{template_id}", response_model=ResultTemplateRead, responses=error_responses(404)
 )
 async def get_result_template(
-    template_id: UUID, session: SessionDep
+    _user: CanView, template_id: UUID, session: SessionDep
 ) -> ResultTemplateRead:
     return await controller.get_template(session, template_id)
 
@@ -289,9 +426,29 @@ async def get_result_template(
     responses=error_responses(404, 409, 422),
 )
 async def update_result_template(
-    template_id: UUID, data: ResultTemplateUpdate, session: SessionDep
+    template_id: UUID,
+    data: ResultTemplateUpdate,
+    request: Request,
+    user: Annotated[LeoUser, Depends(auth.current_user)],
+    session: SessionDep,
 ) -> ResultTemplateRead:
-    return await controller.update_template(session, template_id, data)
+    """Exige `edit` si cambia datos y `change-status` si trae `is_active`."""
+    await authorize_patch(
+        request, user, data, edit_check=EDIT_CHECK, status_check=CHANGE_STATUS_CHECK
+    )
+    before = snapshot(await controller.get_template(session, template_id))
+    updated = await controller.update_template(session, template_id, data)
+    await audit_patch(
+        user,
+        edit_tag=EDIT,
+        status_tag=CHANGE_STATUS,
+        entity_type="result_template",
+        entity_id=template_id,
+        before=before,
+        after=snapshot(updated),
+        reason=data.activity_reason,
+    )
+    return updated
 
 
 @result_templates_router.get(
@@ -300,6 +457,7 @@ async def update_result_template(
     responses=error_responses(404),
 )
 async def list_result_template_versions(
+    _user: CanView,
     template_id: UUID,
     session: SessionDep,
     pagination: PaginationDep,
@@ -317,7 +475,7 @@ async def list_result_template_versions(
     responses=error_responses(404),
 )
 async def get_result_template_version(
-    version_id: UUID, session: SessionDep
+    _user: CanView, version_id: UUID, session: SessionDep
 ) -> ResultTemplateVersionWithOwnerRead:
     """Una version por su id, con su plantilla duena en `owner`."""
     return await controller.get_version_with_owner(session, version_id)
@@ -330,12 +488,23 @@ async def get_result_template_version(
     responses=error_responses(404, 409, 422),
 )
 async def create_result_template_version(
-    template_id: UUID, data: ResultTemplateVersionCreate, session: SessionDep
+    user: CanCreateVersion,
+    template_id: UUID,
+    data: ResultTemplateVersionCreate,
+    session: SessionDep,
 ) -> ResultTemplateVersionRead:
     """Nuevo draft: clona la ultima version (secciones, analitos y rangos
     incluidos), o crea la version 1 si la plantilla todavia no tiene
     ninguna."""
-    return await controller.create_version(session, template_id, data)
+    created = await controller.create_version(session, template_id, data)
+    await record_audit(
+        CREATE_VERSION,
+        user,
+        entity_type="result_template_version",
+        entity_id=created.id,
+        after=snapshot(created),
+    )
+    return created
 
 
 @result_templates_router.patch(
@@ -344,13 +513,24 @@ async def create_result_template_version(
     responses=error_responses(404, 409, 422),
 )
 async def update_result_template_version(
+    user: CanEditVersion,
     template_id: UUID,
     version_id: UUID,
     data: ResultTemplateVersionUpdate,
     session: SessionDep,
 ) -> ResultTemplateVersionRead:
     """Solo aplica si la version esta en `draft`."""
-    return await controller.update_version(session, template_id, version_id, data)
+    before = snapshot(await controller.get_version(session, template_id, version_id))
+    updated = await controller.update_version(session, template_id, version_id, data)
+    await record_audit(
+        EDIT_VERSION,
+        user,
+        entity_type="result_template_version",
+        entity_id=version_id,
+        before=before,
+        after=snapshot(updated),
+    )
+    return updated
 
 
 @result_templates_router.post(
@@ -359,11 +539,21 @@ async def update_result_template_version(
     responses=error_responses(404, 422),
 )
 async def publish_result_template_version(
-    template_id: UUID, version_id: UUID, session: SessionDep
+    user: CanPublishVersion, template_id: UUID, version_id: UUID, session: SessionDep
 ) -> ResultTemplateVersionRead:
     """Valida que la plantilla este completa; `422` con el detalle de lo que
     falta si no lo esta."""
-    return await controller.publish_version(session, template_id, version_id)
+    before = snapshot(await controller.get_version(session, template_id, version_id))
+    updated = await controller.publish_version(session, template_id, version_id)
+    await record_audit(
+        PUBLISH_VERSION,
+        user,
+        entity_type="result_template_version",
+        entity_id=version_id,
+        before=before,
+        after=snapshot(updated),
+    )
+    return updated
 
 
 @result_templates_router.post(
@@ -372,9 +562,19 @@ async def publish_result_template_version(
     responses=RETIRE_VERSION_RESPONSES,
 )
 async def retire_result_template_version(
-    template_id: UUID, version_id: UUID, session: SessionDep
+    user: CanRetireVersion, template_id: UUID, version_id: UUID, session: SessionDep
 ) -> ResultTemplateVersionRead:
-    return await controller.retire_version(session, template_id, version_id)
+    before = snapshot(await controller.get_version(session, template_id, version_id))
+    updated = await controller.retire_version(session, template_id, version_id)
+    await record_audit(
+        RETIRE_VERSION,
+        user,
+        entity_type="result_template_version",
+        entity_id=version_id,
+        before=before,
+        after=snapshot(updated),
+    )
+    return updated
 
 
 # --------------------------------------------------------------------------
@@ -388,6 +588,7 @@ async def retire_result_template_version(
     responses=error_responses(404),
 )
 async def list_result_template_sections(
+    _user: CanView,
     template_id: UUID,
     version_id: UUID,
     session: SessionDep,
@@ -406,12 +607,21 @@ async def list_result_template_sections(
     responses=error_responses(404, 409, 422),
 )
 async def create_result_template_section(
+    user: CanEditContent,
     template_id: UUID,
     version_id: UUID,
     data: ResultTemplateSectionCreate,
     session: SessionDep,
 ) -> ResultTemplateSectionRead:
-    return await controller.create_section(session, template_id, version_id, data)
+    created = await controller.create_section(session, template_id, version_id, data)
+    await record_audit(
+        EDIT_CONTENT,
+        user,
+        entity_type="result_template_section",
+        entity_id=created.id,
+        after=snapshot(created),
+    )
+    return created
 
 
 @result_templates_router.patch(
@@ -420,15 +630,27 @@ async def create_result_template_section(
     responses=error_responses(404, 409, 422),
 )
 async def update_result_template_section(
+    user: CanEditContent,
     template_id: UUID,
     version_id: UUID,
     section_id: UUID,
     data: ResultTemplateSectionUpdate,
     session: SessionDep,
 ) -> ResultTemplateSectionRead:
-    return await controller.update_section(
+    before = snapshot(await controller.get_section(session, version_id, section_id))
+    updated = await controller.update_section(
         session, template_id, version_id, section_id, data
     )
+    await record_audit(
+        EDIT_CONTENT,
+        user,
+        entity_type="result_template_section",
+        entity_id=section_id,
+        before=before,
+        after=snapshot(updated),
+        reason=data.activity_reason,
+    )
+    return updated
 
 
 # --------------------------------------------------------------------------
@@ -442,6 +664,7 @@ async def update_result_template_section(
     responses=error_responses(404),
 )
 async def list_result_template_analytes(
+    _user: CanView,
     template_id: UUID,
     version_id: UUID,
     session: SessionDep,
@@ -460,14 +683,23 @@ async def list_result_template_analytes(
     responses=error_responses(404, 409, 422),
 )
 async def create_result_template_analyte(
+    user: CanEditContent,
     template_id: UUID,
     version_id: UUID,
     data: ResultTemplateAnalyteCreate,
     session: SessionDep,
 ) -> ResultTemplateAnalyteRead:
-    return await controller.create_template_analyte(
+    created = await controller.create_template_analyte(
         session, template_id, version_id, data
     )
+    await record_audit(
+        EDIT_CONTENT,
+        user,
+        entity_type="result_template_analyte",
+        entity_id=created.id,
+        after=snapshot(created, "unit", "unit_detail"),
+    )
+    return created
 
 
 @result_templates_router.patch(
@@ -476,15 +708,31 @@ async def create_result_template_analyte(
     responses=error_responses(404, 409, 422),
 )
 async def update_result_template_analyte(
+    user: CanEditContent,
     template_id: UUID,
     version_id: UUID,
     template_analyte_id: UUID,
     data: ResultTemplateAnalyteUpdate,
     session: SessionDep,
 ) -> ResultTemplateAnalyteRead:
-    return await controller.update_template_analyte(
+    before = snapshot(
+        await controller.get_template_analyte(session, version_id, template_analyte_id),
+        "unit",
+        "unit_detail",
+    )
+    updated = await controller.update_template_analyte(
         session, template_id, version_id, template_analyte_id, data
     )
+    await record_audit(
+        EDIT_CONTENT,
+        user,
+        entity_type="result_template_analyte",
+        entity_id=template_analyte_id,
+        before=before,
+        after=snapshot(updated, "unit", "unit_detail"),
+        reason=data.activity_reason,
+    )
+    return updated
 
 
 # --------------------------------------------------------------------------
@@ -498,6 +746,7 @@ async def update_result_template_analyte(
     responses=error_responses(404),
 )
 async def list_reference_ranges(
+    _user: CanView,
     template_id: UUID,
     version_id: UUID,
     template_analyte_id: UUID,
@@ -521,15 +770,24 @@ async def list_reference_ranges(
     responses=error_responses(404, 409, 422),
 )
 async def create_reference_range(
+    user: CanEditContent,
     template_id: UUID,
     version_id: UUID,
     template_analyte_id: UUID,
     data: ReferenceRangeCreate,
     session: SessionDep,
 ) -> ReferenceRangeRead:
-    return await controller.create_reference_range(
+    created = await controller.create_reference_range(
         session, template_id, version_id, template_analyte_id, data
     )
+    await record_audit(
+        EDIT_CONTENT,
+        user,
+        entity_type="reference_range",
+        entity_id=created.id,
+        after=snapshot(created),
+    )
+    return created
 
 
 @result_templates_router.patch(
@@ -539,6 +797,7 @@ async def create_reference_range(
     responses=error_responses(404, 409, 422),
 )
 async def update_reference_range(
+    user: CanEditContent,
     template_id: UUID,
     version_id: UUID,
     template_analyte_id: UUID,
@@ -546,6 +805,21 @@ async def update_reference_range(
     data: ReferenceRangeUpdate,
     session: SessionDep,
 ) -> ReferenceRangeRead:
-    return await controller.update_reference_range(
+    before = snapshot(
+        await controller.get_reference_range(
+            session, template_analyte_id, reference_range_id
+        )
+    )
+    updated = await controller.update_reference_range(
         session, template_id, version_id, template_analyte_id, reference_range_id, data
     )
+    await record_audit(
+        EDIT_CONTENT,
+        user,
+        entity_type="reference_range",
+        entity_id=reference_range_id,
+        before=before,
+        after=snapshot(updated),
+        reason=data.activity_reason,
+    )
+    return updated

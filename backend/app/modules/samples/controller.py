@@ -131,6 +131,15 @@ async def create_sample_type(
     return SampleTypeRead.model_validate(sample_type)
 
 
+async def get_sample_type(
+    session: AsyncSession, sample_type_id: UUID
+) -> SampleTypeRead:
+    sample_type = await get_or_404(
+        session, SampleType, sample_type_id, "un tipo de muestra"
+    )
+    return SampleTypeRead.model_validate(sample_type)
+
+
 async def update_sample_type(
     session: AsyncSession, sample_type_id: UUID, data: SampleTypeUpdate
 ) -> SampleTypeRead:
