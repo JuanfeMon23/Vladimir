@@ -5,6 +5,8 @@ const route = useRoute()
 interface NavItem {
   label: string
   to: string
+  /** Tag de Leo que lo habilita; sin tag, siempre visible (módulo aún sin proteger). */
+  tag?: string
 }
 
 // Módulos de negocio disponibles en el panel. Cada entrada nueva se agrega
@@ -12,7 +14,7 @@ interface NavItem {
 // `/_design` (referencia viva del sistema de diseño) queda fuera a propósito.
 const navItems: NavItem[] = [
   { label: 'Personal', to: '/staff' },
-  { label: 'Áreas', to: '/lab-areas' },
+  { label: 'Áreas', to: '/lab-areas', tag: LAB_AREAS_TAGS.view },
   { label: 'Exámenes', to: '/lab-tests' },
   { label: 'Precondiciones', to: '/preconditions' },
   { label: 'Muestras', to: '/samples' },
@@ -23,6 +25,9 @@ const navItems: NavItem[] = [
   { label: 'Plantillas de resultados', to: '/result-templates' },
   { label: 'Documentos a firmar', to: '/consent-documents' }
 ]
+
+const leoSession = useLeoSession()
+const visibleNavItems = computed(() => navItems.filter(item => !item.tag || leoSession.can(item.tag)))
 
 // Sidebar fuera de pantalla en < lg; se cierra al navegar.
 const sidebarOpen = ref(false)
@@ -45,7 +50,7 @@ watch(() => route.fullPath, () => {
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
       aria-label="Navegación principal"
     >
-      <div class="flex h-16 items-center gap-3 px-5">
+      <div class="flex h-14 items-center gap-3 px-5">
         <NuxtLink
           to="/"
           class="flex items-center gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
@@ -62,7 +67,7 @@ watch(() => route.fullPath, () => {
           Módulos
         </p>
         <NuxtLink
-          v-for="item in navItems"
+          v-for="item in visibleNavItems"
           :key="item.to"
           :to="item.to"
           class="flex h-9 items-center rounded-md px-3 text-sm font-medium text-default-600 transition duration-150 hover:bg-default-100 hover:text-text active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500"
@@ -74,24 +79,23 @@ watch(() => route.fullPath, () => {
     </aside>
 
     <div class="flex min-w-0 flex-1 flex-col">
-      <header class="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-surface/80 px-4 backdrop-blur-md sm:px-6">
-        <UiButton
-          class="lg:hidden"
-          variant="ghost"
-          size="sm"
-          icon-only
-          aria-label="Abrir menú"
-          :aria-expanded="sidebarOpen"
-          @click="sidebarOpen = !sidebarOpen"
-        >
-          <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fill-rule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75Zm0 5.25a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 10Zm0 5.25a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd" />
-          </svg>
-        </UiButton>
-        <h1 class="truncate text-sm font-medium text-text-muted">
-          {{ appConfig.description }}
-        </h1>
-      </header>
+      <LeoTopBar>
+        <template #start>
+          <UiButton
+            class="lg:hidden"
+            variant="ghost"
+            size="sm"
+            icon-only
+            aria-label="Abrir menú"
+            :aria-expanded="sidebarOpen"
+            @click="sidebarOpen = !sidebarOpen"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75Zm0 5.25a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 10Zm0 5.25a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd" />
+            </svg>
+          </UiButton>
+        </template>
+      </LeoTopBar>
 
       <main class="flex-1 p-4 sm:p-6">
         <slot />

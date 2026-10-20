@@ -3,6 +3,7 @@ import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiRequestError } from '~/composables/useApi'
 import { fakePage } from '~/testing/fakeApi'
+import { signInWith } from '~/testing/session'
 import { button, click, control, flushAll, setValue } from '~/testing/dom'
 import type { ConsentDocumentVersionRead } from '../../../../types/consent-documents'
 import VersionEditorPage from './[versionId].vue'
@@ -35,6 +36,8 @@ function version(overrides: Partial<ConsentDocumentVersionRead> = {}): ConsentDo
 const WITH_FILE = { has_file: true, file_content_type: 'application/pdf', file_sha256: 'a'.repeat(64), file_size_bytes: 2048 }
 
 beforeEach(() => {
+  // La navegación pasa por el middleware de leo-client: requiere sesión.
+  signInWith([])
   fake.reset()
   document.body.innerHTML = ''
   fake.routes['GET /consent-documents/d1'] = { id: 'd1', code: 'CONSENT_VIH', name: 'Consentimiento VIH', document_type: 'consentimiento_informado', is_active: true }

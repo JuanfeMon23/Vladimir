@@ -2,6 +2,7 @@ import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakePage } from '~/testing/fakeApi'
+import { signInWith } from '~/testing/session'
 import { button, click, flushAll, setValue } from '~/testing/dom'
 import type { StaffRead } from '../../types/staff'
 import StaffIndex from './index.vue'
@@ -21,6 +22,8 @@ function person(id: string, first_name: string, last_name: string): StaffRead {
 const everyone = [person('1', 'Ana', 'Herrera'), person('2', 'Luis', 'Pérez')]
 
 beforeEach(() => {
+  // La navegación pasa por el middleware de leo-client: requiere sesión.
+  signInWith([])
   fake.reset()
   invalidateCaches()
   clearNuxtData()
