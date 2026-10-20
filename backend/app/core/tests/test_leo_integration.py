@@ -17,21 +17,40 @@ async def test_auth_routes_are_mounted(client: AsyncClient, leo: FakeLeo) -> Non
     assert response.json()["code"] == "not_authenticated"
 
 
-async def test_other_modules_unaffected_by_leo(
+async def test_all_business_modules_require_session(
     client: AsyncClient, leo: FakeLeo
 ) -> None:
-    leo.user = None  # sin sesion: los modulos aun no protegidos siguen abiertos
+    leo.user = None  # sin sesion: ningun modulo de negocio queda abierto
     for path in (
         "/api/v1/staff",
-        "/api/v1/samples",
+        "/api/v1/lab-areas",
         "/api/v1/lab-tests",
         "/api/v1/preconditions",
+        "/api/v1/samples",
         "/api/v1/print-labels",
         "/api/v1/result-templates",
+        "/api/v1/units",
+        "/api/v1/analytes",
+        "/api/v1/result-option-sets",
         "/api/v1/consent-documents",
     ):
         response = await client.get(path)
-        assert response.status_code == 200, path
+        assert response.status_code == 401, path
+        assert response.json()["code"] == "not_authenticated", path
+
+
+async def test_external_app_endpoints_do_not_need_user_session(
+    client: AsyncClient, leo: FakeLeo
+) -> None:
+    """Integracion con la app externa (tag `integracion`): sin sesion de usuario
+    hasta que exista la autenticacion maquina a maquina."""
+    leo.user = None
+    for path in (
+        "/api/v1/consent-documents/data-treatment/current",
+        "/api/v1/consent-document-versions/00000000-0000-0000-0000-000000000001/file",
+    ):
+        response = await client.get(path)
+        assert response.status_code not in (401, 403), path
 
 
 async def test_cors_allows_credentials_and_dpop_header(client: AsyncClient) -> None:

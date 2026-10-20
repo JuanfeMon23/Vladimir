@@ -258,6 +258,14 @@ class VersioningService[VersionModelT]:
             page_size=pagination.page_size,
         )
 
+    async def read_version(
+        self, session: AsyncSession, parent_id: UUID, version_id: UUID
+    ) -> Any:
+        """`XVersionRead` de una version del padre (sin commit; para auditar el
+        estado previo)."""
+        version = await self.get_or_404(session, parent_id, version_id)
+        return self.read_schema.model_validate(version)  # type: ignore[union-attr]
+
     async def read_with_owner(self, session: AsyncSession, version_id: Any) -> Any:
         """Version buscada solo por su id, con su catalogo dueno embebido
         como `owner` (`VersionOwnerRead`). 404 `VersionNotFoundError` si no

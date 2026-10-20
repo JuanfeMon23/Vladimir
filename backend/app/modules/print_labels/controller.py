@@ -54,6 +54,7 @@ versioning = VersioningService(
 # servicio generico, este modulo solo declara lo especifico arriba.
 list_versions = versioning.list_versions
 get_version_with_owner = versioning.read_with_owner
+get_version = versioning.read_version
 create_version = versioning.create_version
 update_version = versioning.update_version
 publish_version = versioning.publish_version

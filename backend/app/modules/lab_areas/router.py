@@ -16,7 +16,7 @@ from app.core.dependencies import (
     pagination_params,
     search_filter,
 )
-from app.core.leo import auth, record_audit
+from app.core.leo import audit_patch, auth, authorize_patch, record_audit
 from app.core.schemas import Page, error_responses
 from app.modules.lab_areas import controller
 from app.modules.lab_areas.permissions import (
@@ -102,39 +102,21 @@ async def update_lab_area(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> LabAreaRead:
     """Exige `edit` si cambia datos y `change-status` si trae `is_active`."""
-    sent = data.model_fields_set
-    changes_status = "is_active" in sent and data.is_active is not None
-    changes_data = bool(sent - {"is_active", "activity_reason"}) or not changes_status
-    if changes_data:
-        await EDIT_CHECK(request, user)
-    if changes_status:
-        await CHANGE_STATUS_CHECK(request, user)
-
+    await authorize_patch(
+        request, user, data, edit_check=EDIT_CHECK, status_check=CHANGE_STATUS_CHECK
+    )
     before = _snapshot(await controller.get_lab_area(session, area_id))
     updated = await controller.update_lab_area(session, area_id, data)
-    after = _snapshot(updated)
-    status_changed = before["is_active"] != after["is_active"]
-    data_before = {k: v for k, v in before.items() if k != "is_active"}
-    data_after = {k: v for k, v in after.items() if k != "is_active"}
-    if data_before != data_after:
-        await record_audit(
-            EDIT,
-            user,
-            entity_type=ENTITY,
-            entity_id=area_id,
-            before=data_before,
-            after=data_after,
-        )
-    if status_changed:
-        await record_audit(
-            CHANGE_STATUS,
-            user,
-            entity_type=ENTITY,
-            entity_id=area_id,
-            before={"is_active": before["is_active"]},
-            after={"is_active": after["is_active"]},
-            reason=data.activity_reason,
-        )
+    await audit_patch(
+        user,
+        edit_tag=EDIT,
+        status_tag=CHANGE_STATUS,
+        entity_type=ENTITY,
+        entity_id=area_id,
+        before=before,
+        after=_snapshot(updated),
+        reason=data.activity_reason,
+    )
     return updated
 
 

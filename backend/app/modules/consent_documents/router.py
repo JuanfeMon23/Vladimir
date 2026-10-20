@@ -3,7 +3,8 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
+from leo_sdk import LeoUser
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -16,9 +17,27 @@ from app.core.dependencies import (
     search_filter,
     version_status_param,
 )
+from app.core.leo import audit_patch, auth, authorize_patch, record_audit, snapshot
 from app.core.schemas import Page, error_responses
 from app.core.versioning import RETIRE_VERSION_RESPONSES, VersionStatus
 from app.modules.consent_documents import controller
+from app.modules.consent_documents.permissions import (
+    CHANGE_STATUS,
+    CHANGE_STATUS_CHECK,
+    CREATE,
+    CREATE_VERSION,
+    EDIT,
+    EDIT_CHECK,
+    EDIT_VERSION,
+    PUBLISH_VERSION,
+    RETIRE_VERSION,
+    CanCreate,
+    CanCreateVersion,
+    CanEditVersion,
+    CanPublishVersion,
+    CanRetireVersion,
+    CanView,
+)
 from app.modules.consent_documents.schemas import (
     ConsentDocumentCreate,
     ConsentDocumentFileRead,
@@ -34,9 +53,13 @@ from app.modules.consent_documents.schemas import (
 router = APIRouter(tags=["consent_documents"])
 versions_router = APIRouter(tags=["consent_documents"])
 
+ENTITY = "consent_document"
+VERSION_ENTITY = "consent_document_version"
+
 
 @router.get("", response_model=Page[ConsentDocumentRead])
 async def list_consent_documents(
+    _user: CanView,
     session: Annotated[AsyncSession, Depends(get_session)],
     pagination: Annotated[PaginationParams, Depends(pagination_params)],
     active_filter: Annotated[ActiveOnlyFilter, Depends(active_only_filter)],
@@ -53,9 +76,18 @@ async def list_consent_documents(
 )
 async def create_consent_document(
     data: ConsentDocumentCreate,
+    user: CanCreate,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ConsentDocumentRead:
-    return await controller.create_document(session, data)
+    created = await controller.create_document(session, data)
+    await record_audit(
+        CREATE,
+        user,
+        entity_type=ENTITY,
+        entity_id=created.id,
+        after=snapshot(created),
+    )
+    return created
 
 
 @router.get(
@@ -85,6 +117,7 @@ async def get_current_data_treatment_consent(
     responses=error_responses(404),
 )
 async def get_consent_document(
+    _user: CanView,
     consent_document_id: UUID,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ConsentDocumentRead:
@@ -99,9 +132,27 @@ async def get_consent_document(
 async def update_consent_document(
     consent_document_id: UUID,
     data: ConsentDocumentUpdate,
+    request: Request,
+    user: Annotated[LeoUser, Depends(auth.current_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ConsentDocumentRead:
-    return await controller.update_document(session, consent_document_id, data)
+    """Exige `edit` si cambia datos y `change-status` si trae `is_active`."""
+    await authorize_patch(
+        request, user, data, edit_check=EDIT_CHECK, status_check=CHANGE_STATUS_CHECK
+    )
+    before = snapshot(await controller.get_document(session, consent_document_id))
+    updated = await controller.update_document(session, consent_document_id, data)
+    await audit_patch(
+        user,
+        edit_tag=EDIT,
+        status_tag=CHANGE_STATUS,
+        entity_type=ENTITY,
+        entity_id=consent_document_id,
+        before=before,
+        after=snapshot(updated),
+        reason=data.activity_reason,
+    )
+    return updated
 
 
 @router.get(
@@ -110,6 +161,7 @@ async def update_consent_document(
     responses=error_responses(404),
 )
 async def list_consent_document_versions(
+    _user: CanView,
     consent_document_id: UUID,
     session: Annotated[AsyncSession, Depends(get_session)],
     pagination: Annotated[PaginationParams, Depends(pagination_params)],
@@ -130,12 +182,21 @@ async def list_consent_document_versions(
 async def create_consent_document_version(
     consent_document_id: UUID,
     data: ConsentDocumentVersionCreate,
+    user: CanCreateVersion,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ConsentDocumentVersionRead:
     """Nuevo draft: clona la ultima version (publicada o retirada), o crea
     la version 1 si el documento todavia no tiene ninguna. `file_base64`
     (opcional) sube el PDF; al clonar se hereda el de la versión anterior."""
-    return await controller.create_version(session, consent_document_id, data)
+    created = await controller.create_version(session, consent_document_id, data)
+    await record_audit(
+        CREATE_VERSION,
+        user,
+        entity_type=VERSION_ENTITY,
+        entity_id=created.id,
+        after=snapshot(created),
+    )
+    return created
 
 
 @router.patch(
@@ -147,13 +208,26 @@ async def update_consent_document_version(
     consent_document_id: UUID,
     version_id: UUID,
     data: ConsentDocumentVersionUpdate,
+    user: CanEditVersion,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ConsentDocumentVersionRead:
     """Solo aplica si la version esta en `draft`. `file_base64` reemplaza el
     PDF; `null` lo quita; omitirlo no lo toca."""
-    return await controller.update_version(
+    before = snapshot(
+        await controller.get_version(session, consent_document_id, version_id)
+    )
+    updated = await controller.update_version(
         session, consent_document_id, version_id, data
     )
+    await record_audit(
+        EDIT_VERSION,
+        user,
+        entity_type=VERSION_ENTITY,
+        entity_id=version_id,
+        before=before,
+        after=snapshot(updated),
+    )
+    return updated
 
 
 @router.post(
@@ -171,9 +245,22 @@ async def update_consent_document_version(
 async def publish_consent_document_version(
     consent_document_id: UUID,
     version_id: UUID,
+    user: CanPublishVersion,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ConsentDocumentVersionRead:
-    return await controller.publish_version(session, consent_document_id, version_id)
+    before = snapshot(
+        await controller.get_version(session, consent_document_id, version_id)
+    )
+    updated = await controller.publish_version(session, consent_document_id, version_id)
+    await record_audit(
+        PUBLISH_VERSION,
+        user,
+        entity_type=VERSION_ENTITY,
+        entity_id=version_id,
+        before=before,
+        after=snapshot(updated),
+    )
+    return updated
 
 
 @router.post(
@@ -184,9 +271,22 @@ async def publish_consent_document_version(
 async def retire_consent_document_version(
     consent_document_id: UUID,
     version_id: UUID,
+    user: CanRetireVersion,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ConsentDocumentVersionRead:
-    return await controller.retire_version(session, consent_document_id, version_id)
+    before = snapshot(
+        await controller.get_version(session, consent_document_id, version_id)
+    )
+    updated = await controller.retire_version(session, consent_document_id, version_id)
+    await record_audit(
+        RETIRE_VERSION,
+        user,
+        entity_type=VERSION_ENTITY,
+        entity_id=version_id,
+        before=before,
+        after=snapshot(updated),
+    )
+    return updated
 
 
 @versions_router.get(
@@ -195,6 +295,7 @@ async def retire_consent_document_version(
     responses=error_responses(404),
 )
 async def get_consent_document_version(
+    _user: CanView,
     version_id: UUID,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ConsentDocumentVersionWithOwnerRead:
