@@ -38,8 +38,10 @@ VLADIMIR_SETTINGS = SettingsRegistry(
             "pagination.max_page_size",
             "int",
             200,
-            "Máximo de filas por página en los listados.",
-            min=50,
+            "Máximo de filas por página en los listados. No puede ser menor de "
+            "200: los clientes del ecosistema (Incubus y el propio frontend) "
+            "piden páginas de hasta 200.",
+            min=200,
             max=500,
             unit="count",
             group="pagination",

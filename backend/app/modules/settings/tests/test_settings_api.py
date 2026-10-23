@@ -73,18 +73,18 @@ async def test_list_groups_the_declared_settings(client: AsyncClient) -> None:
 async def test_edit_changes_value_history_and_audits(
     client: AsyncClient, leo: FakeLeo
 ) -> None:
-    response = await _put(client, KEY, 100)
+    response = await _put(client, KEY, 300)
 
     assert response.status_code == 200
     body = response.json()
-    assert (body["value"], body["version"]) == (100, 2)
+    assert (body["value"], body["version"]) == (300, 2)
     assert body["updated_by"] == str(leo.user.id)
     assert body["updated_by_username"] == "tester"
-    assert await runtime_settings.get(KEY) == 100  # el cache se invalida al editar
+    assert await runtime_settings.get(KEY) == 300  # el cache se invalida al editar
 
     history = await client.get(f"{BASE}/{KEY}/history")
     entry = history.json()["items"][0]
-    assert (entry["old_value"], entry["new_value"]) == (200, 100)
+    assert (entry["old_value"], entry["new_value"]) == (200, 300)
     assert entry["reason"] == "ajuste de prueba"
 
     event = next(e for e in leo.events if e["action_tag"] == p.UPDATE_EVENT)
@@ -94,16 +94,16 @@ async def test_edit_changes_value_history_and_audits(
 
 
 async def test_out_of_range_value_is_rejected(client: AsyncClient) -> None:
-    response = await _put(client, KEY, 10)
+    response = await _put(client, KEY, 100)
 
     assert response.status_code == 422
     assert response.json()["code"] == "setting_out_of_range"
 
 
 async def test_stale_version_conflicts(client: AsyncClient) -> None:
-    assert (await _put(client, KEY, 100)).status_code == 200
+    assert (await _put(client, KEY, 300)).status_code == 200
 
-    response = await _put(client, KEY, 150, version=1)
+    response = await _put(client, KEY, 400, version=1)
 
     assert response.status_code == 409
 
@@ -118,7 +118,7 @@ async def test_edit_with_arbitrary_user_uuid_works(
     # sin tabla de usuarios: cualquier uuid vale
     leo.user = dataclasses.replace(leo.user, id=uuid.uuid4())
 
-    response = await _put(client, KEY, 100)
+    response = await _put(client, KEY, 300)
 
     assert response.status_code == 200
     assert response.json()["updated_by"] == str(leo.user.id)
@@ -142,7 +142,7 @@ async def test_edit_with_arbitrary_user_uuid_works(
 async def test_each_route_needs_its_permission(
     client: AsyncClient, leo: FakeLeo, method: str, path: str, tag: str
 ) -> None:
-    body = {"value": 100, "reason": "prueba", "expected_version": 1}
+    body = {"value": 300, "reason": "prueba", "expected_version": 1}
     leo.grant(*(catalog.tags - {tag}))
     assert (await client.request(method, path, json=body)).status_code == 403
 
