@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import runtime_settings
 from app.core.dependencies import (
     NO_SEARCH,
     ActiveOnlyFilter,
@@ -62,11 +63,16 @@ publish_version = versioning.publish_version
 retire_version = versioning.retire_version
 
 
-def _with_file(data: BaseModel) -> BaseModel:
+async def _max_file_mib() -> int:
+    return await runtime_settings.get("files.consent_max_mib")
+
+
+def _with_file(data: BaseModel, max_mib: int) -> BaseModel:
     """Si el body trae `file_base64`, lo valida y devuelve el body a escribir
     con `file_sha256`/`file_size_bytes`/`file_content_type` calculados (nunca
     del cliente); `null` explicito quita el archivo (los 4 campos a `None`).
-    Sin `file_base64` en el body, no se toca el archivo.
+    Sin `file_base64` en el body, no se toca el archivo. `max_mib` es el ajuste
+    `files.consent_max_mib` (leido por peticion).
     """
     changes = data.model_dump(exclude_unset=True)
     if "file_base64" not in changes:
@@ -78,7 +84,7 @@ def _with_file(data: BaseModel) -> BaseModel:
             "file_size_bytes": None,
         }
     else:
-        pdf = validate_pdf_base64(changes["file_base64"])
+        pdf = validate_pdf_base64(changes["file_base64"], max_mib)
         derived = {
             "file_content_type": pdf.content_type,
             "file_sha256": pdf.sha256,
@@ -91,7 +97,7 @@ async def create_version(
     session: AsyncSession, consent_document_id: UUID, data: BaseModel
 ) -> ConsentDocumentVersionRead:
     return await versioning.create_version(
-        session, consent_document_id, _with_file(data)
+        session, consent_document_id, _with_file(data, await _max_file_mib())
     )
 
 
@@ -102,7 +108,10 @@ async def update_version(
     data: BaseModel,
 ) -> ConsentDocumentVersionRead:
     return await versioning.update_version(
-        session, consent_document_id, version_id, _with_file(data)
+        session,
+        consent_document_id,
+        version_id,
+        _with_file(data, await _max_file_mib()),
     )
 
 

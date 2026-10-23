@@ -15,11 +15,7 @@ from app.core.exceptions import ValidationAppError
 FILE_FIELD = "file_base64"
 PDF_CONTENT_TYPE = "application/pdf"
 PDF_SIGNATURE = b"%PDF-"
-# Tamano maximo del PDF ya decodificado.
-MAX_FILE_BYTES = 5 * 1024 * 1024
-# Longitud maxima del base64 (4 caracteres por cada 3 bytes, con relleno): se
-# comprueba antes de decodificar para no gastar memoria en un cuerpo enorme.
-MAX_FILE_BASE64_LENGTH = (MAX_FILE_BYTES + 2) // 3 * 4
+MIB = 1024 * 1024
 
 
 @dataclass(frozen=True)
@@ -37,15 +33,20 @@ def _invalid(reason: str, message: str) -> ValidationAppError:
     )
 
 
-def validate_pdf_base64(value: str) -> PdfFile:
-    """Valida `value` (base64 estricto de un PDF de hasta 5 MB) y calcula sus
-    metadatos. 422 `validation_error` con `details={field, reason}`;
-    `reason`: `empty`, `too_large`, `invalid_base64` o `not_pdf`.
+def validate_pdf_base64(value: str, max_mib: int) -> PdfFile:
+    """Valida `value` (base64 estricto de un PDF de hasta `max_mib` MiB; ajuste
+    `files.consent_max_mib`) y calcula sus metadatos. 422 `validation_error`
+    con `details={field, reason}`; `reason`: `empty`, `too_large`,
+    `invalid_base64` o `not_pdf`.
     """
+    max_bytes = max_mib * MIB
+    too_large = f"El archivo supera el tamaño máximo de {max_mib} MB."
     if not value:
         raise _invalid("empty", "El archivo está vacío.")
-    if len(value) > MAX_FILE_BASE64_LENGTH:
-        raise _invalid("too_large", "El archivo supera el tamaño máximo de 5 MB.")
+    # Longitud maxima del base64 (4 caracteres por cada 3 bytes, con relleno):
+    # se comprueba antes de decodificar para no gastar memoria en un cuerpo enorme.
+    if len(value) > (max_bytes + 2) // 3 * 4:
+        raise _invalid("too_large", too_large)
     try:
         content = base64.b64decode(value, validate=True)
     except (binascii.Error, ValueError):
@@ -54,8 +55,8 @@ def validate_pdf_base64(value: str) -> PdfFile:
         ) from None
     if not content:
         raise _invalid("empty", "El archivo está vacío.")
-    if len(content) > MAX_FILE_BYTES:
-        raise _invalid("too_large", "El archivo supera el tamaño máximo de 5 MB.")
+    if len(content) > max_bytes:
+        raise _invalid("too_large", too_large)
     if not content.startswith(PDF_SIGNATURE):
         raise _invalid("not_pdf", "El archivo no es un PDF válido.")
     return PdfFile(

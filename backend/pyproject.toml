@@ -7,7 +7,7 @@ dependencies = [
     "alembic>=1.20.0",
     "asyncpg>=0.31.0",
     "fastapi>=0.142.2",
-    "leo-sdk",
+    "leo-sdk[settings]",
     "pydantic-settings>=2.15.0",
     "python-dotenv>=1.2.3",
     "sqlalchemy[asyncio]>=2",
@@ -33,4 +33,4 @@ line-length = 88
 extend-exclude = ["migrations"]
 
 [tool.uv.sources]
-leo-sdk = { git = "https://github.com/JuanfeMon23/Leo.git", subdirectory = "sdk/python", tag = "v0.2.0" }
+leo-sdk = { git = "https://github.com/JuanfeMon23/Leo.git", subdirectory = "sdk/python", tag = "v0.8.0" }

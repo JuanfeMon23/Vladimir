@@ -11,8 +11,9 @@ from httpx import AsyncClient, Response
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import runtime_settings
 from app.core.tests.pdf import MINIMAL_PDF, pdf_base64, pdf_sha256
-from app.modules.consent_documents.files import MAX_FILE_BYTES
+from app.modules.consent_documents.files import MIB
 
 DOCS = "/api/v1/consent-documents"
 VERSIONS = "/api/v1/consent-document-versions"
@@ -107,7 +108,7 @@ async def test_invalid_file_returns_422(
 
 async def test_file_over_5_mb_returns_422(client: AsyncClient) -> None:
     document = await _document(client)
-    big = b"%PDF-" + b"0" * MAX_FILE_BYTES  # 5 MB + 5 bytes
+    big = b"%PDF-" + b"0" * (5 * MIB)  # 5 MB + 5 bytes
 
     response = await client.post(
         f"{DOCS}/{document['id']}/versions",
@@ -119,13 +120,13 @@ async def test_file_over_5_mb_returns_422(client: AsyncClient) -> None:
 
 async def test_file_of_exactly_5_mb_is_accepted(client: AsyncClient) -> None:
     document = await _document(client)
-    exact = b"%PDF-" + b"0" * (MAX_FILE_BYTES - 5)
+    exact = b"%PDF-" + b"0" * (5 * MIB - 5)
 
     version = await _draft(
         client, document["id"], file_base64=base64.b64encode(exact).decode()
     )
 
-    assert version["file_size_bytes"] == MAX_FILE_BYTES
+    assert version["file_size_bytes"] == 5 * MIB
     assert version["file_sha256"] == hashlib.sha256(exact).hexdigest()
 
 
@@ -333,3 +334,25 @@ async def test_reads_never_select_file_base64(
     assert not [s for s in selects if "file_base64" in s]
     assert "file_base64" not in listing.text
     assert "file_base64" not in detail.text
+
+
+async def test_file_limit_follows_the_setting_per_request(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """El tope sale del ajuste `files.consent_max_mib` en cada peticion."""
+
+    async def fake_get(key: str) -> int:
+        assert key == "files.consent_max_mib"
+        return 1
+
+    monkeypatch.setattr(runtime_settings, "get", fake_get)
+    document = await _document(client)
+    two_mib = b"%PDF-" + b"0" * (2 * MIB)
+
+    response = await client.post(
+        f"{DOCS}/{document['id']}/versions",
+        json={**BODY, "file_base64": base64.b64encode(two_mib).decode()},
+    )
+
+    _assert_file_error(response, "too_large")
+    assert "1 MB" in response.json()["message"]

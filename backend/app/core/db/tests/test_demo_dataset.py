@@ -37,7 +37,7 @@ from app.core.db.seeds.demo.result_templates.catalogs import (
 )
 from app.core.db.seeds.result_option_sets import RESULT_OPTION_SETS
 from app.core.db.seeds.units import UNITS
-from app.modules.consent_documents.files import MAX_FILE_BYTES
+from app.modules.consent_documents.files import MIB
 from app.modules.consent_documents.models import DOCUMENT_TYPE_VALUES, SIGNER_VALUES
 from app.modules.consent_documents.schemas import DATA_TREATMENT_TYPE
 from app.modules.preconditions.models import CATEGORY_VALUES, DURATION_UNIT_VALUES
@@ -194,7 +194,7 @@ def test_los_pdf_existen_son_validos_y_coinciden_con_el_manifest():
     for code, entry in consent_files.load_manifest().items():
         data = consent_files.pdf_bytes(code)
         assert data.startswith(b"%PDF-"), code
-        assert 0 < len(data) <= MAX_FILE_BYTES, code
+        assert 0 < len(data) <= 5 * MIB, code
         assert len(data) == entry["pdf_size_bytes"], code
         assert hashlib.sha256(data).hexdigest() == entry["pdf_sha256"], (
             f"{code}: el PDF no coincide con el manifest; regenerar con "

@@ -8,9 +8,11 @@ from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import Query
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy import ColumnElement, Select, or_
 from sqlalchemy.orm import InstrumentedAttribute
 
+from app.core import runtime_settings
 from app.core.db.search import normalized, normalized_pattern
 from app.core.schemas import VersionStatus
 
@@ -31,10 +33,26 @@ class PaginationParams:
         return self.page_size
 
 
-def pagination_params(
+async def pagination_params(
     page: Annotated[int, Query(ge=1)] = 1,
-    page_size: Annotated[int, Query(ge=1, le=200)] = 20,
+    page_size: Annotated[int, Query(ge=1)] = 20,
 ) -> PaginationParams:
+    """`?page=&page_size=`; el maximo de `page_size` es el ajuste
+    `pagination.max_page_size` (leido en cada peticion). Si se excede: 422 con
+    el mismo formato que un `le=` de Query."""
+    maximum = await runtime_settings.get("pagination.max_page_size")
+    if page_size > maximum:
+        raise RequestValidationError(
+            [
+                {
+                    "type": "less_than_equal",
+                    "loc": ("query", "page_size"),
+                    "msg": f"Input should be less than or equal to {maximum}",
+                    "input": page_size,
+                    "ctx": {"le": maximum},
+                }
+            ]
+        )
     return PaginationParams(page=page, page_size=page_size)
 
 

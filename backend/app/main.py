@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from leo_sdk import leo_router
 
+from app.core import runtime_settings
 from app.core.activity import activity_router
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
@@ -28,6 +29,7 @@ from app.modules.result_templates import (
     units_router,
 )
 from app.modules.samples import sample_types_router, samples_router
+from app.modules.settings import settings_router
 from app.modules.staff import staff_router
 
 
@@ -36,6 +38,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     # Falla al arrancar si algun `require_action` usa un tag sin declarar.
     # La sincronizacion con Leo NO va aqui (ver `python -m app.core.leo_sync`).
     auth.check_catalog()
+    await runtime_settings.sync_on_startup()
     yield
     await auth.aclose()
 
@@ -59,6 +62,7 @@ app.include_router(leo_router(auth))  # /auth/login /callback /me /activity /log
 register_version_usages()
 
 app.include_router(activity_router, prefix="/api/v1/activity")
+app.include_router(settings_router, prefix="/api/v1/settings")
 app.include_router(staff_router, prefix="/api/v1/staff")
 app.include_router(lab_areas_router, prefix="/api/v1/lab-areas")
 app.include_router(lab_tests_router, prefix="/api/v1/lab-tests")
