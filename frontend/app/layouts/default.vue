@@ -4,7 +4,7 @@ import type { UiSidebarItem } from '#andromeda/components/ui/UiSidebar.vue'
 interface NavItem {
   label: string
   to: string
-  /** Tag de Leo que lo habilita (los 8 módulos están protegidos: todo ítem lleva uno). */
+  /** Tag de Leo que lo habilita (todos los módulos están protegidos: todo ítem lleva uno). */
   tag: string
   /** Icono de trazo 24×24 (atributo `d` del path). */
   icon: string
@@ -35,7 +35,9 @@ const navItems: NavItem[] = [
   // Cuadro con encabezado y columna.
   { label: 'Plantillas de resultados', to: '/result-templates', tag: RESULT_TEMPLATES_TAGS.view, icon: 'M4 4h16v16H4zM4 9h16M9 9v11' },
   // Documento con firma.
-  { label: 'Documentos a firmar', to: '/consent-documents', tag: CONSENT_DOCUMENTS_TAGS.view, icon: 'M6 3h8l4 4v14H6zM14 3v4h4M9 17c1-2 2-2 3 0s2 1 3-1' }
+  { label: 'Documentos a firmar', to: '/consent-documents', tag: CONSENT_DOCUMENTS_TAGS.view, icon: 'M6 3h8l4 4v14H6zM14 3v4h4M9 17c1-2 2-2 3 0s2 1 3-1' },
+  // Controles deslizantes.
+  { label: 'Ajustes del sistema', to: '/settings', tag: SETTINGS_TAGS.view, icon: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4' }
 ]
 
 const leoSession = useLeoSession()

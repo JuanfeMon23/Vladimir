@@ -13,16 +13,16 @@ async function menuLabels(tags: string[]) {
 }
 
 describe('menú lateral por permiso', () => {
-  it('con todos los view aparecen los 11 módulos, bajo la sección «Módulos»', async () => {
+  it('con todos los view aparecen los 12 módulos, bajo la sección «Módulos»', async () => {
     const tags = [
       STAFF_TAGS.view, LAB_AREAS_TAGS.view, LAB_TESTS_TAGS.view, PRECONDITIONS_TAGS.view, SAMPLES_TAGS.view,
-      PRINT_LABELS_TAGS.view, RESULT_TEMPLATES_TAGS.view, CONSENT_DOCUMENTS_TAGS.view
+      PRINT_LABELS_TAGS.view, RESULT_TEMPLATES_TAGS.view, CONSENT_DOCUMENTS_TAGS.view, SETTINGS_TAGS.view
     ]
     signInWith(tags)
     const wrapper = await mountSuspended(DefaultLayout)
     expect(wrapper.findAll('nav a').map(a => a.text())).toEqual([
       'Personal', 'Áreas', 'Exámenes', 'Precondiciones', 'Muestras', 'Etiquetas de impresión',
-      'Analitos', 'Unidades de medida', 'Conjuntos de opciones', 'Plantillas de resultados', 'Documentos a firmar'
+      'Analitos', 'Unidades de medida', 'Conjuntos de opciones', 'Plantillas de resultados', 'Documentos a firmar', 'Ajustes del sistema'
     ])
     expect(wrapper.text()).toContain('Módulos')
     expect(wrapper.text()).toContain('Vladimir')

@@ -19,6 +19,8 @@ export function consentFileApiError(err: unknown): string | null {
   if (!(err instanceof LeoApiError)) return null
   const details = err.details as { field?: unknown, reason?: unknown } | null | undefined
   if (!details || typeof details !== 'object' || details.field !== 'file_base64') return null
+  // El tope de tamaño es un ajuste del backend (`files.consent_max_mib`): su mensaje trae el valor vigente.
+  if (details.reason === 'too_large') return err.message
   return pdfFileErrorMessage(details.reason, err.message)
 }
 
