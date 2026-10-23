@@ -29,7 +29,7 @@ DATA_TREATMENT_TYPE = "tratamiento_datos"
 
 FILE_BASE64_DESCRIPTION = (
     "PDF en base64 estricto (sin prefijo `data:` ni saltos de línea); máximo "
-    "5 MB ya decodificado y debe empezar por `%PDF-`. La API calcula "
+    "`files.consent_max_mib` MiB (ajuste; 5 por defecto) ya decodificado y debe empezar por `%PDF-`. La API calcula "
     "`file_sha256`, `file_size_bytes` y `file_content_type`."
 )
 

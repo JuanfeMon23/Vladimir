@@ -6,6 +6,7 @@ las tablas del proyecto.
 """
 
 from app.core.db import activity as core_activity_models  # noqa: F401
+from app.core.db import settings_model as core_settings_models  # noqa: F401
 from app.core.db.base import Base
 from app.modules.consent_documents import (
     models as consent_documents_models,  # noqa: F401
