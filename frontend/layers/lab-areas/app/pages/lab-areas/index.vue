@@ -14,10 +14,15 @@ const activeFilter = ref<boolean | undefined>(undefined)
 
 const search = ref('')
 
-const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList(
-  params => labAreasApi.list({ ...params, active: activeFilter.value }),
-  { resource: '/lab-areas', search, filters: [activeFilter], errorMessage: 'No se pudieron cargar las áreas.' }
-)
+const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList({
+  fetchPage: (params, { signal }) => labAreasApi.list({ ...params, active: activeFilter.value }, { signal }),
+  search,
+  filters: [activeFilter],
+  errorMessage: 'No se pudieron cargar las áreas.',
+  mapError: leoErrorMessage,
+  urlSync: useRouteQuerySync(),
+  cache: listCache('/lab-areas')
+})
 
 const modal = useEntityModal<LabAreaRead>()
 

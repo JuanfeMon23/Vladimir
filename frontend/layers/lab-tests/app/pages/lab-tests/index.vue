@@ -21,10 +21,15 @@ const areaFilter = ref('')
 
 const search = ref('')
 
-const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList(
-  params => labTestsApi.list({ ...params, active: activeFilter.value, area_id: areaFilter.value || undefined }),
-  { resource: '/lab-tests', search, filters: [activeFilter, areaFilter], errorMessage: 'No se pudieron cargar los exámenes.' }
-)
+const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList({
+  fetchPage: (params, { signal }) => labTestsApi.list({ ...params, active: activeFilter.value, area_id: areaFilter.value || undefined }, { signal }),
+  search,
+  filters: [activeFilter, areaFilter],
+  errorMessage: 'No se pudieron cargar los exámenes.',
+  mapError: leoErrorMessage,
+  urlSync: useRouteQuerySync(),
+  cache: listCache('/lab-tests')
+})
 
 const modal = useEntityModal<LabTestRead>()
 

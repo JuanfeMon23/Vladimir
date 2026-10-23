@@ -14,7 +14,7 @@ export function useAnalytes() {
   const api = useLeoAppApi()
 
   /** `opts.cacheTtl`: pide con caché (catálogo para selects). */
-  function list(params: AnalyteListParams = {}, opts: { cacheTtl?: number } = {}) {
+  function list(params: AnalyteListParams = {}, opts: { cacheTtl?: number, signal?: AbortSignal } = {}) {
     return api.get<Page<AnalyteRead>>('/analytes', { params, ...opts })
   }
 

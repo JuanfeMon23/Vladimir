@@ -43,8 +43,8 @@ const PUBLISHED_VERSIONS = { page_size: 200, status: 'published' }
 export function useLabTests() {
   const api = useLeoAppApi()
 
-  function list(params: LabTestListParams = {}) {
-    return api.get<Page<LabTestRead>>('/lab-tests', { params })
+  function list(params: LabTestListParams = {}, opts: { cacheTtl?: number, signal?: AbortSignal } = {}) {
+    return api.get<Page<LabTestRead>>('/lab-tests', { params, ...opts })
   }
 
   /** Detalle completo: precondiciones, tipos de muestra y documentos resueltos. */

@@ -15,10 +15,15 @@ const activeFilter = ref<boolean | undefined>(undefined)
 
 const search = ref('')
 
-const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList(
-  params => preconditionsApi.list({ ...params, active: activeFilter.value }),
-  { resource: '/preconditions', search, filters: [activeFilter], errorMessage: 'No se pudieron cargar las precondiciones.' }
-)
+const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList({
+  fetchPage: (params, { signal }) => preconditionsApi.list({ ...params, active: activeFilter.value }, { signal }),
+  search,
+  filters: [activeFilter],
+  errorMessage: 'No se pudieron cargar las precondiciones.',
+  mapError: leoErrorMessage,
+  urlSync: useRouteQuerySync(),
+  cache: listCache('/preconditions')
+})
 
 const modal = useEntityModal<PreconditionRead>()
 </script>

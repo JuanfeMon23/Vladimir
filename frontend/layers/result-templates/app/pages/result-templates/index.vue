@@ -14,10 +14,15 @@ const activeFilter = ref<boolean | undefined>(undefined)
 
 const search = ref('')
 
-const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList(
-  params => resultTemplatesApi.list({ ...params, active: activeFilter.value }),
-  { resource: '/result-templates', search, filters: [activeFilter], errorMessage: 'No se pudieron cargar las plantillas.' }
-)
+const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList({
+  fetchPage: (params, { signal }) => resultTemplatesApi.list({ ...params, active: activeFilter.value }, { signal }),
+  search,
+  filters: [activeFilter],
+  errorMessage: 'No se pudieron cargar las plantillas.',
+  mapError: leoErrorMessage,
+  urlSync: useRouteQuerySync(),
+  cache: listCache('/result-templates')
+})
 
 const modal = useEntityModal<ResultTemplateRead>()
 useOpenEntityFromQuery(modal, resultTemplatesApi.get)

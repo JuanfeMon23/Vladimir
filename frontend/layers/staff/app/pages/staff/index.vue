@@ -14,10 +14,15 @@ const activeFilter = ref<boolean | undefined>(undefined)
 
 const search = ref('')
 
-const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList(
-  params => staffApi.list({ ...params, active: activeFilter.value }),
-  { resource: '/staff', search, filters: [activeFilter], errorMessage: 'No se pudo cargar el personal.' }
-)
+const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList({
+  fetchPage: (params, { signal }) => staffApi.list({ ...params, active: activeFilter.value }, { signal }),
+  search,
+  filters: [activeFilter],
+  errorMessage: 'No se pudo cargar el personal.',
+  mapError: leoErrorMessage,
+  urlSync: useRouteQuerySync(),
+  cache: listCache('/staff')
+})
 
 const modal = useEntityModal<StaffRead>()
 

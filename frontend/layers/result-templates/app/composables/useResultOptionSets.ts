@@ -19,7 +19,7 @@ export function useResultOptionSets() {
   const api = useLeoAppApi()
 
   /** `opts.cacheTtl`: pide con caché (catálogo para selects). */
-  function list(params: ResultOptionSetListParams = {}, opts: { cacheTtl?: number } = {}) {
+  function list(params: ResultOptionSetListParams = {}, opts: { cacheTtl?: number, signal?: AbortSignal } = {}) {
     return api.get<Page<ResultOptionSetRead>>('/result-option-sets', { params, ...opts })
   }
 

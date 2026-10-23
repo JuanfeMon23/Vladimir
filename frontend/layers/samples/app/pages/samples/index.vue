@@ -13,10 +13,15 @@ const activeFilter = ref<boolean | undefined>(undefined)
 
 const search = ref('')
 
-const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList(
-  params => samplesApi.list({ ...params, active: activeFilter.value }),
-  { resource: '/samples', search, filters: [activeFilter], errorMessage: 'No se pudieron cargar las muestras.' }
-)
+const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList({
+  fetchPage: (params, { signal }) => samplesApi.list({ ...params, active: activeFilter.value }, { signal }),
+  search,
+  filters: [activeFilter],
+  errorMessage: 'No se pudieron cargar las muestras.',
+  mapError: leoErrorMessage,
+  urlSync: useRouteQuerySync(),
+  cache: listCache('/samples')
+})
 
 const modal = useEntityModal<SampleRead>()
 </script>

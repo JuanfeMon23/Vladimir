@@ -12,10 +12,15 @@ const activeFilter = ref<boolean | undefined>(undefined)
 
 const search = ref('')
 
-const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList(
-  params => optionSetsApi.list({ ...params, active: activeFilter.value }),
-  { resource: '/result-option-sets', search, filters: [activeFilter], errorMessage: 'No se pudieron cargar los conjuntos de opciones.' }
-)
+const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList({
+  fetchPage: (params, { signal }) => optionSetsApi.list({ ...params, active: activeFilter.value }, { signal }),
+  search,
+  filters: [activeFilter],
+  errorMessage: 'No se pudieron cargar los conjuntos de opciones.',
+  mapError: leoErrorMessage,
+  urlSync: useRouteQuerySync(),
+  cache: listCache('/result-option-sets')
+})
 
 const modal = useEntityModal<ResultOptionSetRead>()
 

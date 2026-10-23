@@ -12,8 +12,8 @@ import type {
 export function usePreconditions() {
   const api = useLeoAppApi()
 
-  function list(params: PreconditionListParams = {}) {
-    return api.get<Page<PreconditionRead>>('/preconditions', { params })
+  function list(params: PreconditionListParams = {}, opts: { cacheTtl?: number, signal?: AbortSignal } = {}) {
+    return api.get<Page<PreconditionRead>>('/preconditions', { params, ...opts })
   }
 
   function get(id: string) {
