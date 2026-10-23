@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UiDataTableColumn } from '~/components/ui/UiDataTable.vue'
+import type { UiDataTableColumn } from '#andromeda/components/ui/UiDataTable.vue'
 import type { StaffRead } from '../../types/staff'
 
 definePageMeta({ layout: 'default', leo: { tag: STAFF_TAGS.view } })

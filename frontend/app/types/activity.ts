@@ -1,10 +1,8 @@
 /**
- * Historial de activación/desactivación (`GET /api/v1/activity`), común a
- * toda entidad con `is_active` (regla de negocio: nada se elimina, se
- * desactiva, y cada cambio de estado queda con fecha-hora y motivo).
+ * `entity_type` del historial de activación/desactivación = nombre de la tabla
+ * (enum del OpenAPI). Andromeda lo tipa como `string` (`#andromeda/types/activity`);
+ * Vladimir lo acota con su propio enum.
  */
-
-/** `entity_type` = nombre de la tabla (enum del OpenAPI). */
 export type ActivityEntityType =
   | 'analytes'
   | 'consent_documents'
@@ -25,20 +23,3 @@ export type ActivityEntityType =
   | 'samples'
   | 'staff'
   | 'units'
-
-export type ActivityAction = 'activated' | 'deactivated'
-
-export interface ActivityEventRead {
-  id: string
-  entity_type: ActivityEntityType
-  entity_id: string
-  action: ActivityAction
-  reason: string | null
-  occurred_at: string
-}
-
-/** Cuerpo parcial de un PATCH que cambia `is_active` (motivo opcional, ≤ 255). */
-export interface ActivityChange {
-  is_active: boolean
-  activity_reason: string | null
-}

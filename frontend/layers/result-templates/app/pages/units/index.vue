@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UiDataTableColumn } from '~/components/ui/UiDataTable.vue'
+import type { UiDataTableColumn } from '#andromeda/components/ui/UiDataTable.vue'
 import type { UnitRead } from '../../types/result-templates'
 
 definePageMeta({ layout: 'default', leo: { tag: RESULT_TEMPLATES_TAGS.view } })

@@ -6,8 +6,7 @@
  * `/_design?modal=open` abre el modal al cargar.
  */
 import { z } from 'zod'
-import { ApiRequestError } from '~/composables/useApi'
-import type { ActivityEventRead } from '~/types/activity'
+import type { ActivityEventRead } from '#andromeda/types/activity'
 import type { UiDataTableColumn } from '#andromeda/components/ui/UiDataTable.vue'
 import type { UiSelectOption } from '#andromeda/components/ui/UiSelect.vue'
 import type { UiTab } from '#andromeda/components/ui/UiTabs.vue'
@@ -129,21 +128,16 @@ async function fakeCreate(values: z.output<typeof demoSchema>) {
   await new Promise(resolve => setTimeout(resolve, 700))
   switch (simulation.value) {
     case 'conflict':
-      throw new ApiRequestError(
-        { code: 'conflict', message: `Ya existe un área con el código '${values.code}'.`, details: { code: values.code } },
-        409
+      throw new LeoApiError(
+        409, 'conflict', `Ya existe un área con el código '${values.code}'.`, { code: values.code }
       )
     case 'schema':
-      throw new ApiRequestError(
-        {
-          code: 'request_validation',
-          message: 'Algunos datos no son válidos. Revisa los campos marcados.',
-          details: [{ loc: ['body', 'email'], msg: 'value is not a valid email address', type: 'value_error' }]
-        },
-        422
+      throw new LeoApiError(
+        422, 'validation_error', 'Algunos datos no son válidos. Revisa los campos marcados.',
+        [{ field: 'email', message: 'value is not a valid email address' }]
       )
     case 'generic':
-      throw new ApiRequestError({ code: 'conflict', message: 'El área está en uso y no puede modificarse.' }, 409)
+      throw new LeoApiError(409, 'conflict', 'El área está en uso y no puede modificarse.')
     default:
       return values
   }
@@ -164,7 +158,7 @@ const toggle = useToggleActive(async (row: DemoRow, change) => {
   await new Promise(resolve => setTimeout(resolve, 600))
   row.is_active = change.is_active
   lastChange.value = `${row.name}: ${change.is_active ? 'reactivada' : 'desactivada'}${change.activity_reason ? ` — «${change.activity_reason}»` : ''}`
-})
+}, { mapError: leoErrorMessage })
 const lastChange = ref<string | null>(null)
 
 const demoActivity: ActivityEventRead[] = [
@@ -412,7 +406,7 @@ const optionalArea = ref('')
       <UiButton variant="secondary" @click="pdfOpen = true">
         Abrir visor de PDF
       </UiButton>
-      <UiPdfPreviewModal v-model:open="pdfOpen" title="Consentimiento de ejemplo" filename="EJEMPLO-v1.pdf" :load="loadDemoPdf" />
+      <UiPdfPreviewModal v-model:open="pdfOpen" title="Consentimiento de ejemplo" filename="EJEMPLO-v1.pdf" :load="loadDemoPdf" :map-error="leoErrorMessage" />
     </UiCard>
 
     <UiCard title="Formulario en modal (zod + vee-validate)" description="Patrón obligatorio: crear/editar desde el listado en UiFormModal (UiModal + form + UiAlert + Cancelar/Guardar). Elige qué responde el backend simulado.">

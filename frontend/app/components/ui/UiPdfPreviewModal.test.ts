@@ -1,8 +1,8 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { button, click, flushAll } from '~/testing/dom'
-import UiPdfPreviewModal from './UiPdfPreviewModal.vue'
+import { button, click, flushAll } from '#andromeda/testing/dom'
+import UiPdfPreviewModal from '#andromeda/components/ui/UiPdfPreviewModal.vue'
 
 enableAutoUnmount(afterEach)
 

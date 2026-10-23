@@ -28,7 +28,7 @@ export interface StaffCreate extends StaffBase {
 /** Todos los campos opcionales: PATCH parcial. */
 export type StaffUpdate = Partial<StaffBase & { is_active: boolean, activity_reason: string | null }>
 
-export interface StaffListParams {
+export type StaffListParams = {
   page?: number
   page_size?: number
   active?: boolean

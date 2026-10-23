@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UiDataTableColumn } from '~/components/ui/UiDataTable.vue'
+import type { UiDataTableColumn } from '#andromeda/components/ui/UiDataTable.vue'
 import type { LabAreaRead } from '../../types/lab-areas'
 
 definePageMeta({ layout: 'default', leo: { tag: LAB_AREAS_TAGS.view } })

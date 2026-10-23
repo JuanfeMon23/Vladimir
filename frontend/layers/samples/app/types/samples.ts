@@ -41,7 +41,7 @@ export interface SampleCreate extends SampleBase {
 /** Todos los campos opcionales: PATCH parcial. */
 export type SampleUpdate = Partial<SampleBase & { is_active: boolean, activity_reason: string | null }>
 
-export interface SampleListParams {
+export type SampleListParams = {
   page?: number
   page_size?: number
   active?: boolean

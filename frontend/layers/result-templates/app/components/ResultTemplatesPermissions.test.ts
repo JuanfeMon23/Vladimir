@@ -2,9 +2,10 @@ import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import DefaultLayout from '~/layouts/default.vue'
-import { button, control, flushAll, setChecked, setValue } from '~/testing/dom'
+import { button, control, flushAll, setChecked, setValue } from '#andromeda/testing/dom'
 import { fakePage } from '~/testing/fakeApi'
-import { ALL_RESULT_TEMPLATES_TAGS, signInWith } from '~/testing/session'
+import { ALL_RESULT_TEMPLATES_TAGS } from '~/testing/session'
+import { signInWith } from '#leo-client/testing/session'
 import type {
   AnalyteRead, ResultOptionRead, ResultOptionSetRead, ResultTemplateRead,
   ResultTemplateSectionRead, ResultTemplateVersionRead, UnitRead
@@ -20,7 +21,7 @@ import UnitsPage from '../pages/units/index.vue'
 import VersionEditorPage from '../pages/result-templates/[id]/versions/[versionId].vue'
 
 const fake = await vi.hoisted(async () => (await import('~/testing/fakeApi')).createFakeApi())
-mockNuxtImport('useApi', () => () => fake.api)
+mockNuxtImport('useLeoAppApi', () => () => fake.api)
 
 enableAutoUnmount(afterEach)
 

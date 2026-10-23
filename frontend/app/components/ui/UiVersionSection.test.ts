@@ -1,7 +1,7 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { button, flushAll } from '~/testing/dom'
+import { button, flushAll } from '#andromeda/testing/dom'
 import type { VersionRecord } from '~/utils/versioning'
 import UiVersionSection, { type UiVersionSectionApi } from './UiVersionSection.vue'
 

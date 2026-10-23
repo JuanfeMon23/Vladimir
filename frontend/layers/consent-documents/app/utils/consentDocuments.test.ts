@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ApiRequestError } from '~/composables/useApi'
+import { apiError as backendError } from '~/testing/apiError'
 import {
   consentDocumentFilename,
   consentFileApiError,
@@ -9,7 +9,7 @@ import {
 } from './consentDocuments'
 
 function apiError(code: string, message: string, details: unknown, status: number) {
-  return new ApiRequestError({ code, message, details }, status)
+  return backendError({ code, message, details }, status)
 }
 
 describe('consentFileApiError', () => {

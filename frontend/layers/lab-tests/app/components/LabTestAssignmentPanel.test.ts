@@ -1,12 +1,13 @@
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS, signInWith } from '~/testing/session'
+import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS } from '~/testing/session'
+import { signInWith } from '#leo-client/testing/session'
 import { buildLabTestAssignmentRows } from '../utils/assignmentRows'
 import LabTestAssignmentPanel from './LabTestAssignmentPanel.vue'
 
 const { getMock } = vi.hoisted(() => ({ getMock: vi.fn() }))
-mockNuxtImport('useApi', () => () => ({ get: getMock }))
+mockNuxtImport('useLeoAppApi', () => () => ({ get: getMock }))
 
 const flush = async () => {
   for (let i = 0; i < 5; i++) await nextTick()

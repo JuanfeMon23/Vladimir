@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest'
-import { forbiddenMessage, permissionName } from './permissionNames'
+import { beforeAll, describe, expect, it } from 'vitest'
+import { PERMISSION_NAMES } from './permissionNames'
+
+// `permissionName` y `forbiddenMessage` vienen de leo-client; aquí se verifica el mapa de Vladimir registrado.
+beforeAll(() => registerPermissionNames(PERMISSION_NAMES))
 
 describe('permissionNames', () => {
   it('devuelve el nombre legible de un tag conocido', () => {
@@ -27,12 +30,12 @@ describe('permissionNames', () => {
     for (const verb of [...crud, 'add-type']) tags.push(`samples.${verb}`)
     for (const verb of ['edit-content', 'manage-units', 'manage-analytes', 'manage-option-sets']) tags.push(`result-templates.${verb}`)
     for (const tag of tags) expect(permissionName(`vladimir.${tag}`), tag).not.toBeNull()
-    expect(forbiddenMessage('vladimir.lab-tests.set-sample-types', 'x')).toBe('No tienes permiso para: Asignar tipos de muestra a exámenes')
+    expect(forbiddenMessage({ action: 'vladimir.lab-tests.set-sample-types' }, 'x')).toBe('No tienes permiso para: Asignar tipos de muestra a exámenes')
   })
 
   it('forbiddenMessage nombra el permiso; sin nombre usa el mensaje de respaldo', () => {
-    expect(forbiddenMessage('vladimir.lab-areas.edit', 'x')).toBe('No tienes permiso para: Editar áreas de laboratorio')
-    expect(forbiddenMessage('vladimir.x.y', 'Sin permiso.')).toBe('Sin permiso.')
+    expect(forbiddenMessage({ action: 'vladimir.lab-areas.edit' }, 'x')).toBe('No tienes permiso para: Editar áreas de laboratorio')
+    expect(forbiddenMessage({ action: 'vladimir.x.y' }, 'Sin permiso.')).toBe('Sin permiso.')
     expect(forbiddenMessage(undefined, 'Sin permiso.')).toBe('Sin permiso.')
   })
 })

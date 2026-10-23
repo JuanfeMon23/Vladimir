@@ -1,14 +1,15 @@
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiRequestError } from '~/composables/useApi'
+import { apiError } from '~/testing/apiError'
 import { fakePage } from '~/testing/fakeApi'
-import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS, signInWith } from '~/testing/session'
-import { control, flushAll, hasRow, isShown, rowOf, setChecked, setValue, submitForm } from '~/testing/dom'
+import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS } from '~/testing/session'
+import { signInWith } from '#leo-client/testing/session'
+import { control, flushAll, hasRow, isShown, rowOf, setChecked, setValue, submitForm } from '#andromeda/testing/dom'
 import LabTestSampleTypesEditor from './LabTestSampleTypesEditor.vue'
 
 const fake = await vi.hoisted(async () => (await import('~/testing/fakeApi')).createFakeApi())
-mockNuxtImport('useApi', () => () => fake.api)
+mockNuxtImport('useLeoAppApi', () => () => fake.api)
 
 enableAutoUnmount(afterEach)
 
@@ -146,7 +147,7 @@ describe('LabTestSampleTypesEditor', () => {
   })
 
   it('el 422 de conteo de preferidos del backend se muestra en el aviso del formulario', async () => {
-    fake.failures['PUT /lab-tests/t1/sample-types'] = new ApiRequestError(
+    fake.failures['PUT /lab-tests/t1/sample-types'] = apiError(
       {
         code: 'validation_error',
         message: 'Debe haber exactamente un tipo de muestra con \'is_preferred=true\' (se recibieron 0).',
@@ -164,7 +165,7 @@ describe('LabTestSampleTypesEditor', () => {
   })
 
   it('el 422 inactive_reference (tipo desactivado entretanto) se muestra en el aviso', async () => {
-    fake.failures['PUT /lab-tests/t1/sample-types'] = new ApiRequestError(
+    fake.failures['PUT /lab-tests/t1/sample-types'] = apiError(
       { code: 'inactive_reference', message: 'El tipo de muestra «SUE» está inactivo.', details: { sample_type_id: 'suero' } },
       422
     )

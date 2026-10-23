@@ -23,14 +23,14 @@ import type {
 /**
  * Llamadas a la API del módulo `result-templates`: plantillas, versiones y,
  * dentro de cada versión (solo editable en `draft`), secciones, analitos de
- * plantilla y rangos de referencia. Vía el cliente HTTP del núcleo (useApi).
+ * plantilla y rangos de referencia. Vía el cliente HTTP del núcleo (useLeoAppApi).
  *
  * Secciones, analitos y rangos no se eliminan (el backend responde 405): se
  * desactivan con `update*({ is_active: false, activity_reason })`. Sus
  * listados traen solo activos salvo `{ include_inactive: true }`.
  */
 export function useResultTemplates() {
-  const api = useApi()
+  const api = useLeoAppApi()
 
   function list(params: ResultTemplateListParams = {}) {
     return api.get<Page<ResultTemplateRead>>('/result-templates', { params })

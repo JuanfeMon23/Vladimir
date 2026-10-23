@@ -10,10 +10,10 @@ import type {
 } from '../types/samples'
 
 /**
- * Llamadas a la API del módulo `samples`, vía el cliente HTTP del núcleo (useApi).
+ * Llamadas a la API del módulo `samples`, vía el cliente HTTP del núcleo (useLeoAppApi).
  */
 export function useSamples() {
-  const api = useApi()
+  const api = useLeoAppApi()
 
   function list(params: SampleListParams = {}) {
     return api.get<Page<SampleRead>>('/samples', { params })

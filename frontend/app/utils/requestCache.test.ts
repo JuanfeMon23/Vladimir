@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cacheKey, cachedRequest, invalidateCaches, isCacheFresh, stampCache } from './requestCache'
+import { cacheKey, cachedRequest, invalidateCaches, isCacheFresh, stampCache } from '#leo-client/lib/requestCache'
 
 afterEach(() => vi.useRealTimers())
 

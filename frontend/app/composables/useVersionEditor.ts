@@ -64,7 +64,7 @@ export function useVersionEditor<V extends VersionRecord>(options: UseVersionEdi
 
   function captureError(err: unknown, fallback: string) {
     actionError.value = err instanceof Error && err.message ? err.message : fallback
-    actionErrorDetails.value = err instanceof ApiRequestError ? err.details ?? null : null
+    actionErrorDetails.value = err instanceof LeoApiError ? err.details ?? null : null
   }
 
   async function publish() {
@@ -86,7 +86,7 @@ export function useVersionEditor<V extends VersionRecord>(options: UseVersionEdi
       actionErrorDetails.value = null
       setVersion(await options.retire())
     },
-    { errorMessage: 'No se pudo retirar la versión.' }
+    { errorMessage: 'No se pudo retirar la versión.', mapError: leoErrorMessage }
   )
 
   onMounted(reload)

@@ -1,14 +1,15 @@
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiRequestError } from '~/composables/useApi'
+import { apiError } from '~/testing/apiError'
 import { fakePage } from '~/testing/fakeApi'
-import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS, signInWith } from '~/testing/session'
-import { button, click, control, flushAll, hasRow, rowOf, setChecked, submitForm } from '~/testing/dom'
+import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS } from '~/testing/session'
+import { signInWith } from '#leo-client/testing/session'
+import { button, click, control, flushAll, hasRow, rowOf, setChecked, submitForm } from '#andromeda/testing/dom'
 import LabTestConsentDocumentsEditor from './LabTestConsentDocumentsEditor.vue'
 
 const fake = await vi.hoisted(async () => (await import('~/testing/fakeApi')).createFakeApi())
-mockNuxtImport('useApi', () => () => fake.api)
+mockNuxtImport('useLeoAppApi', () => () => fake.api)
 
 enableAutoUnmount(afterEach)
 
@@ -103,7 +104,7 @@ describe('LabTestConsentDocumentsEditor', () => {
   })
 
   it('el 422 por asignar un documento general se muestra en el aviso del panel', async () => {
-    fake.failures['PUT /lab-tests/t1/consent-documents'] = new ApiRequestError(
+    fake.failures['PUT /lab-tests/t1/consent-documents'] = apiError(
       { code: 'validation_error', message: 'No se puede asignar el consentimiento general a un examen.', details: { invalid_ids: ['dat1'] } },
       422
     )
@@ -150,7 +151,7 @@ describe('LabTestConsentDocumentsEditor', () => {
   })
 
   it('el 422 de versión no publicada se muestra en el aviso del formulario', async () => {
-    fake.failures['PUT /lab-tests/t1/consent-documents'] = new ApiRequestError(
+    fake.failures['PUT /lab-tests/t1/consent-documents'] = apiError(
       { code: 'validation_error', message: 'Las siguientes versiones de documento no existen o no estan publicadas: vih2.', details: { invalid_ids: ['vih2'] } },
       422
     )

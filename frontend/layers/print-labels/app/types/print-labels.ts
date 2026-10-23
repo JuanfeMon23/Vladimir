@@ -23,7 +23,7 @@ export interface PrintLabelCreate extends PrintLabelBase {
 /** Todos los campos opcionales: PATCH parcial. */
 export type PrintLabelUpdate = Partial<PrintLabelBase & { is_active: boolean, activity_reason: string | null }>
 
-export interface PrintLabelListParams {
+export type PrintLabelListParams = {
   page?: number
   page_size?: number
   active?: boolean
@@ -96,7 +96,7 @@ export const PRINT_LABEL_FIRST_VERSION_DEFAULTS: Required<Omit<PrintLabelVersion
   placeholders: { patient_name: 'Nombre del paciente' }
 }
 
-export interface PrintLabelVersionListParams {
+export type PrintLabelVersionListParams = {
   page?: number
   page_size?: number
 }

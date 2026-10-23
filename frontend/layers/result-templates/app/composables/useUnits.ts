@@ -3,10 +3,10 @@ import type { UnitCreate, UnitListParams, UnitRead, UnitUpdate } from '../types/
 
 /**
  * Llamadas a la API del catálogo de unidades de medida (`units`, códigos
- * UCUM), vía el cliente HTTP del núcleo (useApi).
+ * UCUM), vía el cliente HTTP del núcleo (useLeoAppApi).
  */
 export function useUnits() {
-  const api = useApi()
+  const api = useLeoAppApi()
 
   /** `opts.cacheTtl`: pide con caché (catálogo para selects). */
   function list(params: UnitListParams = {}, opts: { cacheTtl?: number } = {}) {

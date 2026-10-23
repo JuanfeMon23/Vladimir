@@ -106,7 +106,7 @@ const retirement = useConfirmAction(
     await props.api.retire(versionId)
     await load()
   },
-  { errorMessage: 'No se pudo retirar la versión.' }
+  { errorMessage: 'No se pudo retirar la versión.', mapError: leoErrorMessage }
 )
 
 onMounted(load)

@@ -1,7 +1,7 @@
 import { vi } from 'vitest'
 
 /**
- * `useApi` falso para tests de componentes/composables que llaman a varios
+ * `useLeoAppApi` falso para tests de componentes/composables que llaman a varios
  * endpoints (solo tests; Nuxt no auto-importa `app/testing/`).
  *
  * - `routes['GET /ruta']`: respuesta (valor o función de las opciones/body).
@@ -15,7 +15,7 @@ import { vi } from 'vitest'
  * Uso (el factory de `mockNuxtImport` se iza: el fake se crea con `vi.hoisted`):
  * ```ts
  * const fake = await vi.hoisted(async () => (await import('~/testing/fakeApi')).createFakeApi())
- * mockNuxtImport('useApi', () => () => fake.api)
+ * mockNuxtImport('useLeoAppApi', () => () => fake.api)
  * beforeEach(() => fake.reset())
  * ```
  */

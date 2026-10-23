@@ -79,7 +79,7 @@ export interface PreconditionCreate extends PreconditionBase {
 /** Todos los campos opcionales: PATCH parcial. */
 export type PreconditionUpdate = Partial<PreconditionBase & { is_active: boolean, activity_reason: string | null }>
 
-export interface PreconditionListParams {
+export type PreconditionListParams = {
   page?: number
   page_size?: number
   active?: boolean

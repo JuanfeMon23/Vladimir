@@ -1,15 +1,16 @@
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiRequestError } from '~/composables/useApi'
+import { apiError } from '~/testing/apiError'
 import { fakePage } from '~/testing/fakeApi'
-import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS, signInWith } from '~/testing/session'
-import { control, flushAll, hasRow, rowOf, setChecked, setValue, submitForm } from '~/testing/dom'
+import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS } from '~/testing/session'
+import { signInWith } from '#leo-client/testing/session'
+import { control, flushAll, hasRow, rowOf, setChecked, setValue, submitForm } from '#andromeda/testing/dom'
 import type { LabTestPreconditionOption, LabTestPreconditionRead } from '../types/lab-tests'
 import LabTestPreconditionsEditor from './LabTestPreconditionsEditor.vue'
 
 const fake = await vi.hoisted(async () => (await import('~/testing/fakeApi')).createFakeApi())
-mockNuxtImport('useApi', () => () => fake.api)
+mockNuxtImport('useLeoAppApi', () => () => fake.api)
 
 enableAutoUnmount(afterEach)
 
@@ -182,7 +183,7 @@ describe('LabTestPreconditionsEditor', () => {
   })
 
   it('el 422 inactive_reference se muestra en el aviso del formulario', async () => {
-    fake.failures['PUT /lab-tests/t1/preconditions'] = new ApiRequestError(
+    fake.failures['PUT /lab-tests/t1/preconditions'] = apiError(
       { code: 'inactive_reference', message: 'La precondición «AYU8» está inactiva.', details: { precondition_id: 'ayuno8' } },
       422
     )

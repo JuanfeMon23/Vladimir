@@ -13,10 +13,10 @@ import type {
 /**
  * Llamadas a la API de `result-option-sets` y su sub-recurso `options`, más
  * `result-options/{id}` (PATCH directo), vía el cliente HTTP del núcleo
- * (useApi).
+ * (useLeoAppApi).
  */
 export function useResultOptionSets() {
-  const api = useApi()
+  const api = useLeoAppApi()
 
   /** `opts.cacheTtl`: pide con caché (catálogo para selects). */
   function list(params: ResultOptionSetListParams = {}, opts: { cacheTtl?: number } = {}) {

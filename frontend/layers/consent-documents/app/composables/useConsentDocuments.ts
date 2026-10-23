@@ -13,10 +13,10 @@ import type {
 
 /**
  * Llamadas a la API del módulo `consent-documents`, vía el cliente HTTP del
- * núcleo (useApi).
+ * núcleo (useLeoAppApi).
  */
 export function useConsentDocuments() {
-  const api = useApi()
+  const api = useLeoAppApi()
 
   function list(params: ConsentDocumentListParams = {}) {
     return api.get<Page<ConsentDocumentRead>>('/consent-documents', { params })

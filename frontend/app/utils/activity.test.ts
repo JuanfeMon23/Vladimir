@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { ACTIVITY_ACTION_LABELS, formatDateTime, withActivityReason } from './activity'
+import { ACTIVITY_ACTION_LABELS, withActivityReason } from '#andromeda/utils/activity'
+import { formatDateTime } from '#andromeda/utils/formatDateTime'
 
 describe('withActivityReason', () => {
   const values = { name: 'Hemoglobina', is_active: false, activity_reason: 'Ya no se procesa' }

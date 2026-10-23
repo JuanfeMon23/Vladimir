@@ -7,10 +7,10 @@ import type {
 } from '../types/preconditions'
 
 /**
- * Llamadas a la API del módulo `preconditions`, vía el cliente HTTP del núcleo (useApi).
+ * Llamadas a la API del módulo `preconditions`, vía el cliente HTTP del núcleo (useLeoAppApi).
  */
 export function usePreconditions() {
-  const api = useApi()
+  const api = useLeoAppApi()
 
   function list(params: PreconditionListParams = {}) {
     return api.get<Page<PreconditionRead>>('/preconditions', { params })

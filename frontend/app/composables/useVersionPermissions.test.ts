@@ -1,7 +1,7 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { defineComponent, h } from 'vue'
 import { describe, expect, it } from 'vitest'
-import { signInWith } from '~/testing/session'
+import { signInWith } from '#leo-client/testing/session'
 
 const TAGS = { create: 'a.create', edit: 'a.edit', publish: 'a.publish', retire: 'a.retire' }
 
