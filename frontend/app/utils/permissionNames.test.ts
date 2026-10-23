@@ -14,7 +14,7 @@ describe('permissionNames', () => {
     expect(permissionName(undefined)).toBeNull()
   })
 
-  it('todos los tags de los 8 módulos protegidos tienen nombre legible', () => {
+  it('todos los tags de los módulos protegidos tienen nombre legible', () => {
     const tags = [
       'staff.view', 'staff.create', 'staff.edit', 'staff.change-status',
       'lab-tests.view', 'lab-tests.create', 'lab-tests.edit', 'lab-tests.change-status',
@@ -29,8 +29,13 @@ describe('permissionNames', () => {
     }
     for (const verb of [...crud, 'add-type']) tags.push(`samples.${verb}`)
     for (const verb of ['edit-content', 'manage-units', 'manage-analytes', 'manage-option-sets']) tags.push(`result-templates.${verb}`)
+    for (const verb of ['view', 'edit', 'edit-security']) tags.push(`settings.${verb}`)
     for (const tag of tags) expect(permissionName(`vladimir.${tag}`), tag).not.toBeNull()
     expect(forbiddenMessage({ action: 'vladimir.lab-tests.set-sample-types' }, 'x')).toBe('No tienes permiso para: Asignar tipos de muestra a exámenes')
+  })
+
+  it('el evento settings.update no se concede ni se muestra', () => {
+    expect(permissionName('vladimir.settings.update')).toBeNull()
   })
 
   it('forbiddenMessage nombra el permiso; sin nombre usa el mensaje de respaldo', () => {

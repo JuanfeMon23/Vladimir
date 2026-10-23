@@ -46,6 +46,7 @@ async function onFileSelected(event: Event) {
   input.value = ''
   if (!file) return
   fileError.value = null
+  // Sin maxBytes no se valida el tamaño: el tope es un ajuste del backend y su 422 lo informa.
   const reason = validatePdfFile(file)
   if (reason) {
     fileError.value = pdfFileErrorMessage(reason)

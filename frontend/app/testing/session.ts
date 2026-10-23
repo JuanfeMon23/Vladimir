@@ -4,6 +4,7 @@
 const allOf = (module: string, verbs: string[]) => verbs.map(verb => `vladimir.${module}.${verb}`)
 
 export const ALL_STAFF_TAGS = allOf('staff', ['view', 'create', 'edit', 'change-status'])
+export const ALL_SETTINGS_TAGS = allOf('settings', ['view', 'edit', 'edit-security'])
 export const ALL_PRECONDITIONS_TAGS = allOf('preconditions', ['view', 'create', 'edit', 'change-status', 'add-item'])
 const VERSIONING = ['create-version', 'edit-version', 'publish-version', 'retire-version']
 export const ALL_SAMPLES_TAGS = allOf('samples', ['view', 'create', 'edit', 'change-status', 'add-type'])

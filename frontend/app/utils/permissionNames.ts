@@ -58,5 +58,8 @@ export const PERMISSION_NAMES: Record<string, string> = {
   'vladimir.consent-documents.create-version': 'Crear versiones de documentos a firmar',
   'vladimir.consent-documents.edit-version': 'Editar versiones de documentos a firmar',
   'vladimir.consent-documents.publish-version': 'Publicar versiones de documentos a firmar',
-  'vladimir.consent-documents.retire-version': 'Retirar versiones de documentos a firmar'
+  'vladimir.consent-documents.retire-version': 'Retirar versiones de documentos a firmar',
+  'vladimir.settings.view': 'Consultar los ajustes del sistema',
+  'vladimir.settings.edit': 'Modificar los ajustes del sistema',
+  'vladimir.settings.edit-security': 'Modificar los ajustes de seguridad'
 }

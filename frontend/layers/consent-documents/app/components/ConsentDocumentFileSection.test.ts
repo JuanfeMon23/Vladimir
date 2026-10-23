@@ -132,13 +132,17 @@ describe('ConsentDocumentFileSection', () => {
     expect(wrapper.emitted('changed')).toBeUndefined()
   })
 
-  it('rechaza en cliente un archivo de más de 5 MB', async () => {
+  it('no limita el tamaño en cliente: lo envía y el 422 too_large muestra el mensaje del backend', async () => {
+    fake.failures['PATCH /consent-documents/d1/versions/v1'] = apiError(
+      { code: 'validation_error', message: 'El archivo supera el tamaño máximo de 8 MB.', details: { field: 'file_base64', reason: 'too_large' } },
+      422
+    )
     const { root } = await mountSection(version())
     const big = pdfFile('grande.pdf')
-    Object.defineProperty(big, 'size', { value: 5 * 1024 * 1024 + 1 })
+    Object.defineProperty(big, 'size', { value: 50 * 1024 * 1024 })
     await choose(root, big)
-    expect(root.querySelector('[role="alert"]')?.textContent).toContain('El archivo supera los 5 MB.')
-    expect(fake.requests).not.toHaveBeenCalled()
+    expect(fake.requests).toHaveBeenCalledOnce()
+    expect(root.querySelector('[role="alert"]')?.textContent).toContain('El archivo supera el tamaño máximo de 8 MB.')
   })
 
   it('muestra en español el 422 del backend por reason', async () => {

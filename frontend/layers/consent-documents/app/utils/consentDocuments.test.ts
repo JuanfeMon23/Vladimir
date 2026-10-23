@@ -15,12 +15,16 @@ function apiError(code: string, message: string, details: unknown, status: numbe
 describe('consentFileApiError', () => {
   it.each([
     ['empty', 'El archivo está vacío.'],
-    ['too_large', 'El archivo supera los 5 MB.'],
     ['invalid_base64', 'El archivo no se pudo leer correctamente.'],
     ['not_pdf', 'El archivo no es un PDF válido.']
   ])('traduce el reason %s del campo file_base64', (reason, message) => {
     const err = apiError('validation_error', 'texto del backend', { field: 'file_base64', reason }, 422)
     expect(consentFileApiError(err)).toBe(message)
+  })
+
+  it('too_large usa el mensaje del backend (el tope es un ajuste, trae el valor vigente)', () => {
+    const err = apiError('validation_error', 'El archivo supera el tamaño máximo de 8 MB.', { field: 'file_base64', reason: 'too_large' }, 422)
+    expect(consentFileApiError(err)).toBe('El archivo supera el tamaño máximo de 8 MB.')
   })
 
   it('usa el mensaje del backend con un reason desconocido', () => {
