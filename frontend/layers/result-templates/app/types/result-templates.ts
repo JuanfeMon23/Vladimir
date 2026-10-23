@@ -28,7 +28,7 @@ export interface UnitCreate extends UnitBase {
 
 export type UnitUpdate = Partial<UnitBase & { is_active: boolean, activity_reason: string | null }>
 
-export interface UnitListParams {
+export type UnitListParams = {
   page?: number
   page_size?: number
   active?: boolean
@@ -73,7 +73,7 @@ export interface AnalyteCreate extends AnalyteBase {
 
 export type AnalyteUpdate = Partial<AnalyteBase & { is_active: boolean, activity_reason: string | null }>
 
-export interface AnalyteListParams {
+export type AnalyteListParams = {
   page?: number
   page_size?: number
   active?: boolean
@@ -103,7 +103,7 @@ export interface ResultOptionSetCreate extends ResultOptionSetBase {
 
 export type ResultOptionSetUpdate = Partial<ResultOptionSetBase & { is_active: boolean, activity_reason: string | null }>
 
-export interface ResultOptionSetListParams {
+export type ResultOptionSetListParams = {
   page?: number
   page_size?: number
   active?: boolean
@@ -132,7 +132,7 @@ export interface ResultOptionCreate extends ResultOptionBase {
 
 export type ResultOptionUpdate = Partial<ResultOptionBase & { is_active: boolean, activity_reason: string | null }>
 
-export interface ResultOptionListParams {
+export type ResultOptionListParams = {
   page?: number
   page_size?: number
   active?: boolean
@@ -163,7 +163,7 @@ export interface ResultTemplateCreate extends ResultTemplateBase {
 
 export type ResultTemplateUpdate = Partial<ResultTemplateBase & { is_active: boolean, activity_reason: string | null }>
 
-export interface ResultTemplateListParams {
+export type ResultTemplateListParams = {
   page?: number
   page_size?: number
   active?: boolean
@@ -199,7 +199,7 @@ export interface ResultTemplateVersionCreate {
 
 export type ResultTemplateVersionUpdate = ResultTemplateVersionCreate
 
-export interface ResultTemplateVersionListParams {
+export type ResultTemplateVersionListParams = {
   page?: number
   page_size?: number
 }
@@ -226,7 +226,7 @@ export interface ResultTemplateSectionCreate {
 export type ResultTemplateSectionUpdate = Partial<ResultTemplateSectionCreate & { is_active: boolean, activity_reason: string | null }>
 
 /** Listados de secciones / analitos / rangos: solo activos salvo `include_inactive`. */
-export interface ResultTemplateContentListParams {
+export type ResultTemplateContentListParams = {
   include_inactive?: boolean
 }
 

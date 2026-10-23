@@ -1,15 +1,16 @@
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiRequestError } from '~/composables/useApi'
+import { apiError } from '~/testing/apiError'
 import { fakePage } from '~/testing/fakeApi'
-import { ALL_CONSENT_DOCUMENTS_TAGS, signInWith } from '~/testing/session'
-import { control, fieldError, flushAll, optionLabels, setChecked, setValue, submitForm } from '~/testing/dom'
+import { ALL_CONSENT_DOCUMENTS_TAGS } from '~/testing/session'
+import { signInWith } from '#leo-client/testing/session'
+import { control, fieldError, flushAll, optionLabels, setChecked, setValue, submitForm } from '#andromeda/testing/dom'
 import type { ConsentDocumentRead } from '../types/consent-documents'
 import ConsentDocumentFormModal from './ConsentDocumentFormModal.vue'
 
 const fake = await vi.hoisted(async () => (await import('~/testing/fakeApi')).createFakeApi())
-mockNuxtImport('useApi', () => () => fake.api)
+mockNuxtImport('useLeoAppApi', () => () => fake.api)
 
 enableAutoUnmount(afterEach)
 
@@ -68,7 +69,7 @@ describe('ConsentDocumentFormModal', () => {
   })
 
   it('el 409 de segundo general activo se muestra en Tipo de documento y Activo, no en Código', async () => {
-    fake.failures['POST /consent-documents'] = new ApiRequestError(
+    fake.failures['POST /consent-documents'] = apiError(
       { code: 'conflict', message: GENERAL_CONFLICT, details: { code: 'CONSENT_DATOS', id: 'd0' } },
       409
     )
@@ -85,7 +86,7 @@ describe('ConsentDocumentFormModal', () => {
   })
 
   it('el 409 al reactivar un general se muestra junto a Activo', async () => {
-    fake.failures['PATCH /consent-documents/d1'] = new ApiRequestError(
+    fake.failures['PATCH /consent-documents/d1'] = apiError(
       { code: 'conflict', message: GENERAL_CONFLICT, details: { code: 'CONSENT_DATOS', id: 'd0' } },
       409
     )
@@ -97,7 +98,7 @@ describe('ConsentDocumentFormModal', () => {
   })
 
   it('un código duplicado (409 sin id) sigue yendo al campo Código', async () => {
-    fake.failures['POST /consent-documents'] = new ApiRequestError(
+    fake.failures['POST /consent-documents'] = apiError(
       { code: 'conflict', message: 'Ya existe un documento con el código NUEVO.', details: { code: 'NUEVO' } },
       409
     )

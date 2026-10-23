@@ -46,7 +46,7 @@ export interface ConsentDocumentCreate extends ConsentDocumentBase {
 /** Todos los campos opcionales: PATCH parcial. */
 export type ConsentDocumentUpdate = Partial<ConsentDocumentBase & { is_active: boolean, activity_reason: string | null }>
 
-export interface ConsentDocumentListParams {
+export type ConsentDocumentListParams = {
   page?: number
   page_size?: number
   active?: boolean
@@ -108,7 +108,7 @@ export const CONSENT_DOCUMENT_FIRST_VERSION_DEFAULTS: Required<Pick<ConsentDocum
   signer: 'paciente'
 }
 
-export interface ConsentDocumentVersionListParams {
+export type ConsentDocumentVersionListParams = {
   page?: number
   page_size?: number
 }

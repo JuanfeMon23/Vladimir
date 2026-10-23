@@ -19,7 +19,6 @@ import type { ResultTemplateAnalyteCreate, ResultTemplateAnalyteRead, ResultType
  * selectores ofrecen solo elementos activos (más el valor ya guardado).
  */
 import { useSetFieldValue } from 'vee-validate'
-import { ApiRequestError } from '~/composables/useApi'
 const props = defineProps<{
   entity: ResultTemplateAnalyteRead | null
   content: ResultTemplateVersionContent
@@ -103,7 +102,7 @@ const onSubmit = submit(async (form) => {
     else await api.createTemplateAnalyte(templateId, versionId, payload)
   } catch (err) {
     // 422 de la fórmula: un mensaje en español por problema, en el campo.
-    const problems = err instanceof ApiRequestError ? formulaProblemMessages(err.details) : []
+    const problems = err instanceof LeoApiError ? formulaProblemMessages(err.details) : []
     if (!problems.length) throw err
     setFieldError('formula', problems.join(' '))
     return

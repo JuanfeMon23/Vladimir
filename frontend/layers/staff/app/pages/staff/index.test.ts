@@ -2,13 +2,14 @@ import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakePage } from '~/testing/fakeApi'
-import { ALL_STAFF_TAGS, signInWith } from '~/testing/session'
-import { button, click, flushAll, setValue } from '~/testing/dom'
+import { ALL_STAFF_TAGS } from '~/testing/session'
+import { signInWith } from '#leo-client/testing/session'
+import { button, click, flushAll, setValue } from '#andromeda/testing/dom'
 import type { StaffRead } from '../../types/staff'
 import StaffIndex from './index.vue'
 
 const fake = await vi.hoisted(async () => (await import('~/testing/fakeApi')).createFakeApi())
-mockNuxtImport('useApi', () => () => fake.api)
+mockNuxtImport('useLeoAppApi', () => () => fake.api)
 
 enableAutoUnmount(afterEach)
 

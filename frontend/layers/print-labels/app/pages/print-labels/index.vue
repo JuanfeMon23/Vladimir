@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UiDataTableColumn } from '~/components/ui/UiDataTable.vue'
+import type { UiDataTableColumn } from '#andromeda/components/ui/UiDataTable.vue'
 import type { PrintLabelRead } from '../../types/print-labels'
 
 definePageMeta({ layout: 'default', leo: { tag: PRINT_LABELS_TAGS.view } })

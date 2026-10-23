@@ -1,13 +1,13 @@
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiRequestError } from '~/composables/useApi'
-import { button, click, flushAll } from '~/testing/dom'
+import { apiError } from '~/testing/apiError'
+import { button, click, flushAll } from '#andromeda/testing/dom'
 import type { ConsentDocumentVersionRead } from '../types/consent-documents'
 import ConsentDocumentFileSection from './ConsentDocumentFileSection.vue'
 
 const fake = await vi.hoisted(async () => (await import('~/testing/fakeApi')).createFakeApi())
-mockNuxtImport('useApi', () => () => fake.api)
+mockNuxtImport('useLeoAppApi', () => () => fake.api)
 
 enableAutoUnmount(afterEach)
 
@@ -142,7 +142,7 @@ describe('ConsentDocumentFileSection', () => {
   })
 
   it('muestra en español el 422 del backend por reason', async () => {
-    fake.failures['PATCH /consent-documents/d1/versions/v1'] = new ApiRequestError(
+    fake.failures['PATCH /consent-documents/d1/versions/v1'] = apiError(
       { code: 'validation_error', message: 'texto del backend', details: { field: 'file_base64', reason: 'not_pdf' } },
       422
     )

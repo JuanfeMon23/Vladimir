@@ -41,7 +41,7 @@ const toggle = useToggleActive(
     await api.updateReferenceRange(props.content.templateId, props.content.versionId, props.templateAnalyte.id, range.id, change)
     await load()
   },
-  { errorMessage: 'No se pudo cambiar el estado del rango.' }
+  { errorMessage: 'No se pudo cambiar el estado del rango.', mapError: leoErrorMessage }
 )
 
 function between(low: number | null, high: number | null) {

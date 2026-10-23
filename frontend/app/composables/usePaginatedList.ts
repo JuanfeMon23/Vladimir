@@ -1,6 +1,6 @@
 import type { Ref, WatchSource } from 'vue'
+import type { CacheStamp } from '#leo-client/lib/requestCache'
 import type { ListRequestParams, Page } from '~/types/api'
-import { cacheKey, isCacheFresh, LIST_CACHE_TTL, stampCache, type CacheStamp } from '~/utils/requestCache'
 import { normalizeSearchTerm } from '#andromeda/utils/search'
 
 export interface UsePaginatedListOptions {
@@ -21,7 +21,7 @@ export interface UsePaginatedListOptions {
   /**
    * Recurso del listado (`'/staff'`). Activa la carga inicial en el servidor
    * (SSR, `useAsyncData`) y la caché de páginas/búsquedas recientes; el
-   * recurso es también el prefijo que invalidan las mutaciones de `useApi`.
+   * recurso es también el prefijo que invalidan las mutaciones de `useLeoAppApi`.
    * Sin él, el listado carga al montar y sin caché.
    */
   resource?: string

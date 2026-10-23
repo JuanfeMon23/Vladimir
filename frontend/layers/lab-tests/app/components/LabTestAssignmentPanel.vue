@@ -62,7 +62,7 @@ const canSave = useCan(() => props.saveTag)
 const locked = computed(() => !canSave.value || !canConsult.value)
 const lockedMessage = computed(() => {
   if (!canConsult.value) return noViewMessage(props.catalogModule)
-  return canSave.value ? null : `${forbiddenMessage(props.saveTag, 'Sin permiso para guardar.')}. Solo puedes consultar.`
+  return canSave.value ? null : `${forbiddenMessage({ action: props.saveTag }, 'Sin permiso para guardar.')}. Solo puedes consultar.`
 })
 
 const showInactive = ref(false)

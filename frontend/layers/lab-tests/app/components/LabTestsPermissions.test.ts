@@ -3,9 +3,10 @@ import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Component } from 'vue'
 import DefaultLayout from '~/layouts/default.vue'
-import { button, control, flushAll, setChecked, setValue } from '~/testing/dom'
+import { button, control, flushAll, setChecked, setValue } from '#andromeda/testing/dom'
 import { fakePage } from '~/testing/fakeApi'
-import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS, signInWith } from '~/testing/session'
+import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS } from '~/testing/session'
+import { signInWith } from '#leo-client/testing/session'
 import type { LabTestRead } from '../types/lab-tests'
 import LabTestConsentDocumentsEditor from './LabTestConsentDocumentsEditor.vue'
 import LabTestFormModal from './LabTestFormModal.vue'
@@ -14,7 +15,7 @@ import LabTestSampleTypesEditor from './LabTestSampleTypesEditor.vue'
 import LabTestsPage from '../pages/lab-tests/index.vue'
 
 const fake = await vi.hoisted(async () => (await import('~/testing/fakeApi')).createFakeApi())
-mockNuxtImport('useApi', () => () => fake.api)
+mockNuxtImport('useLeoAppApi', () => () => fake.api)
 
 enableAutoUnmount(afterEach)
 

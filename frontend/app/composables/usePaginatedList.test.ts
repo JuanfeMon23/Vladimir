@@ -3,9 +3,8 @@ import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { defineComponent, type UnwrapNestedRefs } from 'vue'
 import type { Page } from '~/types/api'
-import { signInWith } from '~/testing/session'
-import { invalidateCaches } from '~/utils/requestCache'
-import { ApiRequestError, useApi } from './useApi'
+import { signInWith } from '#leo-client/testing/session'
+import { apiError } from '~/testing/apiError'
 import { usePaginatedList } from './usePaginatedList'
 
 // Un host sin desmontar compartiría la carga de su clave con el siguiente test.
@@ -129,7 +128,7 @@ describe('usePaginatedList', () => {
   })
 
   it('un error con mensaje queda en loadError y loading vuelve a false', async () => {
-    const failure = new ApiRequestError({ code: 'x', message: 'Fallo del servidor.' }, 500)
+    const failure = apiError({ code: 'x', message: 'Fallo del servidor.' }, 500)
     const list = await host(() => rejected(failure))
     expect(list.loadError).toBe('Fallo del servidor.')
     expect(list.loading).toBe(false)
@@ -387,9 +386,9 @@ describe('usePaginatedList: invalidación entre recursos', () => {
     const list = await host(fetchPage, { resource: '/t-cross' })
     list.page = 2
     await flushPromises()
-    // Renombrar un área (otro recurso) con el useApi real: invalida todo.
+    // Renombrar un área (otro recurso) con el useLeoAppApi real: invalida todo.
     areaName = 'Hematología renombrada'
-    await useApi().patch('/lab-areas/1', { name: areaName })
+    await useLeoAppApi().patch('/lab-areas/1', { name: areaName })
     list.page = 1
     await flushPromises()
     expect(list.rows).toEqual(['Hematología renombrada-p1'])

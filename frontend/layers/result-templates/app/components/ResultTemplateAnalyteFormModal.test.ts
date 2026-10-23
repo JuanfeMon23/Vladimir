@@ -1,14 +1,14 @@
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiRequestError } from '~/composables/useApi'
-import { control, fieldError, flushAll, optionLabels, setValue, submitForm } from '~/testing/dom'
+import { apiError } from '~/testing/apiError'
+import { control, fieldError, flushAll, optionLabels, setValue, submitForm } from '#andromeda/testing/dom'
 import type { ResultTemplateVersionContent } from '../composables/useResultTemplateVersionContent'
 import type { ResultTemplateAnalyteRead } from '../types/result-templates'
 import ResultTemplateAnalyteFormModal from './ResultTemplateAnalyteFormModal.vue'
 
 const fake = await vi.hoisted(async () => (await import('~/testing/fakeApi')).createFakeApi())
-mockNuxtImport('useApi', () => () => fake.api)
+mockNuxtImport('useLeoAppApi', () => () => fake.api)
 
 enableAutoUnmount(afterEach)
 
@@ -77,7 +77,7 @@ describe('ResultTemplateAnalyteFormModal: fórmula', () => {
   })
 
   it('422 de la fórmula: un mensaje en español por problema en el campo y el modal sigue abierto', async () => {
-    fake.failures[`PATCH ${BASE}/ta1`] = new ApiRequestError({
+    fake.failures[`PATCH ${BASE}/ta1`] = apiError({
       code: 'validation_error',
       message: 'mensaje crudo del backend',
       details: {

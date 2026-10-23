@@ -1,15 +1,16 @@
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiRequestError } from '~/composables/useApi'
+import { apiError } from '~/testing/apiError'
 import { fakePage } from '~/testing/fakeApi'
-import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS, signInWith } from '~/testing/session'
-import { button, control, fieldError, flushAll, hasRow, optionLabels, rowOf, section, setChecked, setValue, submitForm } from '~/testing/dom'
+import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS } from '~/testing/session'
+import { signInWith } from '#leo-client/testing/session'
+import { button, control, fieldError, flushAll, hasRow, optionLabels, rowOf, section, setChecked, setValue, submitForm } from '#andromeda/testing/dom'
 import type { LabTestRead } from '../types/lab-tests'
 import LabTestFormModal from './LabTestFormModal.vue'
 
 const fake = await vi.hoisted(async () => (await import('~/testing/fakeApi')).createFakeApi())
-mockNuxtImport('useApi', () => () => fake.api)
+mockNuxtImport('useLeoAppApi', () => () => fake.api)
 
 // La pila de modales es de módulo: cada test desmonta el suyo.
 enableAutoUnmount(afterEach)
@@ -254,7 +255,7 @@ describe('LabTestFormModal: errores del backend', () => {
     ['validation_error', 'Debe haber exactamente un tipo de muestra preferido.', { preferred_count: 2 }],
     ['invalid_reference', 'El tipo de muestra «x» no existe.', { invalid_ids: ['x'] }]
   ])('422 %s de los tipos de muestra del POST: error en la sección de tipos', async (code, message, details) => {
-    fake.failures['POST /lab-tests'] = new ApiRequestError({ code, message, details }, 422)
+    fake.failures['POST /lab-tests'] = apiError({ code, message, details }, 422)
     const { dialog, form } = await mountModal(null)
     await fillBasics(dialog)
     await pickRojo(dialog)
@@ -263,7 +264,7 @@ describe('LabTestFormModal: errores del backend', () => {
   })
 
   it('422 inactive_reference de un tipo de muestra: aviso del formulario', async () => {
-    fake.failures['POST /lab-tests'] = new ApiRequestError(
+    fake.failures['POST /lab-tests'] = apiError(
       { code: 'inactive_reference', message: 'El tipo de muestra «TRO» está inactivo.', details: { sample_type_id: 'rojo' } },
       422
     )
@@ -275,7 +276,7 @@ describe('LabTestFormModal: errores del backend', () => {
   })
 
   it('409 de código duplicado: error en el campo Código y el modal sigue abierto', async () => {
-    fake.failures['PATCH /lab-tests/t1'] = new ApiRequestError(
+    fake.failures['PATCH /lab-tests/t1'] = apiError(
       { code: 'conflict', message: 'Ya existe un examen con el código «GLU».', details: { code: 'GLU' } },
       409
     )
@@ -287,7 +288,7 @@ describe('LabTestFormModal: errores del backend', () => {
   })
 
   it('422 inactive_reference del área: error en el campo Área', async () => {
-    fake.failures['POST /lab-tests'] = new ApiRequestError(
+    fake.failures['POST /lab-tests'] = apiError(
       { code: 'inactive_reference', message: 'El área «QUI» está inactiva.', details: { area_id: 'a2' } },
       422
     )
@@ -302,7 +303,7 @@ describe('LabTestFormModal: errores del backend', () => {
   // El backend reporta la etiqueta/plantilla inactiva con la clave de la
   // ENTIDAD (`print_label_id` / `result_template_id`), no la de la versión.
   it('422 inactive_reference de la etiqueta: error en la versión de etiqueta (no un aviso suelto)', async () => {
-    fake.failures['PATCH /lab-tests/t1'] = new ApiRequestError(
+    fake.failures['PATCH /lab-tests/t1'] = apiError(
       { code: 'inactive_reference', message: 'La etiqueta «ETQ» está inactiva.', details: { print_label_id: 'pl1' } },
       422
     )
@@ -313,7 +314,7 @@ describe('LabTestFormModal: errores del backend', () => {
   })
 
   it('422 de versión no publicada: error en la versión de plantilla', async () => {
-    fake.failures['PATCH /lab-tests/t1'] = new ApiRequestError(
+    fake.failures['PATCH /lab-tests/t1'] = apiError(
       {
         code: 'validation_error',
         message: 'La version de plantilla de resultados \'v9\' no existe o no esta publicada.',
@@ -327,7 +328,7 @@ describe('LabTestFormModal: errores del backend', () => {
   })
 
   it('422 de schema (FastAPI) se ubica en el campo por el último segmento de loc', async () => {
-    fake.failures['PATCH /lab-tests/t1'] = new ApiRequestError(
+    fake.failures['PATCH /lab-tests/t1'] = apiError(
       { code: 'request_validation', message: 'Algunos datos no son válidos.', details: [{ loc: ['body', 'turnaround_hours'], msg: 'Debe ser ≤ 720.' }] },
       422
     )
@@ -337,7 +338,7 @@ describe('LabTestFormModal: errores del backend', () => {
   })
 
   it('un error sin campo va al aviso del formulario', async () => {
-    fake.failures['PATCH /lab-tests/t1'] = new ApiRequestError({ code: 'network_error', message: 'No se pudo establecer conexión con el servidor.' })
+    fake.failures['PATCH /lab-tests/t1'] = apiError({ code: 'network_error', message: 'No se pudo establecer conexión con el servidor.' })
     const { dialog, form } = await mountModal(entity())
     await submitForm(form)
     expect(form.textContent).toContain('No se pudo establecer conexión con el servidor.')

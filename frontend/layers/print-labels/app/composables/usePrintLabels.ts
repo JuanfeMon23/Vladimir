@@ -12,10 +12,10 @@ import type {
 
 /**
  * Llamadas a la API del módulo `print-labels`, vía el cliente HTTP del
- * núcleo (useApi).
+ * núcleo (useLeoAppApi).
  */
 export function usePrintLabels() {
-  const api = useApi()
+  const api = useLeoAppApi()
 
   function list(params: PrintLabelListParams = {}) {
     return api.get<Page<PrintLabelRead>>('/print-labels', { params })

@@ -34,14 +34,14 @@ const PUBLISHED_VERSIONS = { page_size: 200, status: 'published' }
 
 /**
  * Llamadas a la API del módulo `lab-tests`, vía el cliente HTTP del núcleo
- * (useApi). Módulo central: enlaza área, versión de etiqueta, versión de
+ * (useLeoAppApi). Módulo central: enlaza área, versión de etiqueta, versión de
  * plantilla, precondiciones, tipos de muestra y documentos a firmar por id.
  * Para elegirlos consulta directamente la API de cada catálogo (lecturas
  * `list*Options`, con tipos propios de este módulo): una layer no usa
  * composables de otra.
  */
 export function useLabTests() {
-  const api = useApi()
+  const api = useLeoAppApi()
 
   function list(params: LabTestListParams = {}) {
     return api.get<Page<LabTestRead>>('/lab-tests', { params })

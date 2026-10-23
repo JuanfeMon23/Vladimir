@@ -10,10 +10,10 @@ import type {
 } from '../types/lab-areas'
 
 /**
- * Llamadas a la API del módulo `lab-areas`, vía el cliente HTTP del núcleo (useApi).
+ * Llamadas a la API del módulo `lab-areas`, vía el cliente HTTP del núcleo (useLeoAppApi).
  */
 export function useLabAreas() {
-  const api = useApi()
+  const api = useLeoAppApi()
 
   function list(params: LabAreaListParams = {}) {
     return api.get<Page<LabAreaRead>>('/lab-areas', { params })

@@ -1,15 +1,16 @@
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiRequestError } from '~/composables/useApi'
+import { apiError } from '~/testing/apiError'
 import { fakePage } from '~/testing/fakeApi'
-import { ALL_CONSENT_DOCUMENTS_TAGS, signInWith } from '~/testing/session'
-import { button, click, control, flushAll, setValue } from '~/testing/dom'
+import { ALL_CONSENT_DOCUMENTS_TAGS } from '~/testing/session'
+import { signInWith } from '#leo-client/testing/session'
+import { button, click, control, flushAll, setValue } from '#andromeda/testing/dom'
 import type { ConsentDocumentVersionRead } from '../../../../types/consent-documents'
 import VersionEditorPage from './[versionId].vue'
 
 const fake = await vi.hoisted(async () => (await import('~/testing/fakeApi')).createFakeApi())
-mockNuxtImport('useApi', () => () => fake.api)
+mockNuxtImport('useLeoAppApi', () => () => fake.api)
 
 enableAutoUnmount(afterEach)
 
@@ -98,7 +99,7 @@ describe('editor de versión de documento a firmar', () => {
 
   it('si llega el 422 missing_fields file_base64 al publicar, lo describe en español', async () => {
     useVersion(version(WITH_FILE))
-    fake.failures['POST /consent-documents/d1/versions/v1/publish'] = new ApiRequestError(
+    fake.failures['POST /consent-documents/d1/versions/v1/publish'] = apiError(
       { code: 'validation_error', message: 'Faltan campos obligatorios para publicar la version: file_base64.', details: { missing_fields: ['file_base64'] } },
       422
     )

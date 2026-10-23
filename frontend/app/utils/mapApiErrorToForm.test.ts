@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { ApiRequestError } from '~/composables/useApi'
-import { mapApiErrorToForm } from './mapApiErrorToForm'
+import { apiError } from '~/testing/apiError'
+import { mapApiErrorToForm } from '#andromeda/utils/mapApiErrorToForm'
 
 const fields = ['code', 'name', 'unit_id', 'analyte_id']
 
 function appError(code: string, message: string, details?: unknown, status = 422) {
-  return new ApiRequestError({ code, message, details }, status)
+  return apiError({ code, message, details }, status)
 }
 
 describe('mapApiErrorToForm', () => {
@@ -78,8 +78,9 @@ describe('mapApiErrorToForm', () => {
     expect(mapApiErrorToForm(err, { fields }).formError).toBe('Algunos datos no son válidos.')
   })
 
-  it('un error que no es de la API usa su mensaje o uno genérico', () => {
-    expect(mapApiErrorToForm(new Error('Falló'), { fields }).formError).toBe('Falló')
-    expect(mapApiErrorToForm('raro', { fields }).formError).toBe('Ocurrió un error inesperado. Intenta de nuevo.')
+  it('un error que no es de la API da un mensaje genérico legible (no expone el texto crudo)', () => {
+    const generic = 'Ocurrió un error inesperado. Inténtalo de nuevo.'
+    expect(mapApiErrorToForm(new Error('Falló'), { fields }).formError).toBe(generic)
+    expect(mapApiErrorToForm('raro', { fields }).formError).toBe(generic)
   })
 })

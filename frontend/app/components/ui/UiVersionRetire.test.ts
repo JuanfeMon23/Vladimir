@@ -2,8 +2,8 @@ import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
-import { ApiRequestError } from '~/composables/useApi'
-import { button, click, flushAll } from '~/testing/dom'
+import { apiError } from '~/testing/apiError'
+import { button, click, flushAll } from '#andromeda/testing/dom'
 import type { VersionRecord } from '~/utils/versioning'
 import UiVersionEditor from './UiVersionEditor.vue'
 import UiVersionSection from './UiVersionSection.vue'
@@ -13,7 +13,7 @@ enableAutoUnmount(afterEach)
 
 const PUBLISHED: VersionRecord = { id: 'v1', version_number: 1, status: 'published', published_at: '2026-10-01T00:00:00Z', change_notes: null }
 
-const IN_USE = new ApiRequestError(
+const IN_USE = apiError(
   {
     code: 'version_in_use',
     message: 'No se puede retirar la versión: la usan los exámenes activos (GLU, HEM).',
@@ -73,7 +73,7 @@ describe('retirar versión (UiVersionSection)', () => {
   })
 
   it('otro error: solo el mensaje, sin lista', async () => {
-    retireFailure = new ApiRequestError({ code: 'network_error', message: 'No se pudo establecer conexión con el servidor.' })
+    retireFailure = apiError({ code: 'network_error', message: 'No se pudo establecer conexión con el servidor.' })
     await mountSection()
     await click(button(document.body, 'Retirar'))
     await click(button(dialog()!, 'Retirar'))

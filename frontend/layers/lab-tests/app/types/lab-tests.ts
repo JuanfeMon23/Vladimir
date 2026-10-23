@@ -104,7 +104,7 @@ export interface LabTestConsentDocumentRead {
  * defecto solo las asignaciones vigentes; con `include_inactive` también las
  * quitadas (los PUT son un diff: lo que no se envía se desactiva).
  */
-export interface LabTestAssignmentListParams {
+export type LabTestAssignmentListParams = {
   include_inactive?: boolean
 }
 
@@ -145,7 +145,7 @@ export interface LabTestCreate extends LabTestBase {
 /** Todos los campos opcionales: PATCH parcial. */
 export type LabTestUpdate = Partial<LabTestBase & { is_active: boolean, activity_reason: string | null }>
 
-export interface LabTestListParams {
+export type LabTestListParams = {
   page?: number
   page_size?: number
   active?: boolean

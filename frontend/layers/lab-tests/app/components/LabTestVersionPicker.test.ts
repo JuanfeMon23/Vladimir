@@ -3,9 +3,10 @@ import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { z } from 'zod'
-import { ApiRequestError } from '~/composables/useApi'
-import { control, flushAll, optionLabels, setValue } from '~/testing/dom'
-import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS, signInWith } from '~/testing/session'
+import { apiError } from '~/testing/apiError'
+import { control, flushAll, optionLabels, setValue } from '#andromeda/testing/dom'
+import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS } from '~/testing/session'
+import { signInWith } from '#leo-client/testing/session'
 import type { LabTestCatalogOption, LabTestVersionOption, LabTestVersionWithOwner } from '../types/lab-tests'
 import LabTestVersionPicker from './LabTestVersionPicker.vue'
 
@@ -143,7 +144,7 @@ describe('LabTestVersionPicker', () => {
   })
 
   it('si la versión asignada no se encuentra (404) muestra el error', async () => {
-    versionFailure = new ApiRequestError({ code: 'not_found', message: 'No existe una versión con id \'v99\'.' }, 404)
+    versionFailure = apiError({ code: 'not_found', message: 'No existe una versión con id \'v99\'.' }, 404)
     const picker = await mountPicker('v99')
     expect(picker.text()).toContain('No existe una versión con id \'v99\'.')
   })

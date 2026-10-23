@@ -2,15 +2,16 @@ import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import DefaultLayout from '~/layouts/default.vue'
-import { button, flushAll } from '~/testing/dom'
+import { button, flushAll } from '#andromeda/testing/dom'
 import { fakePage } from '~/testing/fakeApi'
-import { ALL_LAB_AREAS_TAGS, signInWith } from '~/testing/session'
+import { ALL_LAB_AREAS_TAGS } from '~/testing/session'
+import { signInWith } from '#leo-client/testing/session'
 import type { LabAreaRead } from '../types/lab-areas'
 import LabAreaFormModal from './LabAreaFormModal.vue'
 import LabAreasPage from '../pages/lab-areas/index.vue'
 
 const fake = await vi.hoisted(async () => (await import('~/testing/fakeApi')).createFakeApi())
-mockNuxtImport('useApi', () => () => fake.api)
+mockNuxtImport('useLeoAppApi', () => () => fake.api)
 
 enableAutoUnmount(afterEach)
 

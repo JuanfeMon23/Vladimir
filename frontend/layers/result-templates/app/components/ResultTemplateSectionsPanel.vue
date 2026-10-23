@@ -28,7 +28,7 @@ const toggle = useToggleActive(
     await useResultTemplates().updateSection(props.content.templateId, props.content.versionId, section.id, change)
     await Promise.all([props.content.loadSections(), props.content.loadAnalytes()])
   },
-  { errorMessage: 'No se pudo cambiar el estado de la sección.' }
+  { errorMessage: 'No se pudo cambiar el estado de la sección.', mapError: leoErrorMessage }
 )
 </script>
 

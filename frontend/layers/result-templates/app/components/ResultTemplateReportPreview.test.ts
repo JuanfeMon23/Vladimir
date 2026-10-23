@@ -3,12 +3,12 @@ import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { fakePage } from '~/testing/fakeApi'
-import { flushAll } from '~/testing/dom'
+import { flushAll } from '#andromeda/testing/dom'
 import { useResultTemplateVersionContent } from '../composables/useResultTemplateVersionContent'
 import ResultTemplateReportPreview from './ResultTemplateReportPreview.vue'
 
 const fake = await vi.hoisted(async () => (await import('~/testing/fakeApi')).createFakeApi())
-mockNuxtImport('useApi', () => () => fake.api)
+mockNuxtImport('useLeoAppApi', () => () => fake.api)
 
 enableAutoUnmount(afterEach)
 

@@ -9,7 +9,8 @@
  * del formulario del borrador: el base64 se genera al enviar y no se guarda en
  * ningún estado. Emite `changed` con la versión actualizada.
  */
-import { base64ToBlob, downloadBlob, fileToBase64, formatFileSize, PDF_CONTENT_TYPE, pdfFileErrorMessage, shortSha, validatePdfFile } from '~/utils/pdfFile'
+import { base64ToBlob, fileToBase64, formatFileSize, PDF_CONTENT_TYPE, pdfFileErrorMessage, shortSha, validatePdfFile } from '#andromeda/utils/pdfFile'
+import { downloadBlob } from '#andromeda/utils/downloadBlob'
 import type { ConsentDocumentVersionRead } from '../types/consent-documents'
 import { consentDocumentFilename, consentFileApiError } from '../utils/consentDocuments'
 
@@ -69,7 +70,7 @@ const removal = useConfirmAction(
     fileError.value = null
     emit('changed', await consentDocumentsApi.updateVersion(props.version.consent_document_id, props.version.id, { file_base64: null }))
   },
-  { errorMessage: 'No se pudo quitar el archivo.' }
+  { errorMessage: 'No se pudo quitar el archivo.', mapError: leoErrorMessage }
 )
 
 async function download() {
@@ -151,6 +152,7 @@ async function copySha() {
       :title="`Versión ${version.version_number}`"
       :filename="filename"
       :load="loadFile"
+      :map-error="leoErrorMessage"
     />
     <UiConfirmModal
       v-model:open="removal.open"

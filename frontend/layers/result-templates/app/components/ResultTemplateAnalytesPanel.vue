@@ -39,7 +39,7 @@ const toggle = useToggleActive(
     await useResultTemplates().updateTemplateAnalyte(props.content.templateId, props.content.versionId, item.id, change)
     await props.content.loadAnalytes()
   },
-  { errorMessage: 'No se pudo cambiar el estado del analito.' }
+  { errorMessage: 'No se pudo cambiar el estado del analito.', mapError: leoErrorMessage }
 )
 
 function unitText(item: ResultTemplateAnalyteRead) {

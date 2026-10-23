@@ -11,9 +11,6 @@ export default defineNuxtConfig({
     tsConfig: { exclude: ['../node_modules/leo-client/**', '../node_modules/.pnpm/leo-client*/**'] }
   },
   runtimeConfig: {
-    // Base de la API solo para el servidor (SSR); si está vacía se usa la pública.
-    // Se configura con NUXT_API_BASE_SERVER. (Con leo-client la app es SPA: sin uso real.)
-    apiBaseServer: '',
     public: {
       // Sin valor grabado: se llena desde NUXT_PUBLIC_API_BASE (frontend/.env).
       apiBase: '',

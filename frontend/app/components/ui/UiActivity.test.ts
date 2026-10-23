@@ -3,13 +3,13 @@ import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick } from 'vue'
 import { z } from 'zod'
-import UiActiveField from './UiActiveField.vue'
-import UiActivityTimeline from './UiActivityTimeline.vue'
+import UiActiveField from '#andromeda/components/ui/UiActiveField.vue'
+import UiActivityTimeline from '#andromeda/components/ui/UiActivityTimeline.vue'
 import UiFormModal from '#andromeda/components/ui/UiFormModal.vue'
-import UiToggleActiveModal from './UiToggleActiveModal.vue'
+import UiToggleActiveModal from '#andromeda/components/ui/UiToggleActiveModal.vue'
 
 const { getMock } = vi.hoisted(() => ({ getMock: vi.fn() }))
-mockNuxtImport('useApi', () => () => ({ get: getMock }))
+mockNuxtImport('useLeoAppApi', () => () => ({ get: getMock }))
 
 enableAutoUnmount(afterEach)
 

@@ -8,10 +8,10 @@ import type {
 
 /**
  * Llamadas a la API del catálogo `analytes`, vía el cliente HTTP del núcleo
- * (useApi).
+ * (useLeoAppApi).
  */
 export function useAnalytes() {
-  const api = useApi()
+  const api = useLeoAppApi()
 
   /** `opts.cacheTtl`: pide con caché (catálogo para selects). */
   function list(params: AnalyteListParams = {}, opts: { cacheTtl?: number } = {}) {

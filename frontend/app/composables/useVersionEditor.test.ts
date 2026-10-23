@@ -3,7 +3,7 @@ import { flushPromises } from '@vue/test-utils'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { defineComponent } from 'vue'
 import { versionInUseCodes, type VersionRecord } from '~/utils/versioning'
-import { ApiRequestError } from './useApi'
+import { apiError } from '~/testing/apiError'
 import { useVersionEditor, type UseVersionEditorOptions } from './useVersionEditor'
 
 function version(status: VersionRecord['status'], n = 1): VersionRecord {
@@ -85,7 +85,7 @@ describe('useVersionEditor', () => {
   })
 
   it('publish() fallido deja actionError y details (campos faltantes) sin cambiar la versión', async () => {
-    const failure = new ApiRequestError(
+    const failure = apiError(
       { code: 'publish_incomplete', message: 'Faltan datos.', details: { missing: ['sections'] } },
       409
     )
@@ -108,7 +108,7 @@ describe('useVersionEditor', () => {
     let fail = true
     const editor = await host({
       publish: () => (fail
-        ? rejected(new ApiRequestError({ code: 'x', message: 'mal', details: { a: 1 } }))
+        ? rejected(apiError({ code: 'x', message: 'mal', details: { a: 1 } }))
         : Promise.resolve(version('published')))
     })
     await editor.publish()
@@ -129,7 +129,7 @@ describe('useVersionEditor', () => {
   })
 
   it('retirar con 409 version_in_use deja el modal abierto con el mensaje y los códigos en errorCause', async () => {
-    const failure = new ApiRequestError(
+    const failure = apiError(
       { code: 'version_in_use', message: 'La versión está en uso.', details: { lab_test_codes: ['GLU', 'HEM'] } },
       409
     )

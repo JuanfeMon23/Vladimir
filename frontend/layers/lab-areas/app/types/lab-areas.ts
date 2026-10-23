@@ -37,7 +37,7 @@ export interface LabAreaCreate extends LabAreaBase {
 /** Todos los campos opcionales: PATCH parcial. */
 export type LabAreaUpdate = Partial<LabAreaBase & { is_active: boolean, activity_reason: string | null }>
 
-export interface LabAreaListParams {
+export type LabAreaListParams = {
   page?: number
   page_size?: number
   active?: boolean

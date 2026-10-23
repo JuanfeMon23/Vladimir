@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UiDataTableColumn } from '~/components/ui/UiDataTable.vue'
+import type { UiDataTableColumn } from '#andromeda/components/ui/UiDataTable.vue'
 import { CONSENT_DOCUMENT_TYPE_LABELS } from '../../types/consent-documents'
 import type { ConsentDocumentRead } from '../../types/consent-documents'
 import { isGeneralConsent } from '../../utils/consentDocuments'

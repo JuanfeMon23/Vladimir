@@ -1,5 +1,4 @@
-import { ApiRequestError } from '~/composables/useApi'
-import { pdfFileErrorMessage } from '~/utils/pdfFile'
+import { pdfFileErrorMessage } from '#andromeda/utils/pdfFile'
 import type { ConsentDocumentType } from '../types/consent-documents'
 
 /** Nombre de la descarga de una versión: `<codigo>-v<N>.pdf`. */
@@ -17,7 +16,7 @@ export function isGeneralConsent(document: { document_type: ConsentDocumentType 
  * (`details = { field: "file_base64", reason }`); `null` si el error no es del archivo.
  */
 export function consentFileApiError(err: unknown): string | null {
-  if (!(err instanceof ApiRequestError)) return null
+  if (!(err instanceof LeoApiError)) return null
   const details = err.details as { field?: unknown, reason?: unknown } | null | undefined
   if (!details || typeof details !== 'object' || details.field !== 'file_base64') return null
   return pdfFileErrorMessage(details.reason, err.message)
@@ -43,7 +42,7 @@ export function describeConsentPublishErrors(details: unknown): string[] {
  * documento que ya lo es (el código duplicado trae solo `code`).
  */
 export function isGeneralDocumentConflict(err: unknown): boolean {
-  if (!(err instanceof ApiRequestError) || err.status !== 409) return false
+  if (!(err instanceof LeoApiError) || err.status !== 409) return false
   const details = err.details as { id?: unknown } | null | undefined
   return typeof details?.id === 'string'
 }
