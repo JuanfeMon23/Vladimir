@@ -18,8 +18,8 @@ import type {
 export function useConsentDocuments() {
   const api = useLeoAppApi()
 
-  function list(params: ConsentDocumentListParams = {}) {
-    return api.get<Page<ConsentDocumentRead>>('/consent-documents', { params })
+  function list(params: ConsentDocumentListParams = {}, opts: { cacheTtl?: number, signal?: AbortSignal } = {}) {
+    return api.get<Page<ConsentDocumentRead>>('/consent-documents', { params, ...opts })
   }
 
   function get(id: string) {

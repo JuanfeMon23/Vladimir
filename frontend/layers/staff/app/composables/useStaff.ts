@@ -7,8 +7,8 @@ import type { StaffCreate, StaffListParams, StaffRead, StaffUpdate } from '../ty
 export function useStaff() {
   const api = useLeoAppApi()
 
-  function list(params: StaffListParams = {}) {
-    return api.get<Page<StaffRead>>('/staff', { params })
+  function list(params: StaffListParams = {}, opts: { cacheTtl?: number, signal?: AbortSignal } = {}) {
+    return api.get<Page<StaffRead>>('/staff', { params, ...opts })
   }
 
   function get(id: string) {

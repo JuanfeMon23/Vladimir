@@ -12,10 +12,15 @@ const activeFilter = ref<boolean | undefined>(undefined)
 
 const search = ref('')
 
-const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList(
-  params => analytesApi.list({ ...params, active: activeFilter.value }),
-  { resource: '/analytes', search, filters: [activeFilter], errorMessage: 'No se pudieron cargar los analitos.' }
-)
+const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList({
+  fetchPage: (params, { signal }) => analytesApi.list({ ...params, active: activeFilter.value }, { signal }),
+  search,
+  filters: [activeFilter],
+  errorMessage: 'No se pudieron cargar los analitos.',
+  mapError: leoErrorMessage,
+  urlSync: useRouteQuerySync(),
+  cache: listCache('/analytes')
+})
 
 const modal = useEntityModal<AnalyteRead>()
 

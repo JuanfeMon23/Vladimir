@@ -9,7 +9,7 @@ export function useUnits() {
   const api = useLeoAppApi()
 
   /** `opts.cacheTtl`: pide con caché (catálogo para selects). */
-  function list(params: UnitListParams = {}, opts: { cacheTtl?: number } = {}) {
+  function list(params: UnitListParams = {}, opts: { cacheTtl?: number, signal?: AbortSignal } = {}) {
     return api.get<Page<UnitRead>>('/units', { params, ...opts })
   }
 

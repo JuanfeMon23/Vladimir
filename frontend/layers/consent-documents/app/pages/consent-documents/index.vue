@@ -16,10 +16,15 @@ const activeFilter = ref<boolean | undefined>(undefined)
 
 const search = ref('')
 
-const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList(
-  params => consentDocumentsApi.list({ ...params, active: activeFilter.value }),
-  { resource: '/consent-documents', search, filters: [activeFilter], errorMessage: 'No se pudieron cargar los documentos.' }
-)
+const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList({
+  fetchPage: (params, { signal }) => consentDocumentsApi.list({ ...params, active: activeFilter.value }, { signal }),
+  search,
+  filters: [activeFilter],
+  errorMessage: 'No se pudieron cargar los documentos.',
+  mapError: leoErrorMessage,
+  urlSync: useRouteQuerySync(),
+  cache: listCache('/consent-documents')
+})
 
 const modal = useEntityModal<ConsentDocumentRead>()
 useOpenEntityFromQuery(modal, consentDocumentsApi.get)

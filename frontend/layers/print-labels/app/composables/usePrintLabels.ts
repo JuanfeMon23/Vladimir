@@ -17,8 +17,8 @@ import type {
 export function usePrintLabels() {
   const api = useLeoAppApi()
 
-  function list(params: PrintLabelListParams = {}) {
-    return api.get<Page<PrintLabelRead>>('/print-labels', { params })
+  function list(params: PrintLabelListParams = {}, opts: { cacheTtl?: number, signal?: AbortSignal } = {}) {
+    return api.get<Page<PrintLabelRead>>('/print-labels', { params, ...opts })
   }
 
   function get(id: string) {

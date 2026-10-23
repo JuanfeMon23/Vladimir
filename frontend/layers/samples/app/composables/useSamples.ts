@@ -15,8 +15,8 @@ import type {
 export function useSamples() {
   const api = useLeoAppApi()
 
-  function list(params: SampleListParams = {}) {
-    return api.get<Page<SampleRead>>('/samples', { params })
+  function list(params: SampleListParams = {}, opts: { cacheTtl?: number, signal?: AbortSignal } = {}) {
+    return api.get<Page<SampleRead>>('/samples', { params, ...opts })
   }
 
   function get(id: string) {

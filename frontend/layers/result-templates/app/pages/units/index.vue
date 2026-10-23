@@ -12,10 +12,15 @@ const activeFilter = ref<boolean | undefined>(undefined)
 
 const search = ref('')
 
-const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList(
-  params => unitsApi.list({ ...params, active: activeFilter.value }),
-  { resource: '/units', search, filters: [activeFilter], errorMessage: 'No se pudieron cargar las unidades.' }
-)
+const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList({
+  fetchPage: (params, { signal }) => unitsApi.list({ ...params, active: activeFilter.value }, { signal }),
+  search,
+  filters: [activeFilter],
+  errorMessage: 'No se pudieron cargar las unidades.',
+  mapError: leoErrorMessage,
+  urlSync: useRouteQuerySync(),
+  cache: listCache('/units')
+})
 
 const modal = useEntityModal<UnitRead>()
 

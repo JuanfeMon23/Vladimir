@@ -24,10 +24,3 @@ export interface PaginationParams {
   /** Búsqueda de texto libre (insensible a mayúsculas y tildes; máx. 8 palabras y 100 caracteres). */
   q?: string
 }
-
-/** Lo que `usePaginatedList` entrega a `fetchPage`: `q` solo viaja si hay término. */
-export interface ListRequestParams {
-  page: number
-  page_size: number
-  q?: string
-}

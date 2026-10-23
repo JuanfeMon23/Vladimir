@@ -15,8 +15,8 @@ import type {
 export function useLabAreas() {
   const api = useLeoAppApi()
 
-  function list(params: LabAreaListParams = {}) {
-    return api.get<Page<LabAreaRead>>('/lab-areas', { params })
+  function list(params: LabAreaListParams = {}, opts: { cacheTtl?: number, signal?: AbortSignal } = {}) {
+    return api.get<Page<LabAreaRead>>('/lab-areas', { params, ...opts })
   }
 
   function get(id: string) {

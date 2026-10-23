@@ -14,10 +14,15 @@ const activeFilter = ref<boolean | undefined>(undefined)
 
 const search = ref('')
 
-const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList(
-  params => printLabelsApi.list({ ...params, active: activeFilter.value }),
-  { resource: '/print-labels', search, filters: [activeFilter], errorMessage: 'No se pudieron cargar las etiquetas.' }
-)
+const { rows, total, page, pageSize, loading, loadError, searchTerm, reload } = usePaginatedList({
+  fetchPage: (params, { signal }) => printLabelsApi.list({ ...params, active: activeFilter.value }, { signal }),
+  search,
+  filters: [activeFilter],
+  errorMessage: 'No se pudieron cargar las etiquetas.',
+  mapError: leoErrorMessage,
+  urlSync: useRouteQuerySync(),
+  cache: listCache('/print-labels')
+})
 
 const modal = useEntityModal<PrintLabelRead>()
 useOpenEntityFromQuery(modal, printLabelsApi.get)

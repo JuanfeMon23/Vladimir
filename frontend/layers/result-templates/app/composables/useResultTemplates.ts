@@ -32,8 +32,8 @@ import type {
 export function useResultTemplates() {
   const api = useLeoAppApi()
 
-  function list(params: ResultTemplateListParams = {}) {
-    return api.get<Page<ResultTemplateRead>>('/result-templates', { params })
+  function list(params: ResultTemplateListParams = {}, opts: { cacheTtl?: number, signal?: AbortSignal } = {}) {
+    return api.get<Page<ResultTemplateRead>>('/result-templates', { params, ...opts })
   }
 
   function get(id: string) {
