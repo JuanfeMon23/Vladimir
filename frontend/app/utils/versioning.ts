@@ -21,7 +21,7 @@ export interface VersionRecord {
 /**
  * Tags de Leo de las acciones de versionado de un módulo. El núcleo no conoce
  * los tags de ningún módulo: cada layer pasa los suyos; sin tag, la acción
- * no se restringe (módulo sin proteger).
+ * no se permite (fail-closed).
  */
 export interface VersionPermissionTags {
   create?: string

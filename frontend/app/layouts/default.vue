@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import type { UiSidebarItem } from '#andromeda/components/ui/UiSidebar.vue'
 
-interface NavItem {
+type NavItem = {
   label: string
   to: string
-  /** Tag de Leo que lo habilita (todos los módulos están protegidos: todo ítem lleva uno). */
-  tag: string
   /** Icono de trazo 24×24 (atributo `d` del path). */
   icon: string
-}
+} & (
+  // Tag de Leo que lo habilita.
+  | { tag: string }
+  // Opt-in explícito a un ítem sin permiso; sin `tag` ni `public` no se muestra.
+  | { public: true }
+)
 
 // Módulos de negocio disponibles en el panel. Cada entrada nueva se agrega
 // aquí a medida que se incorpora un módulo (layer) nuevo.
@@ -43,7 +46,7 @@ const navItems: NavItem[] = [
 const leoSession = useLeoSession()
 const menu = computed<UiSidebarItem[]>(() =>
   navItems
-    .filter(item => !item.tag || leoSession.can(item.tag))
+    .filter(item => ('tag' in item ? leoSession.can(item.tag) : item.public))
     .map(({ label, to, icon }) => ({ section: 'Módulos', label, to, icon }))
 )
 </script>

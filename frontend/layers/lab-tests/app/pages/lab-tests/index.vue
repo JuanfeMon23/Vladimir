@@ -84,12 +84,12 @@ const columns: UiDataTableColumn<LabTestRead>[] = [
         inactive-label="Inactivos"
       />
       <UiFormField
+        v-if="canConsultAreas"
         label="Área"
         field-id="lab-test-area-filter"
         class="w-64"
-        :hint="canConsultAreas ? undefined : noViewMessage(MODULE_VIEW.labAreas)"
       >
-        <UiSelect v-model="areaFilter" :options="areaOptions" empty-label="Todas" :disabled="!canConsultAreas" />
+        <UiSelect v-model="areaFilter" :options="areaOptions" empty-label="Todas" />
       </UiFormField>
     </UiListToolbar>
 

@@ -1,11 +1,14 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { signInWith } from '#leo-client/testing/session'
 import { button, flushAll } from '#andromeda/testing/dom'
 import type { VersionRecord } from '~/utils/versioning'
 import UiVersionSection, { type UiVersionSectionApi } from './UiVersionSection.vue'
 
 enableAutoUnmount(afterEach)
+
+const PERMISSIONS = { create: 'v.create', edit: 'v.edit', publish: 'v.publish', retire: 'v.retire' }
 
 type FileVersion = VersionRecord & { has_file: boolean }
 
@@ -14,6 +17,7 @@ function record(id: string, n: number, status: VersionRecord['status'], hasFile:
 }
 
 async function mountSection(versions: FileVersion[], extra: Partial<UiVersionSectionApi> = {}) {
+  signInWith(Object.values(PERMISSIONS))
   const api: UiVersionSectionApi = {
     list: async () => versions,
     create: async () => ({ id: 'new' }),
@@ -22,7 +26,7 @@ async function mountSection(versions: FileVersion[], extra: Partial<UiVersionSec
     editorPath: id => `/x/${id}`,
     ...extra
   }
-  const wrapper = await mountSuspended(UiVersionSection, { props: { api } })
+  const wrapper = await mountSuspended(UiVersionSection, { props: { api, permissions: PERMISSIONS } })
   await flushAll()
   return { root: wrapper.element as HTMLElement, api }
 }
