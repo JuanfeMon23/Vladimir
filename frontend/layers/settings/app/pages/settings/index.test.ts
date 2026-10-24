@@ -50,16 +50,40 @@ describe('página de ajustes', () => {
     expect(wrapper.text()).toContain('Tamaño máximo de página')
   })
 
-  it('sin vladimir.settings.edit el valor no es editable; con él sí', async () => {
+  it('sin vladimir.settings.edit no hay controles de edición y el valor sale como texto; con él sí', async () => {
     signInWith([VIEW])
     const readOnly = await mountSuspended(SettingsPage)
     await flushAll()
-    expect(readOnly.find('input').attributes('disabled')).toBeDefined()
+    expect(readOnly.find('input').exists()).toBe(false)
+    expect(readOnly.find('[role="switch"]').exists()).toBe(false)
+    expect(readOnly.findAll('button').map(b => b.text())).not.toContain('Guardar')
+    expect(readOnly.findAll('button').map(b => b.text())).not.toContain('Restablecer')
+    expect(readOnly.find('[data-testid="setting-readonly"]').text()).toContain('200')
 
     signInWith([VIEW, 'vladimir.settings.edit'])
     const editable = await mountSuspended(SettingsPage)
     await flushAll()
     expect(editable.find('input').attributes('disabled')).toBeUndefined()
+    expect(editable.findAll('button').map(b => b.text())).toEqual(expect.arrayContaining(['Guardar', 'Restablecer']))
+  })
+
+  it('sin vladimir.settings.edit-security un ajuste de seguridad es solo texto, con su motivo; con él se edita', async () => {
+    fake.routes['GET /settings'] = {
+      groups: [{ group: 'Seguridad', settings: [setting({ key: 'login.lockout', value: 5, default: 5, requires_security_permission: true })] }]
+    }
+    signInWith([VIEW, 'vladimir.settings.edit'])
+    const locked = await mountSuspended(SettingsPage)
+    await flushAll()
+    expect(locked.find('input').exists()).toBe(false)
+    expect(locked.findAll('button').map(b => b.text())).not.toContain('Guardar')
+    expect(locked.find('[data-testid="setting-readonly"]').text()).toContain('5')
+    expect(locked.find('[data-testid="setting-locked"]').exists()).toBe(true)
+
+    signInWith(ALL_SETTINGS_TAGS)
+    const editable = await mountSuspended(SettingsPage)
+    await flushAll()
+    expect(editable.find('input').exists()).toBe(true)
+    expect(editable.find('[data-testid="setting-readonly"]').exists()).toBe(false)
   })
 })
 

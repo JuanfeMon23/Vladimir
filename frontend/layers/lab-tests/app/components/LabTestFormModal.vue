@@ -101,7 +101,7 @@ const onSubmit = submit(async (values) => {
 })
 
 // Áreas: las activas, más la actual del examen aunque esté inactiva. Sin el
-// `view` de áreas no se pide el catálogo: se avisa y el selector se deshabilita.
+// `view` de áreas no se pide el catálogo: se avisa y el selector no se muestra.
 const canConsultAreas = useCan(MODULE_VIEW.labAreas.tag)
 const areas = ref<LabTestCatalogOption[]>([])
 const areasError = ref<string | null>(null)
@@ -145,8 +145,8 @@ watch(open, async (isOpen) => {
       <UiFormField name="abbreviation" label="Abreviatura">
         <UiTextInput :disabled="dataLocked" />
       </UiFormField>
-      <UiFormField name="area_id" label="Área" required>
-        <UiSelect :options="areaOptions" placeholder="Seleccionar área" :disabled="dataLocked || !canConsultAreas" />
+      <UiFormField v-if="canConsultAreas" name="area_id" label="Área" required>
+        <UiSelect :options="areaOptions" placeholder="Seleccionar área" :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="method" label="Método">
         <UiTextInput :disabled="dataLocked" />

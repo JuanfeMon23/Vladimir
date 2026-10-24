@@ -12,7 +12,9 @@ import type { UiSelectOption } from '#andromeda/components/ui/UiSelect.vue'
 import type { UiTab } from '#andromeda/components/ui/UiTabs.vue'
 import type { UiVersionTimelineEntry } from '#andromeda/components/ui/UiVersionTimeline.vue'
 
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', leo: {} })
+// Solo en desarrollo: en producción la referencia de diseño no existe.
+if (!import.meta.dev) showError({ statusCode: 404 })
 useHead({ title: 'Sistema de diseño · Vladimir' })
 
 const route = useRoute()

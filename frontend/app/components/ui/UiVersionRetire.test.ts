@@ -3,6 +3,7 @@ import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { apiError } from '~/testing/apiError'
+import { signInWith } from '#leo-client/testing/session'
 import { button, click, flushAll } from '#andromeda/testing/dom'
 import type { VersionRecord } from '~/utils/versioning'
 import UiVersionEditor from './UiVersionEditor.vue'
@@ -10,6 +11,9 @@ import UiVersionSection from './UiVersionSection.vue'
 
 // La pila de modales es de módulo: cada test desmonta los suyos.
 enableAutoUnmount(afterEach)
+
+// El versionado es fail-closed: cada acción exige su tag.
+const PERMISSIONS = { create: 'v.create', edit: 'v.edit', publish: 'v.publish', retire: 'v.retire' }
 
 const PUBLISHED: VersionRecord = { id: 'v1', version_number: 1, status: 'published', published_at: '2026-10-01T00:00:00Z', change_notes: null }
 
@@ -34,6 +38,7 @@ async function retire(id: string) {
 beforeEach(() => {
   retired.mockReset()
   retireFailure = null
+  signInWith(Object.values(PERMISSIONS))
   document.body.innerHTML = ''
 })
 
@@ -45,6 +50,7 @@ describe('retirar versión (UiVersionSection)', () => {
   async function mountSection() {
     await mountSuspended(UiVersionSection, {
       props: {
+        permissions: PERMISSIONS,
         api: {
           list: async () => [PUBLISHED],
           create: async () => ({ id: 'v2' }),
@@ -89,7 +95,7 @@ describe('retirar versión (UiVersionEditor + useVersionEditor)', () => {
     const Host = defineComponent({
       setup() {
         const editor = useVersionEditor({ load: async () => PUBLISHED, publish: async () => PUBLISHED, retire: () => retire('v1') })
-        return () => h(UiVersionEditor, { editor, backTo: '/x' })
+        return () => h(UiVersionEditor, { editor, backTo: '/x', permissions: PERMISSIONS })
       }
     })
     const wrapper = await mountSuspended(Host, { attachTo: document.body })
@@ -106,7 +112,7 @@ describe('retirar versión (UiVersionEditor + useVersionEditor)', () => {
     const Host = defineComponent({
       setup() {
         const editor = useVersionEditor({ load: async () => PUBLISHED, publish: async () => PUBLISHED, retire: () => retire('v1') })
-        return () => h(UiVersionEditor, { editor, backTo: '/x' })
+        return () => h(UiVersionEditor, { editor, backTo: '/x', permissions: PERMISSIONS })
       }
     })
     const wrapper = await mountSuspended(Host, { attachTo: document.body })

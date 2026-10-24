@@ -104,11 +104,10 @@ describe('listado de exámenes', () => {
     expect((await mountPage([VIEW, L('set-consent-documents')])).text()).toContain('Ver / Editar')
   })
 
-  it('sin view de áreas no pide el catálogo, avisa en el filtro y lo deshabilita', async () => {
+  it('sin view de áreas no pide el catálogo y no muestra el filtro', async () => {
     const wrapper = await mountPage([VIEW])
     expect(requested('/lab-areas')).toBe(false)
-    expect(wrapper.text()).toContain('No tienes permiso para consultar áreas.')
-    expect(wrapper.find<HTMLSelectElement>('#lab-test-area-filter').element.disabled).toBe(true)
+    expect(wrapper.find('#lab-test-area-filter').exists()).toBe(false)
   })
 
   it('con view de áreas pide el catálogo y el filtro queda activo', async () => {
@@ -160,13 +159,13 @@ describe('detalle/edición de un examen', () => {
 })
 
 describe('selectores de otros módulos sin su view', () => {
-  it('área, etiqueta, plantilla y muestras: avisan, no piden el catálogo y deshabilitan el control', async () => {
+  it('área, etiqueta, plantilla y muestras: avisan, no piden el catálogo y no muestran el selector de área (los demás se deshabilitan)', async () => {
     const { dialog } = await mountModal([...ALL_LAB_TESTS_TAGS], null)
     for (const label of ['áreas', 'etiquetas de impresión', 'plantillas de resultados', 'muestras']) {
       expect(dialog.textContent).toContain(`No tienes permiso para consultar ${label}.`)
     }
     for (const path of ['/lab-areas', '/print-labels', '/result-templates', '/samples']) expect(requested(path)).toBe(false)
-    expect(control(dialog, 'Área').disabled).toBe(true)
+    expect(() => control(dialog, 'Área')).toThrow()
     expect(control(dialog, 'Etiqueta').disabled).toBe(true)
     expect(control(dialog, 'Plantilla').disabled).toBe(true)
   })

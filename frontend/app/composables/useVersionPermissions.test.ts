@@ -22,7 +22,7 @@ describe('useVersionPermissions', () => {
     expect(await resolve(['a.edit', 'a.retire'], TAGS)).toEqual({ create: false, edit: true, publish: false, retire: true })
   })
 
-  it('sin tags no restringe nada', async () => {
-    expect(await resolve([], undefined)).toEqual({ create: true, edit: true, publish: true, retire: true })
+  it('sin tag la acción no se permite (fail-closed)', async () => {
+    expect(await resolve([], undefined)).toEqual({ create: false, edit: false, publish: false, retire: false })
   })
 })
