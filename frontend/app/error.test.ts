@@ -7,7 +7,7 @@ enableAutoUnmount(afterEach)
 
 // Vladimir no tiene `app/error.vue`: Nuxt usa el de la capa Andromeda.
 async function show(statusCode: number) {
-  return mountSuspended(ErrorPage, { props: { error: { statusCode, message: 'Traceback (crudo)', url: '/x', fatal: true } } })
+  return mountSuspended(ErrorPage, { props: { error: createError({ statusCode, message: 'Traceback (crudo)', fatal: true }) } })
 }
 
 describe('página de error de la capa (app/error.vue de Andromeda)', () => {
