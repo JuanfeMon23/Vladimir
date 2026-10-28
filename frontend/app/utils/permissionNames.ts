@@ -1,65 +1,14 @@
+import permissions from '../generated/permissions.json'
+
 /**
  * Nombres legibles de los permisos (tags) de Vladimir, para mensajes al
  * usuario ("No tienes permiso para: …"). Se registran en leo-client con
- * `registerPermissionNames` (plugin `permissionNames.ts`). Son los mismos del catálogo
- * sincronizado en Leo; cada módulo protegido agrega aquí los suyos.
+ * `registerPermissionNames` (plugin `permissionNames.ts`). Se DERIVAN del
+ * contrato generado por el backend (`generated/permissions.json`, ver README):
+ * no se editan a mano. Los eventos de auditoría (no asignables) no tienen nombre.
  */
-export const PERMISSION_NAMES: Record<string, string> = {
-  'vladimir.lab-areas.view': 'Consultar áreas de laboratorio',
-  'vladimir.lab-areas.create': 'Crear áreas de laboratorio',
-  'vladimir.lab-areas.edit': 'Editar áreas de laboratorio',
-  'vladimir.lab-areas.change-status': 'Activar o desactivar áreas de laboratorio',
-  'vladimir.lab-areas.assign-manager': 'Asignar encargado de un área de laboratorio',
-  'vladimir.staff.view': 'Consultar personal',
-  'vladimir.staff.create': 'Crear personal',
-  'vladimir.staff.edit': 'Editar personal',
-  'vladimir.staff.change-status': 'Activar o desactivar personal',
-  'vladimir.lab-tests.view': 'Consultar exámenes de laboratorio',
-  'vladimir.lab-tests.create': 'Crear exámenes de laboratorio',
-  'vladimir.lab-tests.edit': 'Editar exámenes de laboratorio',
-  'vladimir.lab-tests.change-status': 'Activar o desactivar exámenes de laboratorio',
-  'vladimir.lab-tests.set-preconditions': 'Asignar precondiciones a exámenes',
-  'vladimir.lab-tests.set-sample-types': 'Asignar tipos de muestra a exámenes',
-  'vladimir.lab-tests.set-consent-documents': 'Asignar documentos a firmar a exámenes',
-  'vladimir.preconditions.view': 'Consultar precondiciones',
-  'vladimir.preconditions.create': 'Crear precondiciones',
-  'vladimir.preconditions.edit': 'Editar precondiciones',
-  'vladimir.preconditions.change-status': 'Activar o desactivar precondiciones',
-  'vladimir.preconditions.add-item': 'Agregar ítems a precondiciones',
-  'vladimir.samples.view': 'Consultar muestras',
-  'vladimir.samples.create': 'Crear muestras',
-  'vladimir.samples.edit': 'Editar muestras',
-  'vladimir.samples.change-status': 'Activar o desactivar muestras',
-  'vladimir.samples.add-type': 'Agregar tipos a muestras',
-  'vladimir.print-labels.view': 'Consultar etiquetas de impresión',
-  'vladimir.print-labels.create': 'Crear etiquetas de impresión',
-  'vladimir.print-labels.edit': 'Editar etiquetas de impresión',
-  'vladimir.print-labels.change-status': 'Activar o desactivar etiquetas de impresión',
-  'vladimir.print-labels.create-version': 'Crear versiones de etiquetas',
-  'vladimir.print-labels.edit-version': 'Editar versiones de etiquetas',
-  'vladimir.print-labels.publish-version': 'Publicar versiones de etiquetas',
-  'vladimir.print-labels.retire-version': 'Retirar versiones de etiquetas',
-  'vladimir.result-templates.view': 'Consultar plantillas de resultados',
-  'vladimir.result-templates.create': 'Crear plantillas de resultados',
-  'vladimir.result-templates.edit': 'Editar plantillas de resultados',
-  'vladimir.result-templates.change-status': 'Activar o desactivar plantillas de resultados',
-  'vladimir.result-templates.create-version': 'Crear versiones de plantillas',
-  'vladimir.result-templates.edit-version': 'Editar versiones de plantillas',
-  'vladimir.result-templates.publish-version': 'Publicar versiones de plantillas',
-  'vladimir.result-templates.retire-version': 'Retirar versiones de plantillas',
-  'vladimir.result-templates.edit-content': 'Editar contenido de plantillas',
-  'vladimir.result-templates.manage-units': 'Gestionar unidades de medida',
-  'vladimir.result-templates.manage-analytes': 'Gestionar analitos',
-  'vladimir.result-templates.manage-option-sets': 'Gestionar conjuntos de opciones de resultado',
-  'vladimir.consent-documents.view': 'Consultar documentos a firmar',
-  'vladimir.consent-documents.create': 'Crear documentos a firmar',
-  'vladimir.consent-documents.edit': 'Editar documentos a firmar',
-  'vladimir.consent-documents.change-status': 'Activar o desactivar documentos a firmar',
-  'vladimir.consent-documents.create-version': 'Crear versiones de documentos a firmar',
-  'vladimir.consent-documents.edit-version': 'Editar versiones de documentos a firmar',
-  'vladimir.consent-documents.publish-version': 'Publicar versiones de documentos a firmar',
-  'vladimir.consent-documents.retire-version': 'Retirar versiones de documentos a firmar',
-  'vladimir.settings.view': 'Consultar los ajustes del sistema',
-  'vladimir.settings.edit': 'Modificar los ajustes del sistema',
-  'vladimir.settings.edit-security': 'Modificar los ajustes de seguridad'
-}
+export const PERMISSION_NAMES: Record<string, string> = Object.fromEntries(
+  permissions.modules.flatMap(module =>
+    module.actions.filter(action => action.assignable).map(action => [action.tag, action.name])
+  )
+)

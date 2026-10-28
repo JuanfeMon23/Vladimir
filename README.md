@@ -27,6 +27,18 @@ Python 3.13+, [uv](https://docs.astral.sh/uv/), Node.js con [pnpm](https://pnpm.
    pnpm run dev
    ```
 
+## Tags de permisos (backend ↔ frontend)
+
+El contrato `frontend/app/generated/permissions.json` se genera desde el backend y se commitea. Al agregar, quitar o renombrar un módulo o acción en cualquier `permissions.py`, regenéralo y commitéalo:
+
+```bash
+cd backend
+uv run python -m app.core.permissions_export          # regenera el JSON
+uv run python -m app.core.permissions_export --check  # sale con 1 si está desalineado
+```
+
+Un test del backend falla si el JSON está desactualizado y uno del frontend falla si el código usa un tag inexistente o si un tag asignable no se usa.
+
 Datos de demostración (opcional): `cd backend && uv run python -m app.core.db.seeds.demo --yes`
 
 ## Producción (backend)
