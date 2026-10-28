@@ -49,7 +49,11 @@ def alembic(*args: str) -> None:
     result = subprocess.run(
         [sys.executable, "-m", "alembic", *args],
         cwd=BACKEND_DIR,
-        env={**os.environ, "DATABASE_URL": SA_URL},
+        env={
+            **os.environ,
+            "DATABASE_URL": SA_URL,
+            "MIGRATION_DATABASE_URL": SA_URL,
+        },
         capture_output=True,
         text=True,
         check=False,

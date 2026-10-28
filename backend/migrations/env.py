@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-# Carga backend/.env (DATABASE_URL) para que alembic use la misma conexion
-# que la app en runtime, sin duplicar la URL en alembic.ini.
+# Carga backend/.env para que alembic use la misma conexion que la app en
+# runtime, sin duplicar la URL en alembic.ini. No pisa el entorno del proceso.
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 # `app.core.db.registry` importa el models.py de todos los modulos: es la
@@ -20,9 +20,14 @@ from app.core.db.registry import Base  # noqa: E402
 # access to the values within the .ini file in use.
 config = context.config
 
-database_url = os.environ.get("DATABASE_URL")
+# `MIGRATION_DATABASE_URL` (rol `vladimir_migrator`, duenio del esquema) tiene
+# prioridad sobre `DATABASE_URL` (rol `vladimir_app`, sin DDL); vacio = ausente.
+database_url = os.environ.get("MIGRATION_DATABASE_URL") or os.environ.get(
+    "DATABASE_URL"
+)
 if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+    # `%` se duplica: ConfigParser lo interpreta (contrasenas con %-encoding).
+    config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
