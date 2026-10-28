@@ -1,0 +1,474 @@
+{
+  "app": "vladimir",
+  "modules": [
+    {
+      "slug": "consent-documents",
+      "name": "Documentos a firmar",
+      "description": "Consentimientos y documentos que firma el paciente, con sus versiones y PDF.",
+      "actions": [
+        {
+          "tag": "vladimir.consent-documents.change-status",
+          "verb": "change-status",
+          "name": "Activar o desactivar documentos a firmar",
+          "description": "Desactivar un documento o reactivarlo.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.consent-documents.create",
+          "verb": "create",
+          "name": "Crear documentos a firmar",
+          "description": "Registrar un documento.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.consent-documents.create-version",
+          "verb": "create-version",
+          "name": "Crear versiones de documentos a firmar",
+          "description": "Crear el borrador de una nueva versión de un documento.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.consent-documents.edit",
+          "verb": "edit",
+          "name": "Editar documentos a firmar",
+          "description": "Modificar los datos de un documento.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.consent-documents.edit-version",
+          "verb": "edit-version",
+          "name": "Editar versiones de documentos a firmar",
+          "description": "Modificar el borrador de una versión (texto, firmante y PDF).",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.consent-documents.publish-version",
+          "verb": "publish-version",
+          "name": "Publicar versiones de documentos a firmar",
+          "description": "Publicar el borrador de una versión para que pueda firmarse y asignarse.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.consent-documents.retire-version",
+          "verb": "retire-version",
+          "name": "Retirar versiones de documentos a firmar",
+          "description": "Retirar una versión publicada.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.consent-documents.view",
+          "verb": "view",
+          "name": "Consultar documentos a firmar",
+          "description": "Listar documentos, ver su detalle y el de sus versiones, y descargar el PDF.",
+          "assignable": true
+        }
+      ]
+    },
+    {
+      "slug": "lab-areas",
+      "name": "Áreas de laboratorio",
+      "description": "Áreas del laboratorio y su encargado.",
+      "actions": [
+        {
+          "tag": "vladimir.lab-areas.assign-manager",
+          "verb": "assign-manager",
+          "name": "Asignar encargado de área de laboratorio",
+          "description": "Asignar o cambiar el encargado vigente de un área.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.lab-areas.change-status",
+          "verb": "change-status",
+          "name": "Activar o desactivar áreas de laboratorio",
+          "description": "Desactivar un área o reactivarla.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.lab-areas.create",
+          "verb": "create",
+          "name": "Crear áreas de laboratorio",
+          "description": "Registrar un área.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.lab-areas.edit",
+          "verb": "edit",
+          "name": "Editar áreas de laboratorio",
+          "description": "Modificar código, nombre y descripción.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.lab-areas.view",
+          "verb": "view",
+          "name": "Consultar áreas de laboratorio",
+          "description": "Listar áreas, ver su detalle y el historial de encargados.",
+          "assignable": true
+        }
+      ]
+    },
+    {
+      "slug": "lab-tests",
+      "name": "Exámenes de laboratorio",
+      "description": "Exámenes con sus precondiciones, tipos de muestra y documentos a firmar.",
+      "actions": [
+        {
+          "tag": "vladimir.lab-tests.change-status",
+          "verb": "change-status",
+          "name": "Activar o desactivar exámenes de laboratorio",
+          "description": "Desactivar un examen o reactivarlo.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.lab-tests.create",
+          "verb": "create",
+          "name": "Crear exámenes de laboratorio",
+          "description": "Registrar un examen.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.lab-tests.edit",
+          "verb": "edit",
+          "name": "Editar exámenes de laboratorio",
+          "description": "Modificar los datos del examen y sus versiones de etiqueta y plantilla.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.lab-tests.set-consent-documents",
+          "verb": "set-consent-documents",
+          "name": "Asignar documentos a firmar a exámenes",
+          "description": "Reemplazar el conjunto de documentos a firmar de un examen.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.lab-tests.set-preconditions",
+          "verb": "set-preconditions",
+          "name": "Asignar precondiciones a exámenes",
+          "description": "Reemplazar el conjunto de precondiciones de un examen.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.lab-tests.set-sample-types",
+          "verb": "set-sample-types",
+          "name": "Asignar tipos de muestra a exámenes",
+          "description": "Reemplazar el conjunto de tipos de muestra de un examen.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.lab-tests.view",
+          "verb": "view",
+          "name": "Consultar exámenes de laboratorio",
+          "description": "Listar exámenes, ver su detalle y sus precondiciones, muestras y documentos.",
+          "assignable": true
+        }
+      ]
+    },
+    {
+      "slug": "preconditions",
+      "name": "Precondiciones",
+      "description": "Precondiciones de los exámenes y sus ítems.",
+      "actions": [
+        {
+          "tag": "vladimir.preconditions.add-item",
+          "verb": "add-item",
+          "name": "Agregar ítems a precondiciones",
+          "description": "Agregar un ítem a una precondición.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.preconditions.change-status",
+          "verb": "change-status",
+          "name": "Activar o desactivar precondiciones",
+          "description": "Desactivar una precondición o reactivarla.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.preconditions.create",
+          "verb": "create",
+          "name": "Crear precondiciones",
+          "description": "Registrar una precondición.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.preconditions.edit",
+          "verb": "edit",
+          "name": "Editar precondiciones",
+          "description": "Modificar los datos de una precondición.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.preconditions.view",
+          "verb": "view",
+          "name": "Consultar precondiciones",
+          "description": "Listar precondiciones con sus ítems y ver su detalle.",
+          "assignable": true
+        }
+      ]
+    },
+    {
+      "slug": "print-labels",
+      "name": "Etiquetas de impresión",
+      "description": "Etiquetas de muestras y sus versiones (borrador, publicada, retirada).",
+      "actions": [
+        {
+          "tag": "vladimir.print-labels.change-status",
+          "verb": "change-status",
+          "name": "Activar o desactivar etiquetas de impresión",
+          "description": "Desactivar una etiqueta o reactivarla.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.print-labels.create",
+          "verb": "create",
+          "name": "Crear etiquetas de impresión",
+          "description": "Registrar una etiqueta.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.print-labels.create-version",
+          "verb": "create-version",
+          "name": "Crear versiones de etiquetas",
+          "description": "Crear el borrador de una nueva versión de una etiqueta.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.print-labels.edit",
+          "verb": "edit",
+          "name": "Editar etiquetas de impresión",
+          "description": "Modificar los datos de una etiqueta.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.print-labels.edit-version",
+          "verb": "edit-version",
+          "name": "Editar versiones de etiquetas",
+          "description": "Modificar el borrador de una versión de una etiqueta.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.print-labels.publish-version",
+          "verb": "publish-version",
+          "name": "Publicar versiones de etiquetas",
+          "description": "Publicar el borrador de una versión para que los exámenes puedan usarla.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.print-labels.retire-version",
+          "verb": "retire-version",
+          "name": "Retirar versiones de etiquetas",
+          "description": "Retirar una versión publicada.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.print-labels.view",
+          "verb": "view",
+          "name": "Consultar etiquetas de impresión",
+          "description": "Listar etiquetas, ver su detalle y el de sus versiones.",
+          "assignable": true
+        }
+      ]
+    },
+    {
+      "slug": "result-templates",
+      "name": "Plantillas de resultados",
+      "description": "Plantillas de resultados con sus versiones, y los catálogos que las alimentan: unidades, analitos y conjuntos de opciones.",
+      "actions": [
+        {
+          "tag": "vladimir.result-templates.change-status",
+          "verb": "change-status",
+          "name": "Activar o desactivar plantillas de resultados",
+          "description": "Desactivar una plantilla o reactivarla.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.result-templates.create",
+          "verb": "create",
+          "name": "Crear plantillas de resultados",
+          "description": "Registrar una plantilla.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.result-templates.create-version",
+          "verb": "create-version",
+          "name": "Crear versiones de plantillas",
+          "description": "Crear el borrador de una nueva versión de una plantilla.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.result-templates.edit",
+          "verb": "edit",
+          "name": "Editar plantillas de resultados",
+          "description": "Modificar los datos de una plantilla.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.result-templates.edit-content",
+          "verb": "edit-content",
+          "name": "Editar contenido de plantillas",
+          "description": "Crear, modificar y desactivar secciones, analitos y rangos de referencia de un borrador.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.result-templates.edit-version",
+          "verb": "edit-version",
+          "name": "Editar versiones de plantillas",
+          "description": "Modificar el borrador de una versión (ajustes del reporte y notas).",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.result-templates.manage-analytes",
+          "verb": "manage-analytes",
+          "name": "Gestionar analitos",
+          "description": "Crear, modificar y activar o desactivar analitos.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.result-templates.manage-option-sets",
+          "verb": "manage-option-sets",
+          "name": "Gestionar conjuntos de opciones de resultado",
+          "description": "Crear, modificar y activar o desactivar conjuntos de opciones y sus opciones.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.result-templates.manage-units",
+          "verb": "manage-units",
+          "name": "Gestionar unidades de medida",
+          "description": "Crear, modificar y activar o desactivar unidades.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.result-templates.publish-version",
+          "verb": "publish-version",
+          "name": "Publicar versiones de plantillas",
+          "description": "Publicar el borrador de una versión para que los exámenes puedan usarla.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.result-templates.retire-version",
+          "verb": "retire-version",
+          "name": "Retirar versiones de plantillas",
+          "description": "Retirar una versión publicada.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.result-templates.view",
+          "verb": "view",
+          "name": "Consultar plantillas de resultados",
+          "description": "Listar y ver plantillas, versiones, secciones, analitos, rangos de referencia, unidades, analitos y conjuntos de opciones.",
+          "assignable": true
+        }
+      ]
+    },
+    {
+      "slug": "samples",
+      "name": "Muestras",
+      "description": "Muestras y sus tipos (tubos, aditivos, volúmenes).",
+      "actions": [
+        {
+          "tag": "vladimir.samples.add-type",
+          "verb": "add-type",
+          "name": "Agregar tipos a muestras",
+          "description": "Agregar un tipo de muestra (tubo) a una muestra.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.samples.change-status",
+          "verb": "change-status",
+          "name": "Activar o desactivar muestras",
+          "description": "Desactivar una muestra o un tipo de muestra, o reactivarlos.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.samples.create",
+          "verb": "create",
+          "name": "Crear muestras",
+          "description": "Registrar una muestra.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.samples.edit",
+          "verb": "edit",
+          "name": "Editar muestras",
+          "description": "Modificar los datos de una muestra o de uno de sus tipos.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.samples.view",
+          "verb": "view",
+          "name": "Consultar muestras",
+          "description": "Listar muestras y sus tipos y ver su detalle.",
+          "assignable": true
+        }
+      ]
+    },
+    {
+      "slug": "settings",
+      "name": "Ajustes",
+      "description": "Políticas operativas de Vladimir editables sin redesplegar.",
+      "actions": [
+        {
+          "tag": "vladimir.settings.edit",
+          "verb": "edit",
+          "name": "Editar ajustes",
+          "description": "Modificar el valor de un ajuste.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.settings.edit-security",
+          "verb": "edit-security",
+          "name": "Editar ajustes de seguridad",
+          "description": "Modificar los ajustes marcados como sensibles (además de «Editar ajustes»).",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.settings.update",
+          "verb": "update",
+          "name": "Evento: ajuste modificado",
+          "description": "Evento de auditoría de cada cambio de un ajuste; no se concede.",
+          "assignable": false
+        },
+        {
+          "tag": "vladimir.settings.view",
+          "verb": "view",
+          "name": "Consultar ajustes",
+          "description": "Ver los ajustes, sus valores vigentes y su historial de cambios.",
+          "assignable": true
+        }
+      ]
+    },
+    {
+      "slug": "staff",
+      "name": "Personal",
+      "description": "Personal del laboratorio.",
+      "actions": [
+        {
+          "tag": "vladimir.staff.change-status",
+          "verb": "change-status",
+          "name": "Activar o desactivar personal",
+          "description": "Desactivar una persona o reactivarla.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.staff.create",
+          "verb": "create",
+          "name": "Crear personal",
+          "description": "Registrar una persona del personal.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.staff.edit",
+          "verb": "edit",
+          "name": "Editar personal",
+          "description": "Modificar los datos de una persona.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.staff.view",
+          "verb": "view",
+          "name": "Consultar personal",
+          "description": "Listar el personal y ver su detalle.",
+          "assignable": true
+        }
+      ]
+    }
+  ]
+}
