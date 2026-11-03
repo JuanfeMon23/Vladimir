@@ -30,6 +30,7 @@ TEST_DB = "vladimir_migrations_test"
 REV_LAB_TESTS = "db1a126fd56b"
 REV_SOFT_DELETE = "6be0a4509512"
 REV_UNITS = "98b5c90d1b86"
+REV_BEFORE_ACTOR = "f7d3a9c25e18"
 
 
 def _urls() -> tuple[str, str, str]:
@@ -180,6 +181,35 @@ async def test_migracion_de_desactivacion_hace_backfill_y_resuelve_duplicados(
     assert [row["id"] for row in remaining] == [older]
 
     alembic("upgrade", "head")
+
+
+async def test_migracion_de_actor_baja_y_sube_conservando_eventos(
+    db: asyncpg.Connection,
+) -> None:
+    alembic("upgrade", "head")
+    columns_sql = (
+        "SELECT column_name, is_nullable FROM information_schema.columns "
+        "WHERE table_name = 'activity_events' AND column_name LIKE 'actor\\_%' "
+        "ORDER BY column_name"
+    )
+    assert [tuple(r) for r in await db.fetch(columns_sql)] == [
+        ("actor_user_id", "YES"),
+        ("actor_username", "YES"),
+    ]
+
+    alembic("downgrade", REV_BEFORE_ACTOR)
+    assert await db.fetch(columns_sql) == []
+    area_id = await db.fetchval(
+        "INSERT INTO lab_areas (code, name) VALUES ('mig-actor', 'A') RETURNING id"
+    )
+
+    alembic("upgrade", "head")
+    event = await db.fetchrow(
+        "SELECT actor_user_id, actor_username FROM activity_events WHERE entity_id = $1",
+        area_id,
+    )
+    assert tuple(event) == (None, None)
+    assert await _schema_diff() == []
 
 
 async def test_migracion_de_unidades_convierte_texto_a_catalogo_y_vuelve(

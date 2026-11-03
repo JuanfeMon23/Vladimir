@@ -16,7 +16,7 @@ mockNuxtImport('useLeoAppApi', () => () => ({
 enableAutoUnmount(afterEach)
 
 function event(id: string, action: 'activated' | 'deactivated' = 'deactivated') {
-  return { id, entity_type: 'units', entity_id: 'u1', action, reason: null, occurred_at: '2026-10-02T10:00:00Z' }
+  return { id, entity_type: 'units', entity_id: 'u1', action, reason: null, occurred_at: '2026-10-02T10:00:00Z', actor_user_id: null, actor_username: null }
 }
 
 const flush = async () => {

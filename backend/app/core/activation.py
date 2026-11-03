@@ -22,19 +22,54 @@ Uso en un controller, antes de asociar una referencia:
     ensure_active(analyte, subject="el analito", field="analyte_id")
 """
 
+from contextvars import ContextVar
 from typing import Any, Protocol
 from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.db.triggers import ACTIVITY_REASON_SETTING
+from app.core.db.triggers import (
+    ACTIVITY_ACTOR_ID_SETTING,
+    ACTIVITY_ACTOR_USERNAME_SETTING,
+    ACTIVITY_REASON_SETTING,
+)
 from app.core.exceptions import InvalidReferenceError, ValidationAppError
 
 
 class _Activatable(Protocol):
     id: Any
     is_active: bool
+
+
+class _Actor(Protocol):
+    id: Any
+    username: str
+
+
+# Quien hace la peticion en curso. Lo fija `authorize_patch` (core/leo.py) en
+# cada PATCH, antes del controller, para que `flush_with_reason` lo lleve al
+# trigger sin que los ~15 controllers/`update_entity` reciban un parametro mas.
+_current_actor: ContextVar[_Actor | None] = ContextVar("activity_actor", default=None)
+
+
+def set_activity_actor(actor: _Actor | None) -> None:
+    """Fija (o limpia con `None`) el actor de las (des)activaciones que se
+    hagan a continuacion en esta peticion."""
+    _current_actor.set(actor)
+
+
+def _actor_settings() -> tuple[str, str]:
+    """`(id, username)` como texto para los settings; vacio = NULL. Un `id` que
+    no es UUID (p. ej. cuenta de servicio) se omite en vez de romper el trigger."""
+    actor = _current_actor.get()
+    if actor is None:
+        return "", ""
+    try:
+        actor_id = str(UUID(str(actor.id)))
+    except ValueError:
+        actor_id = ""
+    return actor_id, actor.username or ""
 
 
 class InactiveReferenceError(ValidationAppError):
@@ -93,17 +128,23 @@ def ensure_active_reference[EntityT: _Activatable](
 
 
 async def flush_with_reason(session: AsyncSession, reason: str | None) -> None:
-    """Hace `flush` de los cambios pendientes con `reason` como motivo de
-    cualquier (des)activacion que incluyan.
+    """Hace `flush` de los cambios pendientes con `reason` como motivo (y el
+    actor de la peticion, ver `set_activity_actor`) de cualquier
+    (des)activacion que incluyan.
 
     El motivo (`set_config(..., true)`) es local a la transaccion: se descarta
     con el `commit`/`rollback` que sigue, asi que no se limpia aparte. Sin
     autoflush al fijarlo: los cambios pendientes deben llegar a la BD despues
     del motivo, no antes. Llamar solo cuando hay un cambio de `is_active`.
     """
+    actor_id, actor_username = _actor_settings()
     with session.no_autoflush:
         await session.execute(
-            select(func.set_config(ACTIVITY_REASON_SETTING, reason or "", True))
+            select(
+                func.set_config(ACTIVITY_REASON_SETTING, reason or "", True),
+                func.set_config(ACTIVITY_ACTOR_ID_SETTING, actor_id, True),
+                func.set_config(ACTIVITY_ACTOR_USERNAME_SETTING, actor_username, True),
+            )
         )
     await session.flush()
 

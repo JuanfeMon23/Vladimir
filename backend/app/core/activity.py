@@ -59,6 +59,8 @@ class ActivityEventRead(BaseModel):
     action: ActivityAction
     reason: str | None
     occurred_at: datetime
+    actor_user_id: UUID | None
+    actor_username: str | None
 
 
 async def list_activity(

@@ -2,7 +2,7 @@
 actividad (`activity_events`), sobre el esquema migrado (`upgrade head`).
 """
 
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import text
@@ -11,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db.registry import Base
 from app.core.db.triggers import (
+    ACTIVITY_ACTOR_ID_SETTING,
+    ACTIVITY_ACTOR_USERNAME_SETTING,
     ACTIVITY_REASON_SETTING,
     FORBIDDEN_OPERATION_SQLSTATE,
     activity_trigger_name,
@@ -155,6 +157,59 @@ async def test_cambio_de_is_active_registra_evento_con_motivo_de_la_transaccion(
         ("lab_areas", "activated", None),
         ("lab_areas", "deactivated", "Area cerrada"),
         ("lab_areas", "activated", None),
+    ]
+
+
+async def _actor(session: AsyncSession, entity_id: UUID) -> list[tuple]:
+    rows = await session.execute(
+        text(
+            "SELECT action, actor_user_id, actor_username FROM activity_events "
+            "WHERE entity_id = :id ORDER BY occurred_at, id"
+        ),
+        {"id": entity_id},
+    )
+    return [tuple(row) for row in rows]
+
+
+async def test_cambio_de_is_active_guarda_actor_de_la_transaccion(
+    session: AsyncSession,
+) -> None:
+    area_id = await _insert_area(session)
+    actor_id = uuid4()
+
+    for name, value in (
+        (ACTIVITY_ACTOR_ID_SETTING, str(actor_id)),
+        (ACTIVITY_ACTOR_USERNAME_SETTING, "maria"),
+    ):
+        await session.execute(
+            text("SELECT set_config(:name, :value, true)"),
+            {"name": name, "value": value},
+        )
+    await session.execute(
+        text("UPDATE lab_areas SET is_active = false WHERE id = :id"), {"id": area_id}
+    )
+
+    assert await _actor(session, area_id) == [
+        ("activated", None, None),
+        ("deactivated", actor_id, "maria"),
+    ]
+
+
+async def test_sin_settings_de_actor_o_vacios_el_actor_queda_null(
+    session: AsyncSession,
+) -> None:
+    area_id = await _insert_area(session)
+    for name in (ACTIVITY_ACTOR_ID_SETTING, ACTIVITY_ACTOR_USERNAME_SETTING):
+        await session.execute(
+            text("SELECT set_config(:name, '', true)"), {"name": name}
+        )
+    await session.execute(
+        text("UPDATE lab_areas SET is_active = false WHERE id = :id"), {"id": area_id}
+    )
+
+    assert await _actor(session, area_id) == [
+        ("activated", None, None),
+        ("deactivated", None, None),
     ]
 
 

@@ -12,11 +12,16 @@ Constantes que consume el backend:
 - `ACTIVITY_REASON_SETTING`: el motivo de una (des)activacion se pasa con
   `SET LOCAL vladimir.activity_reason = '<motivo>'` (o
   `set_config(..., true)`) en la misma transaccion del UPDATE.
+- `ACTIVITY_ACTOR_ID_SETTING` / `ACTIVITY_ACTOR_USERNAME_SETTING`: quien
+  hace el cambio (id y nombre del usuario de Leo), fijados igual que el
+  motivo; vacio o ausente -> `actor_user_id` / `actor_username` NULL.
 - `FORBIDDEN_OPERATION_SQLSTATE`: SQLSTATE propio del RAISE de los DELETE
   (y de UPDATE sobre `activity_events`), para mapearlo a un error de API.
 """
 
 ACTIVITY_REASON_SETTING = "vladimir.activity_reason"
+ACTIVITY_ACTOR_ID_SETTING = "vladimir.activity_actor_id"
+ACTIVITY_ACTOR_USERNAME_SETTING = "vladimir.activity_actor_username"
 FORBIDDEN_OPERATION_SQLSTATE = "VLD01"
 
 

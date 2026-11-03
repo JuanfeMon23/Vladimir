@@ -12,6 +12,8 @@ from typing import Any
 from fastapi import Request
 from leo_sdk import Catalog, LeoAuth, LeoSettings, LeoUser
 
+from app.core.activation import set_activity_actor
+
 logger = logging.getLogger("app.leo")
 
 APP_SLUG = "vladimir"
@@ -74,7 +76,9 @@ async def authorize_patch(
     edit_check: Callable[..., Any],
     status_check: Callable[..., Any],
 ) -> None:
-    """Un PATCH exige `edit` si cambia datos y `change-status` si trae `is_active`."""
+    """Un PATCH exige `edit` si cambia datos y `change-status` si trae `is_active`.
+    Deja al usuario como actor de la (des)activacion que registre el trigger."""
+    set_activity_actor(user)
     changes_data, changes_status = patch_intent(data)
     if changes_data:
         await edit_check(request, user)

@@ -19,7 +19,9 @@ from typing import Any
 import app.modules
 from app.core.leo import APP_SLUG, catalog
 
-CONTRACT_PATH = Path(__file__).resolve().parents[3] / "frontend/app/generated/permissions.json"
+CONTRACT_PATH = (
+    Path(__file__).resolve().parents[3] / "frontend/app/generated/permissions.json"
+)
 EVENT_PREFIX = "Evento:"
 
 
@@ -62,9 +64,13 @@ def render() -> str:
 def main(check: bool) -> int:
     content = render()
     if check:
-        current = CONTRACT_PATH.read_bytes().decode("utf-8") if CONTRACT_PATH.exists() else ""
+        current = (
+            CONTRACT_PATH.read_bytes().decode("utf-8") if CONTRACT_PATH.exists() else ""
+        )
         if current != content:
-            print("tags desalineados: ejecuta uv run python -m app.core.permissions_export")
+            print(
+                "tags desalineados: ejecuta uv run python -m app.core.permissions_export"
+            )
             return 1
         return 0
     CONTRACT_PATH.parent.mkdir(parents=True, exist_ok=True)

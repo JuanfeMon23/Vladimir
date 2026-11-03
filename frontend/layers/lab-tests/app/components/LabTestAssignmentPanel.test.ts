@@ -17,7 +17,7 @@ const flush = async () => {
 describe('LabTestAssignmentPanel', () => {
   it('"Actividad" despliega el historial de la asignación de esa fila', async () => {
     getMock.mockResolvedValue({
-      items: [{ id: 'e1', entity_type: 'lab_test_sample_types', entity_id: 'L-a', action: 'deactivated', reason: 'Ya no aplica', occurred_at: '2026-10-02T10:00:00Z' }],
+      items: [{ id: 'e1', entity_type: 'lab_test_sample_types', entity_id: 'L-a', action: 'deactivated', reason: 'Ya no aplica', occurred_at: '2026-10-02T10:00:00Z', actor_user_id: null, actor_username: null }],
       total: 1,
       page: 1,
       page_size: 20

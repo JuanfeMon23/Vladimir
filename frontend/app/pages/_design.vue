@@ -164,9 +164,9 @@ const toggle = useToggleActive(async (row: DemoRow, change) => {
 const lastChange = ref<string | null>(null)
 
 const demoActivity: ActivityEventRead[] = [
-  { id: 'a3', entity_type: 'lab_areas', entity_id: '1', action: 'activated', reason: 'Se reabre el servicio.', occurred_at: '2026-10-02T14:30:00Z' },
-  { id: 'a2', entity_type: 'lab_areas', entity_id: '1', action: 'deactivated', reason: null, occurred_at: '2026-09-15T09:05:00Z' },
-  { id: 'a1', entity_type: 'lab_areas', entity_id: '1', action: 'activated', reason: null, occurred_at: '2026-09-01T08:00:00Z' }
+  { id: 'a3', entity_type: 'lab_areas', entity_id: '1', action: 'activated', reason: 'Se reabre el servicio.', occurred_at: '2026-10-02T14:30:00Z', actor_user_id: 'u-1', actor_username: 'maria.perez' },
+  { id: 'a2', entity_type: 'lab_areas', entity_id: '1', action: 'deactivated', reason: null, occurred_at: '2026-09-15T09:05:00Z', actor_user_id: null, actor_username: null },
+  { id: 'a1', entity_type: 'lab_areas', entity_id: '1', action: 'activated', reason: null, occurred_at: '2026-09-01T08:00:00Z', actor_user_id: 'u-2', actor_username: 'admin' }
 ]
 
 // ── Pestañas ────────────────────────────────────────────────────────────

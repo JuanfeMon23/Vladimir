@@ -3,6 +3,7 @@
 
 import json
 from collections.abc import Iterator
+from types import SimpleNamespace
 from uuid import UUID, uuid4
 
 import pytest
@@ -16,6 +17,7 @@ from app.core.activation import (
     ensure_active,
     flush_with_reason,
     get_active_by_id,
+    set_activity_actor,
 )
 from app.core.database import engine
 from app.core.db.activity import ActivityEvent
@@ -189,3 +191,35 @@ async def test_patch_con_is_active_fija_el_motivo_una_sola_vez_y_lo_registra(
     assert response.status_code == 200
     assert sum("set_config" in sql for sql in executed_sql) == 1
     assert (await _events(session, area.id))[-1] == ("deactivated", "Area cerrada")
+
+
+@pytest.mark.parametrize(
+    ("actor_id", "username", "expected"),
+    [
+        (uuid4(), "ana", ("ana",)),
+        ("cuenta-de-servicio", "svc", ("svc",)),
+        (None, None, (None,)),
+    ],
+)
+async def test_flush_with_reason_fija_el_actor_y_tolera_ids_no_uuid(
+    session: AsyncSession, actor_id: object, username: str | None, expected: tuple
+) -> None:
+    area = await _area(session)
+    set_activity_actor(
+        None if actor_id is None else SimpleNamespace(id=actor_id, username=username)
+    )
+
+    area.is_active = False
+    await flush_with_reason(session, None)
+    await session.commit()
+    set_activity_actor(None)
+
+    row = (
+        await session.execute(
+            select(ActivityEvent.actor_user_id, ActivityEvent.actor_username)
+            .where(ActivityEvent.entity_id == area.id)
+            .where(ActivityEvent.action == "deactivated")
+        )
+    ).one()
+    assert row.actor_username == expected[0]
+    assert row.actor_user_id == (actor_id if isinstance(actor_id, UUID) else None)

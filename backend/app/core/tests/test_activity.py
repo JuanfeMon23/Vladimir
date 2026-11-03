@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from httpx import AsyncClient
 
+from app.conftest import FakeLeo
 from app.core.activity import ACTIVATABLE_TABLES, ActivityEntityType
 from app.core.db.registry import Base
 
@@ -56,6 +57,8 @@ async def test_activity_lista_eventos_con_motivo_mas_reciente_primero(
         "action",
         "reason",
         "occurred_at",
+        "actor_user_id",
+        "actor_username",
     }
 
 
@@ -99,3 +102,23 @@ async def test_activity_reason_mayor_a_255_devuelve_422(client: AsyncClient) -> 
         json={"is_active": False, "activity_reason": "x" * 256},
     )
     assert response.status_code == 422
+
+
+async def test_activity_expone_el_actor_de_la_desactivacion(
+    client: AsyncClient, leo: FakeLeo
+) -> None:
+    created = await client.post(
+        "/api/v1/lab-areas", json={"code": _code(), "name": "Area de prueba"}
+    )
+    area_id = created.json()["id"]
+    await client.patch(f"/api/v1/lab-areas/{area_id}", json={"is_active": False})
+
+    response = await client.get(
+        "/api/v1/activity", params={"entity_type": "lab_areas", "entity_id": area_id}
+    )
+
+    deactivated, activated = response.json()["items"]
+    assert deactivated["actor_user_id"] == str(leo.user.id)
+    assert deactivated["actor_username"] == leo.user.username
+    assert activated["actor_user_id"] is None
+    assert activated["actor_username"] is None

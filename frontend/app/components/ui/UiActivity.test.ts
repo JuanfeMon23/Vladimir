@@ -22,8 +22,8 @@ beforeEach(() => {
   getMock.mockReset()
   getMock.mockResolvedValue({
     items: [
-      { id: 'e2', entity_type: 'units', entity_id: 'u1', action: 'activated', reason: null, occurred_at: '2026-10-02T12:00:00Z' },
-      { id: 'e1', entity_type: 'units', entity_id: 'u1', action: 'deactivated', reason: 'Duplicada', occurred_at: '2026-10-01T12:00:00Z' }
+      { id: 'e2', entity_type: 'units', entity_id: 'u1', action: 'activated', reason: null, occurred_at: '2026-10-02T12:00:00Z', actor_user_id: null, actor_username: null },
+      { id: 'e1', entity_type: 'units', entity_id: 'u1', action: 'deactivated', reason: 'Duplicada', occurred_at: '2026-10-01T12:00:00Z', actor_user_id: 'u-1', actor_username: 'maria.perez' }
     ],
     total: 2,
     page: 1,
@@ -49,13 +49,33 @@ describe('UiActivityTimeline', () => {
     const wrapper = await mountSuspended(UiActivityTimeline, {
       props: {
         entityType: 'lab_areas',
-        events: [{ id: 'x', entity_type: 'lab_areas', entity_id: '1', action: 'deactivated', reason: 'Cierre', occurred_at: '2026-10-02T12:00:00Z' }]
+        events: [{ id: 'x', entity_type: 'lab_areas', entity_id: '1', action: 'deactivated', reason: 'Cierre', occurred_at: '2026-10-02T12:00:00Z', actor_user_id: null, actor_username: null }]
       }
     })
     await flush()
     expect(getMock).not.toHaveBeenCalled()
     expect(wrapper.findAll('li')).toHaveLength(1)
     expect(wrapper.text()).toContain('Cierre')
+  })
+
+  it('con actor muestra "por <nombre>"; con null, sin el campo o vacío no muestra actor', async () => {
+    const base = { entity_type: 'units', entity_id: 'u1', action: 'activated' as const, reason: null, occurred_at: '2026-10-02T12:00:00Z' }
+    const wrapper = await mountSuspended(UiActivityTimeline, {
+      props: {
+        entityType: 'units',
+        events: [
+          { ...base, id: 'a', actor_user_id: 'u-1', actor_username: 'maria.perez' },
+          { ...base, id: 'b', actor_user_id: null, actor_username: null },
+          { ...base, id: 'c' },
+          { ...base, id: 'd', actor_user_id: 'u-2', actor_username: '' }
+        ]
+      }
+    })
+    await flush()
+    const items = wrapper.findAll('li')
+    expect(items).toHaveLength(4)
+    expect(items[0]!.text()).toContain('por maria.perez')
+    for (const i of [1, 2, 3]) expect(items[i]!.text()).not.toContain('por ')
   })
 
   it('sin eventos muestra el mensaje vacío', async () => {
