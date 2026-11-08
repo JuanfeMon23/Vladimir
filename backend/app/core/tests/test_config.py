@@ -22,7 +22,11 @@ def _load() -> Settings:
 def test_sin_variables_falla_nombrando_las_obligatorias() -> None:
     with pytest.raises(ValidationError) as error:
         _load()
-    missing = {e["loc"][0] for e in error.value.errors() if e["type"] == "missing"}
+    missing = {
+        validation_error["loc"][0]
+        for validation_error in error.value.errors()
+        if validation_error["type"] == "missing"
+    }
     assert missing == {"database_url", "cors_origins"}
 
 
@@ -47,4 +51,6 @@ def test_con_ambas_variables_se_parsean(monkeypatch: pytest.MonkeyPatch) -> None
 
 
 def test_ningun_campo_tiene_valor_por_defecto_grabado() -> None:
-    assert all(f.is_required() for f in Settings.model_fields.values())
+    assert all(
+        field_info.is_required() for field_info in Settings.model_fields.values()
+    )

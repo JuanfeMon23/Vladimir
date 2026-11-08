@@ -58,14 +58,14 @@ describe('ruta y menú de lab-areas', () => {
   it('el ítem "Áreas" aparece con view', async () => {
     signInWith([VIEW])
     const wrapper = await mountSuspended(DefaultLayout)
-    expect(wrapper.findAll('a').find(a => a.text() === 'Áreas')?.attributes('href')).toBe('/lab-areas')
+    expect(wrapper.findAll('a').find(link => link.text() === 'Áreas')?.attributes('href')).toBe('/lab-areas')
   })
 
   it('el ítem "Áreas" no aparece sin view, y los demás módulos siguen visibles', async () => {
     // Personal ya está protegido: se le da su view para comprobar que los demás módulos siguen.
     signInWith(['vladimir.lab-areas.create', 'vladimir.staff.view'])
     const wrapper = await mountSuspended(DefaultLayout)
-    const labels = wrapper.findAll('a').map(a => a.text())
+    const labels = wrapper.findAll('a').map(link => link.text())
     expect(labels).not.toContain('Áreas')
     expect(labels).toContain('Personal')
   })

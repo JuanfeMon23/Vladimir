@@ -18,9 +18,10 @@ async def test_create_and_get_lab_test(
     assert created["code"] == lab_test_payload["code"]
     assert created["is_active"] is True
     assert created["preconditions"] == []
-    assert [st["sample_type_id"] for st in created["sample_types"]] == [
-        lab_test_payload["sample_types"][0]["sample_type_id"]
-    ]
+    assert [
+        sample_type_entry["sample_type_id"]
+        for sample_type_entry in created["sample_types"]
+    ] == [lab_test_payload["sample_types"][0]["sample_type_id"]]
     assert created["sample_types"][0]["is_preferred"] is True
     assert created["consent_documents"] == []
 
@@ -32,7 +33,9 @@ async def test_create_and_get_lab_test(
 async def test_create_lab_test_without_sample_types_returns_422(
     client: AsyncClient, lab_test_payload: dict
 ) -> None:
-    payload = {k: v for k, v in lab_test_payload.items() if k != "sample_types"}
+    payload = {
+        key: value for key, value in lab_test_payload.items() if key != "sample_types"
+    }
 
     response = await client.post("/api/v1/lab-tests", json=payload)
     assert response.status_code == 422

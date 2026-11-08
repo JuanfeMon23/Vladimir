@@ -285,7 +285,9 @@ async def test_deactivated_template_analyte_is_hidden_and_analyte_can_be_added_a
         session, draft.result_template_id, draft.id, include_inactive=True
     )
     assert visible == []
-    assert [(a.id, a.is_active) for a in everything] == [(first.id, False)]
+    assert [(analyte.id, analyte.is_active) for analyte in everything] == [
+        (first.id, False)
+    ]
 
     again = await _add(
         session, draft, analyte_id=first.analyte_id, result_type="numeric"
@@ -323,7 +325,7 @@ async def test_section_delete_returns_405_and_patch_deactivates(
     assert patched.json()["is_active"] is False
     assert (await client.get(base)).json() == []
     everything = (await client.get(base, params={"include_inactive": True})).json()
-    assert [s["id"] for s in everything] == [section["id"]]
+    assert [section_entry["id"] for section_entry in everything] == [section["id"]]
 
 
 async def test_template_analyte_and_range_delete_return_405(
@@ -598,11 +600,13 @@ async def test_clone_copies_only_active_content(
     analytes = await controller.list_template_analytes(
         session, template_id, clone.id, include_inactive=True
     )
-    assert [s.name for s in sections] == ["A"]
-    assert [(a.analyte_id, a.section_id) for a in analytes] == [
+    assert [section.name for section in sections] == ["A"]
+    assert [(analyte.analyte_id, analyte.section_id) for analyte in analytes] == [
         (kept.analyte_id, sections[0].id)
     ]
     ranges = await controller.list_reference_ranges(
         session, template_id, clone.id, analytes[0].id, include_inactive=True
     )
-    assert [(r.low, r.high) for r in ranges] == [(kept_range.low, kept_range.high)]
+    assert [
+        (reference_range.low, reference_range.high) for reference_range in ranges
+    ] == [(kept_range.low, kept_range.high)]

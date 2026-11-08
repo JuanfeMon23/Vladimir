@@ -54,7 +54,7 @@ const { submit, isSubmitting, formError, reset } = useZodForm(schema, {
 })
 
 const editor = useVersionEditor<ResultTemplateVersionRead>({
-  load: async () => (await resultTemplatesApi.listVersions(templateId, { page_size: 100 })).items.find(v => v.id === versionId),
+  load: async () => (await resultTemplatesApi.listVersions(templateId, { page_size: 100 })).items.find(version => version.id === versionId),
   publish: () => resultTemplatesApi.publishVersion(templateId, versionId),
   retire: () => resultTemplatesApi.retireVersion(templateId, versionId),
   onChange: (version) => {

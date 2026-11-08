@@ -51,7 +51,7 @@ beforeEach(() => {
       version => version.status === (options as { params?: { status?: string } }).params?.status
     ))
     for (const version of versions) {
-      fake.routes[`GET /consent-document-versions/${version.id}`] = { ...version, owner: DOCUMENTS.find(d => d.id === documentId) }
+      fake.routes[`GET /consent-document-versions/${version.id}`] = { ...version, owner: DOCUMENTS.find(document => document.id === documentId) }
     }
   }
   fake.routes['GET /lab-tests/t1/consent-documents'] = [

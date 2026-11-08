@@ -47,7 +47,7 @@ export function useResultTemplateVersionContent(templateId: string, versionId: s
     sectionsError.value = null
     try {
       const items = await api.listSections(templateId, versionId, { include_inactive: true })
-      sections.value = [...items].sort((a, b) => a.sort_order - b.sort_order)
+      sections.value = [...items].sort((left, right) => left.sort_order - right.sort_order)
     } catch (err) {
       sectionsError.value = messageOf(err, 'No se pudieron cargar las secciones.')
     } finally {
@@ -60,7 +60,7 @@ export function useResultTemplateVersionContent(templateId: string, versionId: s
     analytesError.value = null
     try {
       const items = await api.listTemplateAnalytes(templateId, versionId, { include_inactive: true })
-      templateAnalytes.value = [...items].sort((a, b) => a.sort_order - b.sort_order)
+      templateAnalytes.value = [...items].sort((left, right) => left.sort_order - right.sort_order)
     } catch (err) {
       analytesError.value = messageOf(err, 'No se pudieron cargar los analitos.')
     } finally {
@@ -114,9 +114,9 @@ export function useResultTemplateVersionContent(templateId: string, versionId: s
     await loadOptionLabels(active.flatMap(item => (item.option_set_id ? [item.option_set_id] : [])))
   }
 
-  const analytesById = computed(() => new Map(analyteCatalog.value.map(a => [a.id, a])))
-  const optionSetsById = computed(() => new Map(optionSets.value.map(s => [s.id, s])))
-  const unitsById = computed(() => new Map(units.value.map(u => [u.id, u])))
+  const analytesById = computed(() => new Map(analyteCatalog.value.map(analyte => [analyte.id, analyte])))
+  const optionSetsById = computed(() => new Map(optionSets.value.map(optionSet => [optionSet.id, optionSet])))
+  const unitsById = computed(() => new Map(units.value.map(unit => [unit.id, unit])))
 
   const analyteLabel = (analyte: AnalyteRead) => `${analyte.name} (${analyte.code})`
   const optionSetLabel = (set: ResultOptionSetRead) => `${set.name} (${set.code})`
@@ -145,7 +145,7 @@ export function useResultTemplateVersionContent(templateId: string, versionId: s
   }
 
   function templateAnalyteName(templateAnalyteId: string) {
-    const item = templateAnalytes.value.find(a => a.id === templateAnalyteId)
+    const item = templateAnalytes.value.find(analyte => analyte.id === templateAnalyteId)
     return item ? analyteName(item.analyte_id) : templateAnalyteId
   }
 

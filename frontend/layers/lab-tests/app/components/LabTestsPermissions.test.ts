@@ -26,8 +26,8 @@ const TEST: LabTestRead = {
   preconditions: [], sample_types: [], consent_documents: []
 }
 
-const L = (verb: string) => `vladimir.lab-tests.${verb}`
-const VIEW = L('view')
+const permissionTag = (verb: string) => `vladimir.lab-tests.${verb}`
+const VIEW = permissionTag('view')
 const SELECTORS = LAB_TEST_SELECTOR_VIEW_TAGS
 
 beforeEach(() => {
@@ -82,10 +82,10 @@ describe('ruta y menú de lab-tests', () => {
   it('el ítem "Exámenes" aparece con view y no sin él (los módulos con view siguen)', async () => {
     signInWith([VIEW])
     const withView = await mountSuspended(DefaultLayout)
-    expect(withView.findAll('a').find(a => a.text() === 'Exámenes')?.attributes('href')).toBe('/lab-tests')
+    expect(withView.findAll('a').find(link => link.text() === 'Exámenes')?.attributes('href')).toBe('/lab-tests')
 
-    signInWith([L('create'), 'vladimir.staff.view'])
-    const labels = (await mountSuspended(DefaultLayout)).findAll('a').map(a => a.text())
+    signInWith([permissionTag('create'), 'vladimir.staff.view'])
+    const labels = (await mountSuspended(DefaultLayout)).findAll('a').map(link => link.text())
     expect(labels).not.toContain('Exámenes')
     expect(labels).toContain('Personal')
   })
@@ -94,14 +94,14 @@ describe('ruta y menú de lab-tests', () => {
 describe('listado de exámenes', () => {
   it('sin create no hay botón "Nuevo examen"; con create sí', async () => {
     expect((await mountPage([VIEW])).text()).not.toContain('Nuevo examen')
-    expect((await mountPage([VIEW, L('create')])).text()).toContain('Nuevo examen')
+    expect((await mountPage([VIEW, permissionTag('create')])).text()).toContain('Nuevo examen')
   })
 
   it('solo con view la acción de fila es "Ver"; con cualquier permiso de cambio, "Ver / Editar"', async () => {
     const readOnly = (await mountPage([VIEW])).text()
     expect(readOnly).not.toContain('Ver / Editar')
     expect(readOnly).toMatch(/Ver(?! \/)/)
-    expect((await mountPage([VIEW, L('set-consent-documents')])).text()).toContain('Ver / Editar')
+    expect((await mountPage([VIEW, permissionTag('set-consent-documents')])).text()).toContain('Ver / Editar')
   })
 
   it('sin view de áreas no pide el catálogo y no muestra el filtro', async () => {
@@ -128,7 +128,7 @@ describe('detalle/edición de un examen', () => {
   })
 
   it('con edit el PATCH lleva los datos y no is_active', async () => {
-    const { dialog, form } = await mountModal([VIEW, L('edit'), ...SELECTORS])
+    const { dialog, form } = await mountModal([VIEW, permissionTag('edit'), ...SELECTORS])
     expect(dialog.textContent).not.toContain('Activo')
     await setValue(control(dialog, 'Nombre'), 'Glucosa basal')
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
@@ -141,7 +141,7 @@ describe('detalle/edición de un examen', () => {
   })
 
   it('con solo change-status los datos están bloqueados y el PATCH solo lleva el estado y el motivo', async () => {
-    const { dialog, form } = await mountModal([VIEW, L('change-status'), ...SELECTORS])
+    const { dialog, form } = await mountModal([VIEW, permissionTag('change-status'), ...SELECTORS])
     expect(control(dialog, 'Nombre').disabled).toBe(true)
     await setChecked(dialog, 'Activo', false)
     await setValue(control(dialog, 'Motivo de la desactivación'), 'Reemplazado')
@@ -172,7 +172,7 @@ describe('selectores de otros módulos sin su view', () => {
 
   it('al editar, la etiqueta ya asignada viaja intacta aunque no se pueda consultar', async () => {
     const assigned = { ...TEST, print_label_version_id: 'plv1' }
-    const { form } = await mountModal([VIEW, L('edit')], assigned)
+    const { form } = await mountModal([VIEW, permissionTag('edit')], assigned)
     form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
     await flushAll()
     expect(requested('/print-label-versions/plv1')).toBe(false)
@@ -194,7 +194,7 @@ const TABS = [
 
 describe.each(TABS)('pestaña de asignaciones: $name', ({ editor, save, view, catalog, submit, module }) => {
   it('con el tag de asignar y el view del catálogo se puede guardar', async () => {
-    const root = await mountEditor(editor, [VIEW, L(save), view])
+    const root = await mountEditor(editor, [VIEW, permissionTag(save), view])
     expect(() => button(root, submit)).not.toThrow()
     expect(root.textContent).not.toContain('No tienes permiso')
   })
@@ -207,7 +207,7 @@ describe.each(TABS)('pestaña de asignaciones: $name', ({ editor, save, view, ca
   })
 
   it('sin el view del módulo del catálogo avisa, no lo pide y no ofrece guardar', async () => {
-    const root = await mountEditor(editor, [VIEW, L(save)])
+    const root = await mountEditor(editor, [VIEW, permissionTag(save)])
     expect(root.textContent).toContain(`No tienes permiso para consultar ${module}.`)
     expect(requested(catalog)).toBe(false)
     expect(() => button(root, submit)).toThrow()

@@ -167,7 +167,7 @@ describe('LabTestPreconditionsEditor', () => {
     const { root, form } = await mountEditor()
     await setChecked(root, AYUNO, false)
     await submitForm(form)
-    expect((fake.bodies('PUT', '/lab-tests/t1/preconditions')[0] as { precondition_id: string }[]).map(i => i.precondition_id))
+    expect((fake.bodies('PUT', '/lab-tests/t1/preconditions')[0] as { precondition_id: string }[]).map(entry => entry.precondition_id))
       .toEqual(['retirada'])
 
     await setChecked(root, AYUNO, true)

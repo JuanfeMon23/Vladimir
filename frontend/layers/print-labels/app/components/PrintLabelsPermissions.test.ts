@@ -82,10 +82,10 @@ describe('ruta y menú de print-labels', () => {
   it('el ítem "Etiquetas de impresión" aparece con view y no sin él', async () => {
     signInWith([VIEW])
     const withView = await mountSuspended(DefaultLayout)
-    expect(withView.findAll('a').find(a => a.text() === 'Etiquetas de impresión')?.attributes('href')).toBe('/print-labels')
+    expect(withView.findAll('a').find(link => link.text() === 'Etiquetas de impresión')?.attributes('href')).toBe('/print-labels')
 
     signInWith([PUBLISH])
-    expect((await mountSuspended(DefaultLayout)).findAll('a').map(a => a.text())).not.toContain('Etiquetas de impresión')
+    expect((await mountSuspended(DefaultLayout)).findAll('a').map(link => link.text())).not.toContain('Etiquetas de impresión')
   })
 })
 
@@ -96,9 +96,9 @@ describe('listado y datos de la etiqueta', () => {
   })
 
   it('solo con view la acción es "Ver"; con edit o permisos de versión, "Ver / Editar"', async () => {
-    expect((await mountPage([VIEW])).findAll('button').map(b => b.text())).toContain('Ver')
-    expect((await mountPage([VIEW, EDIT])).findAll('button').map(b => b.text())).toContain('Ver / Editar')
-    expect((await mountPage([VIEW, PUBLISH])).findAll('button').map(b => b.text())).toContain('Ver / Editar')
+    expect((await mountPage([VIEW])).findAll('button').map(button => button.text())).toContain('Ver')
+    expect((await mountPage([VIEW, EDIT])).findAll('button').map(button => button.text())).toContain('Ver / Editar')
+    expect((await mountPage([VIEW, PUBLISH])).findAll('button').map(button => button.text())).toContain('Ver / Editar')
   })
 
   it('con solo view el modal es de lectura (campos bloqueados, "Cerrar", sin "Activa")', async () => {

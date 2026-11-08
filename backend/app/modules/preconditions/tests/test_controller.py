@@ -110,7 +110,10 @@ async def test_list_preconditions_includes_nested_items(
         ActiveOnlyFilter(active=None),
     )
 
-    found = next((p for p in page.items if p.id == root.id), None)
+    found = next(
+        (precondition for precondition in page.items if precondition.id == root.id),
+        None,
+    )
     assert found is not None
     assert found.items is not None
     assert {i.id for i in found.items} == {item.id}

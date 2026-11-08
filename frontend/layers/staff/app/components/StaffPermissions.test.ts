@@ -58,11 +58,11 @@ describe('ruta y menú de staff', () => {
   it('el ítem "Personal" aparece con view y no aparece sin él (los módulos con view siguen)', async () => {
     signInWith([VIEW])
     const withView = await mountSuspended(DefaultLayout)
-    expect(withView.findAll('a').find(a => a.text() === 'Personal')?.attributes('href')).toBe('/staff')
+    expect(withView.findAll('a').find(link => link.text() === 'Personal')?.attributes('href')).toBe('/staff')
 
     signInWith(['vladimir.staff.create', 'vladimir.lab-tests.view'])
     const without = await mountSuspended(DefaultLayout)
-    const labels = without.findAll('a').map(a => a.text())
+    const labels = without.findAll('a').map(link => link.text())
     expect(labels).not.toContain('Personal')
     expect(labels).toContain('Exámenes')
   })

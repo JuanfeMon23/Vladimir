@@ -71,7 +71,7 @@ describe('alineación de tags con el backend', () => {
 
   it('el contrato es de Vladimir y los eventos no son asignables', () => {
     expect(permissions.app).toBe('vladimir')
-    const events = permissions.modules.flatMap(m => m.actions).filter(a => !a.assignable)
-    expect(events.every(a => a.name.startsWith('Evento:'))).toBe(true)
+    const events = permissions.modules.flatMap(module => module.actions).filter(action => !action.assignable)
+    expect(events.every(action => action.name.startsWith('Evento:'))).toBe(true)
   })
 })

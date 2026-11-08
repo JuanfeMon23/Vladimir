@@ -30,7 +30,7 @@ const groups = computed(() => {
   // Orden de las secciones; "Sin sección" al final.
   const order = [...props.content.sections.map(section => section.id), '']
   return [...bySection.entries()]
-    .sort(([a], [b]) => order.indexOf(a) - order.indexOf(b))
+    .sort(([leftId], [rightId]) => order.indexOf(leftId) - order.indexOf(rightId))
     .map(([sectionId, items]) => ({ sectionId: sectionId || null, items }))
 })
 

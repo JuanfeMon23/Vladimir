@@ -26,7 +26,7 @@ def _property_variants(prop: dict[str, Any]) -> list[dict[str, Any]]:
     """Variantes no nulas de una propiedad del JSON Schema (`anyOf` de un
     campo opcional, o la propiedad misma)."""
     variants = prop.get("anyOf", [prop])
-    return [v for v in variants if v.get("type") != "null"]
+    return [variant for variant in variants if variant.get("type") != "null"]
 
 
 def schema_model_mismatches(schema: type[BaseModel], model: type) -> list[str]:
@@ -49,7 +49,11 @@ def schema_model_mismatches(schema: type[BaseModel], model: type) -> list[str]:
             continue
         for variant in _property_variants(prop):
             if "enum" in variant:
-                too_long = [v for v in variant["enum"] if len(v) > length]
+                too_long = [
+                    enum_value
+                    for enum_value in variant["enum"]
+                    if len(enum_value) > length
+                ]
                 if too_long:
                     problems.append(f"{schema.__name__}.{name}: {too_long} > {length}")
             elif variant.get("type") == "string":

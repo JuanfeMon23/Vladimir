@@ -13,7 +13,7 @@ def test_registry_declares_the_operational_policies() -> None:
     page = VLADIMIR_SETTINGS.get("pagination.max_page_size")
     assert (page.default, page.min, page.max) == (200, 200, 500)
     assert "Incubus" in page.description
-    assert not any(d.requires_security for d in VLADIMIR_SETTINGS)
+    assert not any(definition.requires_security for definition in VLADIMIR_SETTINGS)
 
 
 async def test_page_size_limit_follows_the_setting(

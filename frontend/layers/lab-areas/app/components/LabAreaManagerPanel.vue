@@ -127,7 +127,7 @@ onMounted(() => {
       <UiItemList
         v-else
         :items="history"
-        :row-key="(a: ManagerAssignmentRead) => a.id"
+        :row-key="(assignment: ManagerAssignmentRead) => assignment.id"
         :loading="historyLoading"
         empty-message="Sin historial de encargados."
       >

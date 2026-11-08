@@ -64,11 +64,11 @@ const ownerOptions = computed<UiSelectOption[]>(() =>
 const versionOptions = computed<UiSelectOption[]>(() => {
   const list = [...published.value]
   const current = assigned.value
-  if (current && current.id === versionId.value && current.owner.id === ownerId.value && !list.some(v => v.id === current.id)) {
+  if (current && current.id === versionId.value && current.owner.id === ownerId.value && !list.some(version => version.id === current.id)) {
     list.push(current)
   }
   return list
-    .sort((a, b) => a.version_number - b.version_number)
+    .sort((left, right) => left.version_number - right.version_number)
     .map(version => ({
       value: version.id,
       label: version.status === 'published'

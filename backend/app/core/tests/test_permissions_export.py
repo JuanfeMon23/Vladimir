@@ -18,15 +18,19 @@ def test_export_gathers_every_module_of_the_leo_sync_catalog() -> None:
     import app.main  # noqa: F401  (como leo_sync: los routers registran sus tags)
 
     contract = permissions_export.build_contract()
-    exported = {a["tag"] for m in contract["modules"] for a in m["actions"]}
+    exported = {
+        action_entry["tag"]
+        for module_entry in contract["modules"]
+        for action_entry in module_entry["actions"]
+    }
     assert exported == set(catalog.tags)
 
 
 def test_events_are_not_assignable() -> None:
     actions = {
-        a["tag"]: a
-        for m in permissions_export.build_contract()["modules"]
-        for a in m["actions"]
+        action_entry["tag"]: action_entry
+        for module_entry in permissions_export.build_contract()["modules"]
+        for action_entry in module_entry["actions"]
     }
     assert actions["vladimir.settings.update"]["assignable"] is False
     assert actions["vladimir.settings.view"]["assignable"] is True

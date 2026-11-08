@@ -46,9 +46,9 @@ beforeEach(() => {
   Object.assign(URL, { createObjectURL: vi.fn(() => 'blob:x'), revokeObjectURL: vi.fn() })
 })
 
-async function mountSection(v: ConsentDocumentVersionRead, editable = true) {
+async function mountSection(version: ConsentDocumentVersionRead, editable = true) {
   const wrapper = await mountSuspended(ConsentDocumentFileSection, {
-    props: { version: v, documentCode: 'CONSENT_VIH', editable },
+    props: { version, documentCode: 'CONSENT_VIH', editable },
     attachTo: document.body
   })
   await flushAll()

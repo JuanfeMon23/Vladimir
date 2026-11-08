@@ -99,8 +99,8 @@ async def audit_patch(
 ) -> None:
     """Audita un PATCH: `edit` con el diff de datos y `change-status` con el de
     `is_active` (+ motivo), solo si cada uno cambio."""
-    data_before = {k: v for k, v in before.items() if k != "is_active"}
-    data_after = {k: v for k, v in after.items() if k != "is_active"}
+    data_before = {key: value for key, value in before.items() if key != "is_active"}
+    data_after = {key: value for key, value in after.items() if key != "is_active"}
     if data_before != data_after:
         await record_audit(
             edit_tag,

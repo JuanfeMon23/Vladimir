@@ -174,36 +174,51 @@ async def test_replace_non_empty_preconditions_deactivates_and_reactivates(
     session: AsyncSession, lab_test_payload: dict
 ) -> None:
     lab_test = await _lab_test(session, lab_test_payload)
-    a = await _precondition(session)
-    b = await _precondition(session)
-    c = await _precondition(session)
+    first_precondition = await _precondition(session)
+    second_precondition = await _precondition(session)
+    third_precondition = await _precondition(session)
 
     await controller.set_preconditions(
-        session, lab_test.id, [_precondition_input(a.id), _precondition_input(b.id, 2)]
+        session,
+        lab_test.id,
+        [
+            _precondition_input(first_precondition.id),
+            _precondition_input(second_precondition.id, 2),
+        ],
     )
     result = await controller.set_preconditions(
         session,
         lab_test.id,
-        [_precondition_input(b.id, 1), _precondition_input(c.id, 2)],
+        [
+            _precondition_input(second_precondition.id, 1),
+            _precondition_input(third_precondition.id, 2),
+        ],
     )
 
-    assert [item.precondition_id for item in result] == [b.id, c.id]
+    assert [item.precondition_id for item in result] == [
+        second_precondition.id,
+        third_precondition.id,
+    ]
     assert all(item.is_active for item in result)
 
     with_inactive = await controller.get_preconditions(
         session, lab_test.id, include_inactive=True
     )
     states = {item.precondition_id: item.is_active for item in with_inactive}
-    assert states == {a.id: False, b.id: True, c.id: True}
+    assert states == {
+        first_precondition.id: False,
+        second_precondition.id: True,
+        third_precondition.id: True,
+    }
 
     # Volver a poner `a` reactiva la misma fila, con los campos nuevos.
     result = await controller.set_preconditions(
         session,
         lab_test.id,
-        [_precondition_input(a.id, 5, name_override="Ayuno estricto")],
+        [_precondition_input(first_precondition.id, 5, name_override="Ayuno estricto")],
     )
     assert [(i.precondition_id, i.name, i.sort_order) for i in result] == [
-        (a.id, "Ayuno estricto", 5)
+        (first_precondition.id, "Ayuno estricto", 5)
     ]
     rows = (
         await session.execute(
@@ -211,7 +226,7 @@ async def test_replace_non_empty_preconditions_deactivates_and_reactivates(
             .select_from(LabTestPrecondition)
             .where(
                 LabTestPrecondition.lab_test_id == lab_test.id,
-                LabTestPrecondition.precondition_id == a.id,
+                LabTestPrecondition.precondition_id == first_precondition.id,
             )
         )
     ).scalar_one()
@@ -234,16 +249,18 @@ async def test_set_preconditions_keeps_already_associated_inactive_precondition(
     session: AsyncSession, lab_test_payload: dict
 ) -> None:
     lab_test = await _lab_test(session, lab_test_payload)
-    a = await _precondition(session)
+    first_precondition = await _precondition(session)
     await controller.set_preconditions(
-        session, lab_test.id, [_precondition_input(a.id)]
+        session, lab_test.id, [_precondition_input(first_precondition.id)]
     )
-    await _deactivate(session, a)
+    await _deactivate(session, first_precondition)
 
     result = await controller.set_preconditions(
-        session, lab_test.id, [_precondition_input(a.id, 3)]
+        session, lab_test.id, [_precondition_input(first_precondition.id, 3)]
     )
-    assert [(i.precondition_id, i.sort_order) for i in result] == [(a.id, 3)]
+    assert [(i.precondition_id, i.sort_order) for i in result] == [
+        (first_precondition.id, 3)
+    ]
 
 
 async def test_set_sample_types_diff_and_preferred_swap(
@@ -386,43 +403,52 @@ async def test_detail_embeds_only_active_associations(
     session: AsyncSession, lab_test_payload: dict
 ) -> None:
     lab_test = await _lab_test(session, lab_test_payload)
-    a = await _precondition(session)
-    b = await _precondition(session)
+    first_precondition = await _precondition(session)
+    second_precondition = await _precondition(session)
     await controller.set_preconditions(
-        session, lab_test.id, [_precondition_input(a.id), _precondition_input(b.id, 2)]
+        session,
+        lab_test.id,
+        [
+            _precondition_input(first_precondition.id),
+            _precondition_input(second_precondition.id, 2),
+        ],
     )
     await controller.set_preconditions(
-        session, lab_test.id, [_precondition_input(b.id)]
+        session, lab_test.id, [_precondition_input(second_precondition.id)]
     )
 
     detail = await controller.get_lab_test(session, lab_test.id)
-    assert [item.precondition_id for item in detail.preconditions] == [b.id]
+    assert [item.precondition_id for item in detail.preconditions] == [
+        second_precondition.id
+    ]
 
 
 async def test_http_get_preconditions_include_inactive(
     client: AsyncClient, session: AsyncSession, lab_test_payload: dict
 ) -> None:
     created = (await client.post("/api/v1/lab-tests", json=lab_test_payload)).json()
-    a = await _precondition(session)
-    b = await _precondition(session)
+    first_precondition = await _precondition(session)
+    second_precondition = await _precondition(session)
     url = f"/api/v1/lab-tests/{created['id']}/preconditions"
     await client.put(
         url,
         json=[
-            {"precondition_id": str(a.id), "sort_order": 1},
-            {"precondition_id": str(b.id), "sort_order": 2},
+            {"precondition_id": str(first_precondition.id), "sort_order": 1},
+            {"precondition_id": str(second_precondition.id), "sort_order": 2},
         ],
     )
-    put = await client.put(url, json=[{"precondition_id": str(b.id), "sort_order": 1}])
+    put = await client.put(
+        url, json=[{"precondition_id": str(second_precondition.id), "sort_order": 1}]
+    )
     assert put.status_code == 200
 
     active_only = (await client.get(url)).json()
     everything = (await client.get(url, params={"include_inactive": True})).json()
 
-    assert [i["precondition_id"] for i in active_only] == [str(b.id)]
+    assert [i["precondition_id"] for i in active_only] == [str(second_precondition.id)]
     assert {i["precondition_id"]: i["is_active"] for i in everything} == {
-        str(a.id): False,
-        str(b.id): True,
+        str(first_precondition.id): False,
+        str(second_precondition.id): True,
     }
 
 

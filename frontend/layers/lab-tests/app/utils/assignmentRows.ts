@@ -54,7 +54,7 @@ export function buildLabTestAssignmentRows(
   catalog: readonly LabTestAssignmentCatalogEntry[]
 ): LabTestAssignmentRow[] {
   const byId = new Map(catalog.map(entry => [entry.id, entry]))
-  const active = [...links].filter(link => link.isActive).sort((a, b) => a.sortOrder - b.sortOrder)
+  const active = [...links].filter(link => link.isActive).sort((left, right) => left.sortOrder - right.sortOrder)
   const activeIds = new Set(active.map(link => link.id))
   const removedIds = new Set(links.filter(link => !link.isActive && !activeIds.has(link.id)).map(link => link.id))
   const removedLinkId = new Map(links.filter(link => !link.isActive).map(link => [link.id, link.linkId ?? null]))

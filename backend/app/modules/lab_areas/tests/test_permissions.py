@@ -45,7 +45,9 @@ async def test_missing_tag_returns_403_and_denied_event(
     response = await client.request(method, path, json=body)
     assert response.status_code == 403
     assert response.json()["details"] == {"action": tag}
-    assert [(e["action_tag"], e["result"]) for e in leo.events] == [(tag, "denied")]
+    assert [(event["action_tag"], event["result"]) for event in leo.events] == [
+        (tag, "denied")
+    ]
 
 
 async def test_with_tag_returns_200(client: AsyncClient, leo: FakeLeo) -> None:
@@ -130,7 +132,7 @@ async def test_failing_audit_never_propagates(
     lab_area_payload: dict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    async def boom(*_a: object, **_k: object) -> bool:
+    async def boom(*_args: object, **_kwargs: object) -> bool:
         raise RuntimeError("fallo inesperado")
 
     monkeypatch.setattr(auth.audit, "record", boom)
@@ -140,14 +142,26 @@ async def test_failing_audit_never_propagates(
 
 def test_catalog_matches_require_action() -> None:
     auth.check_catalog()  # ningun tag usado sin declarar
-    declared = {t for t in catalog.tags if t.startswith("vladimir.lab-areas.")}
-    used = {t for t in auth.used_tags if t.startswith("vladimir.lab-areas.")}
+    declared = {
+        declared_tag
+        for declared_tag in catalog.tags
+        if declared_tag.startswith("vladimir.lab-areas.")
+    }
+    used = {
+        used_tag
+        for used_tag in auth.used_tags
+        if used_tag.startswith("vladimir.lab-areas.")
+    }
     assert declared == used == ALL_TAGS
 
 
 def test_catalog_payload_has_readable_unique_names() -> None:
     payload = catalog.to_payload()
-    (module,) = [m for m in payload["modules"] if m["slug"] == "lab-areas"]
+    (module,) = [
+        module_entry
+        for module_entry in payload["modules"]
+        if module_entry["slug"] == "lab-areas"
+    ]
     assert module["name"] == "Áreas de laboratorio"
-    names = [a["name"] for a in module["actions"]]
+    names = [action_entry["name"] for action_entry in module["actions"]]
     assert len(set(names)) == len(names) == 5

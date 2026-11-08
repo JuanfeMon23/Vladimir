@@ -329,9 +329,15 @@ async def test_reads_never_select_file_base64(
     assert listing.status_code == detail.status_code == 200
     assert listing.json()["items"][0]["has_file"] is True
     assert detail.json()["has_file"] is True
-    selects = [s for s in statements if "consent_document_versions" in s]
+    selects = [
+        sql_statement
+        for sql_statement in statements
+        if "consent_document_versions" in sql_statement
+    ]
     assert selects
-    assert not [s for s in selects if "file_base64" in s]
+    assert not [
+        sql_statement for sql_statement in selects if "file_base64" in sql_statement
+    ]
     assert "file_base64" not in listing.text
     assert "file_base64" not in detail.text
 

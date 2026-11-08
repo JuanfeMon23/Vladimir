@@ -7,7 +7,7 @@ beforeAll(() => registerPermissionNames(PERMISSION_NAMES))
 
 describe('permissionNames', () => {
   it('devuelve el nombre legible de un tag conocido', () => {
-    expect(permissionName('vladimir.lab-areas.create')).toBe(permissions.modules.find(m => m.slug === 'lab-areas')!.actions.find(a => a.verb === 'create')!.name)
+    expect(permissionName('vladimir.lab-areas.create')).toBe(permissions.modules.find(module => module.slug === 'lab-areas')!.actions.find(action => action.verb === 'create')!.name)
   })
 
   it('un tag desconocido no tiene nombre', () => {

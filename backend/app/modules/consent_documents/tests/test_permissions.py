@@ -13,7 +13,7 @@ ENTITY = "consent_document"
 VERSION_ENTITY = "consent_document_version"
 MODULE_NAME = "Documentos a firmar"
 ID1 = "00000000-0000-0000-0000-000000000001"
-V1 = "00000000-0000-0000-0000-000000000002"
+VERSION_ID = "00000000-0000-0000-0000-000000000002"
 
 ALL_TAGS = {
     p.VIEW,
@@ -31,7 +31,7 @@ CASES = [
     ("GET", BASE, p.VIEW, None),
     ("GET", f"{BASE}/{ID1}", p.VIEW, None),
     ("GET", f"{BASE}/{ID1}/versions", p.VIEW, None),
-    ("GET", f"/api/v1/consent-document-versions/{V1}", p.VIEW, None),
+    ("GET", f"/api/v1/consent-document-versions/{VERSION_ID}", p.VIEW, None),
     (
         "POST",
         BASE,
@@ -41,9 +41,14 @@ CASES = [
     ("PATCH", f"{BASE}/{ID1}", p.EDIT, {"name": "Y"}),
     ("PATCH", f"{BASE}/{ID1}", p.CHANGE_STATUS, {"is_active": False}),
     ("POST", f"{BASE}/{ID1}/versions", p.CREATE_VERSION, {}),
-    ("PATCH", f"{BASE}/{ID1}/versions/{V1}", p.EDIT_VERSION, {"change_notes": "n"}),
-    ("POST", f"{BASE}/{ID1}/versions/{V1}/publish", p.PUBLISH_VERSION, None),
-    ("POST", f"{BASE}/{ID1}/versions/{V1}/retire", p.RETIRE_VERSION, None),
+    (
+        "PATCH",
+        f"{BASE}/{ID1}/versions/{VERSION_ID}",
+        p.EDIT_VERSION,
+        {"change_notes": "n"},
+    ),
+    ("POST", f"{BASE}/{ID1}/versions/{VERSION_ID}/publish", p.PUBLISH_VERSION, None),
+    ("POST", f"{BASE}/{ID1}/versions/{VERSION_ID}/retire", p.RETIRE_VERSION, None),
 ]
 
 
@@ -72,7 +77,9 @@ async def test_missing_tag_returns_403_and_denied_event(
     response = await client.request(method, path, json=body)
     assert response.status_code == 403
     assert response.json()["details"] == {"action": tag}
-    assert [(e["action_tag"], e["result"]) for e in leo.events] == [(tag, "denied")]
+    assert [(event["action_tag"], event["result"]) for event in leo.events] == [
+        (tag, "denied")
+    ]
 
 
 async def test_with_view_tag_returns_200(client: AsyncClient, leo: FakeLeo) -> None:
@@ -143,7 +150,7 @@ async def test_leo_down_does_not_break_business_operation(
 async def test_failing_audit_never_propagates(
     client: AsyncClient, payload: dict, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    async def boom(*_a: object, **_k: object) -> bool:
+    async def boom(*_args: object, **_kwargs: object) -> bool:
         raise RuntimeError("fallo inesperado")
 
     monkeypatch.setattr(auth.audit, "record", boom)
@@ -153,16 +160,22 @@ async def test_failing_audit_never_propagates(
 def test_catalog_matches_require_action() -> None:
     auth.check_catalog()  # ningun tag usado sin declarar
     prefix = f"vladimir.{SLUG}."
-    declared = {t for t in catalog.tags if t.startswith(prefix)}
-    used = {t for t in auth.used_tags if t.startswith(prefix)}
+    declared = {
+        declared_tag for declared_tag in catalog.tags if declared_tag.startswith(prefix)
+    }
+    used = {used_tag for used_tag in auth.used_tags if used_tag.startswith(prefix)}
     assert declared == used == ALL_TAGS
 
 
 def test_catalog_payload_has_readable_unique_names() -> None:
     payload = catalog.to_payload()
-    (module,) = [m for m in payload["modules"] if m["slug"] == SLUG]
+    (module,) = [
+        module_entry
+        for module_entry in payload["modules"]
+        if module_entry["slug"] == SLUG
+    ]
     assert module["name"] == MODULE_NAME
-    names = [a["name"] for a in module["actions"]]
+    names = [action_entry["name"] for action_entry in module["actions"]]
     assert len(set(names)) == len(names) == len(ALL_TAGS)
 
 
@@ -200,7 +213,7 @@ async def test_external_app_endpoints_stay_open_without_session(
     leo.user = None
     for path in (
         f"{BASE}/data-treatment/current",
-        f"/api/v1/consent-document-versions/{V1}/file",
+        f"/api/v1/consent-document-versions/{VERSION_ID}/file",
     ):
         response = await client.get(path)
         assert response.status_code not in (401, 403), path

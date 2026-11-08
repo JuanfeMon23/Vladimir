@@ -138,7 +138,7 @@ describe('UiToggleActiveModal', () => {
     textarea.value = 'Se fusionó'
     textarea.dispatchEvent(new Event('input'))
     await flush()
-    const confirm = [...dialog.querySelectorAll('button')].find(b => b.textContent?.trim() === 'Desactivar')!
+    const confirm = [...dialog.querySelectorAll('button')].find(button => button.textContent?.trim() === 'Desactivar')!
     confirm.click()
     await flush()
     expect(action).toHaveBeenCalledWith({ id: 's1', is_active: true }, { is_active: false, activity_reason: 'Se fusionó' })
@@ -159,7 +159,7 @@ describe('UiFormModal con activity', () => {
     })
     await mountSuspended(Host, { attachTo: document.body })
     await flush()
-    const tabs = [...document.body.querySelectorAll('[role="tab"]')].map(t => t.textContent?.trim())
+    const tabs = [...document.body.querySelectorAll('[role="tab"]')].map(tab => tab.textContent?.trim())
     expect(tabs).toEqual(['General', 'Actividad'])
     expect(getMock).not.toHaveBeenCalled()
     ;(document.body.querySelectorAll('[role="tab"]')[1] as HTMLButtonElement).click()

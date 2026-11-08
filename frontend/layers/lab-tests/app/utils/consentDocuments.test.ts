@@ -8,7 +8,7 @@ describe('examConsentDocuments', () => {
       { id: 'b', document_type: 'tratamiento_datos' },
       { id: 'c', document_type: 'otro' }
     ]
-    expect(examConsentDocuments(documents).map(d => d.id)).toEqual(['a', 'c'])
+    expect(examConsentDocuments(documents).map(document => document.id)).toEqual(['a', 'c'])
   })
 
   it('lista vacía -> vacía', () => {

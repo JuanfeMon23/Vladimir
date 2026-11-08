@@ -38,7 +38,7 @@ describe('labTestSampleTypeRowsSchema', () => {
 describe('preferSampleTypeRow', () => {
   it('deja preferido solo el indicado', () => {
     const rows = [row('a', { is_preferred: true }), row('b'), row('c', { is_preferred: true })]
-    expect(preferSampleTypeRow(rows, 2).map(r => r.is_preferred)).toEqual([false, false, true])
+    expect(preferSampleTypeRow(rows, 2).map(row => row.is_preferred)).toEqual([false, false, true])
   })
 })
 

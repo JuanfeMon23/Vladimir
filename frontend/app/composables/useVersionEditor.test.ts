@@ -11,9 +11,9 @@ function version(status: VersionRecord['status'], n = 1): VersionRecord {
 }
 
 function rejected(err: unknown): Promise<never> {
-  const p = Promise.reject(err)
-  p.catch(() => {})
-  return p
+  const rejection = Promise.reject(err)
+  rejection.catch(() => {})
+  return rejection
 }
 
 async function host(overrides: Partial<UseVersionEditorOptions<VersionRecord>> = {}) {
@@ -46,8 +46,8 @@ describe('useVersionEditor', () => {
   })
 
   it('loading es true hasta que termina la carga', async () => {
-    let resolve!: (v: VersionRecord) => void
-    const editor = await host({ load: () => new Promise((r) => { resolve = r }) })
+    let resolve!: (value: VersionRecord) => void
+    const editor = await host({ load: () => new Promise((resolveValue) => { resolve = resolveValue }) })
     expect(editor.loading).toBe(true)
     resolve(version('draft'))
     await flushPromises()
@@ -64,17 +64,17 @@ describe('useVersionEditor', () => {
   })
 
   it('si la carga falla, loadError trae el mensaje (o uno genérico)', async () => {
-    const a = await host({ load: () => rejected(new Error('Sin conexión.')) })
-    expect(a.loadError).toBe('Sin conexión.')
-    expect(a.loading).toBe(false)
-    const b = await host({ load: () => rejected('x') })
-    expect(b.loadError).toBe('No se pudo cargar la versión.')
+    const failedWithError = await host({ load: () => rejected(new Error('Sin conexión.')) })
+    expect(failedWithError.loadError).toBe('Sin conexión.')
+    expect(failedWithError.loading).toBe(false)
+    const failedWithText = await host({ load: () => rejected('x') })
+    expect(failedWithText.loadError).toBe('No se pudo cargar la versión.')
   })
 
   it('publish() actualiza la versión a publicada, notifica y marca publishing', async () => {
-    let resolve!: (v: VersionRecord) => void
+    let resolve!: (value: VersionRecord) => void
     const onChange = vi.fn()
-    const editor = await host({ publish: () => new Promise((r) => { resolve = r }), onChange })
+    const editor = await host({ publish: () => new Promise((resolveValue) => { resolve = resolveValue }), onChange })
     const pending = editor.publish()
     expect(editor.publishing).toBe(true)
     resolve(version('published'))

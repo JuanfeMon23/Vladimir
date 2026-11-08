@@ -5,9 +5,9 @@ import { useChildCollection } from './useChildCollection'
 interface Child { id: string }
 
 function rejected(err: unknown): Promise<never> {
-  const p = Promise.reject(err)
-  p.catch(() => {})
-  return p
+  const rejection = Promise.reject(err)
+  rejection.catch(() => {})
+  return rejection
 }
 
 function setup(opts: { refetch?: () => Promise<Child[]>, errorMessage?: string } = {}) {
@@ -52,8 +52,8 @@ describe('useChildCollection', () => {
   })
 
   it('refresh() recarga los hijos y marca loading mientras corre', async () => {
-    let resolve!: (v: Child[]) => void
-    const refetch = vi.fn(() => new Promise<Child[]>((r) => { resolve = r }))
+    let resolve!: (value: Child[]) => void
+    const refetch = vi.fn(() => new Promise<Child[]>((resolveValue) => { resolve = resolveValue }))
     const { children } = setup({ refetch })
     const pending = children.refresh()
     expect(children.loading).toBe(true)
@@ -72,12 +72,12 @@ describe('useChildCollection', () => {
   })
 
   it('un error sin mensaje usa errorMessage o el genérico', async () => {
-    const a = setup({ refetch: () => rejected('x'), errorMessage: 'No se pudieron cargar los ítems.' })
-    await a.children.refresh()
-    expect(a.children.error).toBe('No se pudieron cargar los ítems.')
-    const b = setup({ refetch: () => rejected('x') })
-    await b.children.refresh()
-    expect(b.children.error).toBe('No se pudo recargar la lista.')
+    const customMessage = setup({ refetch: () => rejected('x'), errorMessage: 'No se pudieron cargar los ítems.' })
+    await customMessage.children.refresh()
+    expect(customMessage.children.error).toBe('No se pudieron cargar los ítems.')
+    const defaultMessage = setup({ refetch: () => rejected('x') })
+    await defaultMessage.children.refresh()
+    expect(defaultMessage.children.error).toBe('No se pudo recargar la lista.')
   })
 
   it('un refresh exitoso limpia el error previo', async () => {

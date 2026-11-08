@@ -61,7 +61,7 @@ const catalog = useLabTestAssignmentCatalog<LabTestAssignmentRow>(async () => {
 
   // Catálogo: versiones publicadas; se puede agregar solo si su documento está activo.
   const entries: LabTestAssignmentCatalogEntry[] = versionsByDocument.flatMap(({ document, versions }) =>
-    [...versions].sort((a, b) => b.version_number - a.version_number).map(version => toEntry(document, version))
+    [...versions].sort((left, right) => right.version_number - left.version_number).map(version => toEntry(document, version))
   )
   // Asignadas (vigentes o quitadas) que ya no están publicadas: por su id, con su documento.
   const known = new Set(entries.map(entry => entry.id))

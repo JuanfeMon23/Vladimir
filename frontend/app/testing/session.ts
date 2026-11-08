@@ -6,7 +6,7 @@ import { MODULE_VIEW } from '../utils/moduleAccess'
 
 /** Todos los tags asignables de un módulo, derivados del contrato del backend. */
 const allOf = (module: string): string[] => {
-  const found = permissions.modules.find(m => m.slug === module)
+  const found = permissions.modules.find(moduleEntry => moduleEntry.slug === module)
   if (!found) throw new Error(`Módulo inexistente en generated/permissions.json: ${module}`)
   return found.actions.filter(action => action.assignable).map(action => action.tag)
 }

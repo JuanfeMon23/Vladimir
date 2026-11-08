@@ -212,8 +212,8 @@ def formula_problems(
     except FormulaSyntaxError as error:
         return [FormulaProblem("syntax", f"Sintaxis inválida: {error}.", [])]
 
-    active = {n.code for n in nodes if n.is_active}
-    known = {n.code for n in nodes}
+    active = {formula_node.code for formula_node in nodes if formula_node.is_active}
+    known = {formula_node.code for formula_node in nodes}
     problems: list[FormulaProblem] = []
 
     unknown = sorted(code for code in refs if code not in known)
@@ -236,7 +236,11 @@ def formula_problems(
             )
         )
 
-    graph = {n.code: _references(n.formula) for n in nodes if n.is_active}
+    graph = {
+        formula_node.code: _references(formula_node.formula)
+        for formula_node in nodes
+        if formula_node.is_active
+    }
     graph[node.code] = refs
     cycle = _find_cycle(graph, node.code)
     if cycle is not None:

@@ -83,10 +83,10 @@ describe('ruta y menú de consent-documents', () => {
   it('el ítem "Documentos a firmar" aparece con view y no sin él', async () => {
     signInWith([VIEW])
     const withView = await mountSuspended(DefaultLayout)
-    expect(withView.findAll('a').find(a => a.text() === 'Documentos a firmar')?.attributes('href')).toBe('/consent-documents')
+    expect(withView.findAll('a').find(link => link.text() === 'Documentos a firmar')?.attributes('href')).toBe('/consent-documents')
 
     signInWith([PUBLISH])
-    expect((await mountSuspended(DefaultLayout)).findAll('a').map(a => a.text())).not.toContain('Documentos a firmar')
+    expect((await mountSuspended(DefaultLayout)).findAll('a').map(link => link.text())).not.toContain('Documentos a firmar')
   })
 })
 
@@ -97,9 +97,9 @@ describe('listado y datos del documento', () => {
   })
 
   it('solo con view la acción es "Ver"; con edit o permisos de versión, "Ver / Editar"', async () => {
-    expect((await mountPage([VIEW])).findAll('button').map(b => b.text())).toContain('Ver')
-    expect((await mountPage([VIEW, EDIT])).findAll('button').map(b => b.text())).toContain('Ver / Editar')
-    expect((await mountPage([VIEW, RETIRE])).findAll('button').map(b => b.text())).toContain('Ver / Editar')
+    expect((await mountPage([VIEW])).findAll('button').map(button => button.text())).toContain('Ver')
+    expect((await mountPage([VIEW, EDIT])).findAll('button').map(button => button.text())).toContain('Ver / Editar')
+    expect((await mountPage([VIEW, RETIRE])).findAll('button').map(button => button.text())).toContain('Ver / Editar')
   })
 
   it('con solo view el modal es de lectura (campos bloqueados, "Cerrar", sin "Activo")', async () => {

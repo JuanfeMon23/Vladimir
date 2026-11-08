@@ -96,7 +96,7 @@ export interface ReportPreviewInput {
  * inactiva) van al final en "Sin sección". Los inactivos quedan fuera.
  */
 export function buildReportPreview(input: ReportPreviewInput): ReportPreviewGroup[] {
-  const bySort = <T extends { sort_order: number }>(a: T, b: T) => a.sort_order - b.sort_order
+  const bySort = <T extends { sort_order: number }>(left: T, right: T) => left.sort_order - right.sort_order
   const sections = input.sections.filter(section => section.is_active).sort(bySort)
   const activeSectionIds = new Set(sections.map(section => section.id))
   const analytes = input.analytes.filter(item => item.is_active).sort(bySort)

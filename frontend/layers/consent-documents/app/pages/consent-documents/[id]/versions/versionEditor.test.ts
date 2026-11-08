@@ -44,8 +44,8 @@ beforeEach(() => {
   fake.routes['GET /consent-documents/d1'] = { id: 'd1', code: 'CONSENT_VIH', name: 'Consentimiento VIH', document_type: 'consentimiento_informado', is_active: true }
 })
 
-function useVersion(v: ConsentDocumentVersionRead) {
-  fake.routes['GET /consent-documents/d1/versions'] = fakePage([v])
+function useVersion(version: ConsentDocumentVersionRead) {
+  fake.routes['GET /consent-documents/d1/versions'] = fakePage([version])
 }
 
 async function mountPage() {

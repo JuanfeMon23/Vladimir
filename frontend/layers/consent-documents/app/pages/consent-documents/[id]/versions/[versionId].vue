@@ -50,7 +50,7 @@ const { submit, isSubmitting, formError, reset } = useZodForm(schema, {
 })
 
 const editor = useVersionEditor<ConsentDocumentVersionRead>({
-  load: async () => (await consentDocumentsApi.listVersions(documentId, { page_size: 100 })).items.find(v => v.id === versionId),
+  load: async () => (await consentDocumentsApi.listVersions(documentId, { page_size: 100 })).items.find(version => version.id === versionId),
   publish: () => consentDocumentsApi.publishVersion(documentId, versionId),
   retire: () => consentDocumentsApi.retireVersion(documentId, versionId),
   onChange: (version) => {

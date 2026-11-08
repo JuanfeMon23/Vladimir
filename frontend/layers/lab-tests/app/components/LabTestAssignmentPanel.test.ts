@@ -38,7 +38,7 @@ describe('LabTestAssignmentPanel', () => {
     })
 
     // Solo la fila con asignación tiene el botón.
-    const buttons = wrapper.findAll('button').filter(b => b.text() === 'Actividad')
+    const buttons = wrapper.findAll('button').filter(button => button.text() === 'Actividad')
     expect(buttons).toHaveLength(1)
     expect(getMock).not.toHaveBeenCalled()
 

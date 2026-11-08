@@ -19,7 +19,7 @@ beforeEach(() => {
 
 const page = (items: string[]) => ({ items, total: items.length })
 
-async function host(fetchPage: (p: { page: number }) => Promise<{ items: string[], total: number }>, scope: string) {
+async function host(fetchPage: (params: { page: number }) => Promise<{ items: string[], total: number }>, scope: string) {
   let state!: UnwrapNestedRefs<ReturnType<typeof usePaginatedList<string, CacheStamp>>>
   await mountSuspended(defineComponent({
     setup() {

@@ -35,7 +35,9 @@ def load_catalog() -> None:
 def build_contract() -> dict[str, Any]:
     load_catalog()
     modules = []
-    for module in sorted(catalog.to_payload()["modules"], key=lambda m: m["slug"]):
+    for module in sorted(
+        catalog.to_payload()["modules"], key=lambda module_entry: module_entry["slug"]
+    ):
         actions = [
             {
                 "tag": f"{APP_SLUG}.{module['slug']}.{action['verb']}",
@@ -44,7 +46,9 @@ def build_contract() -> dict[str, Any]:
                 "description": action.get("description", ""),
                 "assignable": not action["name"].startswith(EVENT_PREFIX),
             }
-            for action in sorted(module.get("actions", []), key=lambda a: a["verb"])
+            for action in sorted(
+                module.get("actions", []), key=lambda action_entry: action_entry["verb"]
+            )
         ]
         modules.append(
             {

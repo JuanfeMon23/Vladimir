@@ -117,7 +117,7 @@ watch(open, async (isOpen) => {
   if (!isOpen || !optionSetId || !has('expected_option_id')) return
   try {
     const page = await useResultOptionSets().listOptions(optionSetId, { page_size: 200 }, { cacheTtl: CATALOG_CACHE_TTL })
-    optionCatalog.value = [...page.items].sort((a, b) => a.sort_order - b.sort_order)
+    optionCatalog.value = [...page.items].sort((left, right) => left.sort_order - right.sort_order)
   } catch {
     optionCatalog.value = []
   }

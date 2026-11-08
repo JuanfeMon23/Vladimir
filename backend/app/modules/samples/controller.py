@@ -34,7 +34,11 @@ def _to_read(sample: Sample, types: list[SampleType] | None = None) -> SampleRea
     base = SampleRead.model_validate(sample)
     if types is not None:
         base = base.model_copy(
-            update={"types": [SampleTypeRead.model_validate(t) for t in types]}
+            update={
+                "types": [
+                    SampleTypeRead.model_validate(sample_type) for sample_type in types
+                ]
+            }
         )
     return base
 
@@ -110,7 +114,7 @@ async def list_sample_types(
     )
 
     return Page[SampleTypeRead](
-        items=[SampleTypeRead.model_validate(t) for t in types],
+        items=[SampleTypeRead.model_validate(sample_type) for sample_type in types],
         total=total,
         page=pagination.page,
         page_size=pagination.page_size,

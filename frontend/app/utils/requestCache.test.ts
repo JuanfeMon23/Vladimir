@@ -56,8 +56,8 @@ describe('cachedRequest', () => {
   })
 
   it('llamadas simultáneas a la misma clave comparten una sola carga', async () => {
-    let resolve!: (v: string) => void
-    const loader = vi.fn(() => new Promise<string>((r) => { resolve = r }))
+    let resolve!: (value: string) => void
+    const loader = vi.fn(() => new Promise<string>((resolveValue) => { resolve = resolveValue }))
     const p1 = cachedRequest('/t-shared', 1000, loader)
     const p2 = cachedRequest('/t-shared', 1000, loader)
     resolve('x')

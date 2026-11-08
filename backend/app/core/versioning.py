@@ -252,7 +252,9 @@ class VersioningService[VersionModelT]:
             self.model.version_number.desc(),  # type: ignore[attr-defined]
         )
         return Page[self.read_schema](  # type: ignore[name-defined]
-            items=[self.read_schema.model_validate(v) for v in versions],  # type: ignore[union-attr]
+            items=[
+                self.read_schema.model_validate(version_row) for version_row in versions
+            ],  # type: ignore[union-attr]
             total=total,
             page=pagination.page,
             page_size=pagination.page_size,
@@ -310,7 +312,11 @@ class VersioningService[VersionModelT]:
         ).scalar_one_or_none()
 
         if latest is None:
-            missing = [f for f in self.required_fields if getattr(data, f) is None]
+            missing = [
+                field_name
+                for field_name in self.required_fields
+                if getattr(data, field_name) is None
+            ]
             if missing:
                 raise VersionMissingFieldsError(missing)
             draft = self.model(
@@ -394,7 +400,11 @@ class VersioningService[VersionModelT]:
         fields = self._clonable_fields()
         # Columnas diferidas (p. ej. un archivo base64): cargarlas aqui, en
         # async, porque un `getattr` sincrono dispararia una carga perezosa.
-        unloaded = [f for f in fields if f in inspect(source_version).unloaded]
+        unloaded = [
+            field_name
+            for field_name in fields
+            if field_name in inspect(source_version).unloaded
+        ]
         if unloaded:
             await session.refresh(source_version, attribute_names=unloaded)
         values = {field: getattr(source_version, field) for field in fields}

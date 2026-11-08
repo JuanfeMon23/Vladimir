@@ -23,7 +23,7 @@ class Case:
     key: str
     base: str  # /api/v1/<padre>
     flat: str  # /api/v1/<x>-versions (lookup por id)
-    fk: str  # columna FK al padre (clave de details)
+    parent_fk_column: str  # columna FK al padre (clave de details)
     parent_payload: dict
     first_payload: dict
     missing_text: str  # campos que faltan con body vacio
@@ -40,7 +40,7 @@ CASES = [
         key="print_labels",
         base="/api/v1/print-labels",
         flat="/api/v1/print-label-versions",
-        fk="print_label_id",
+        parent_fk_column="print_label_id",
         parent_payload={"name": "Etiqueta de tubo"},
         first_payload={
             "width_mm": 40,
@@ -65,7 +65,7 @@ CASES = [
         key="consent_documents",
         base="/api/v1/consent-documents",
         flat="/api/v1/consent-document-versions",
-        fk="consent_document_id",
+        parent_fk_column="consent_document_id",
         parent_payload={
             "name": "Consentimiento",
             "document_type": "consentimiento_informado",
@@ -86,7 +86,7 @@ CASES = [
         key="result_templates",
         base="/api/v1/result-templates",
         flat="/api/v1/result-template-versions",
-        fk="result_template_id",
+        parent_fk_column="result_template_id",
         parent_payload={"name": "Perfil basico"},
         first_payload={"report_settings": {"logo": True}},
         missing_text="report_settings",
@@ -167,7 +167,7 @@ async def test_first_version_creates_draft_number_one(
     assert body["status"] == "draft"
     assert body["published_at"] is None
     assert body["change_notes"] == "Primera"
-    assert body[case.fk] == parent["id"]
+    assert body[case.parent_fk_column] == parent["id"]
     for field, value in case.first_payload.items():
         if field not in case.write_only:
             assert body[field] == value
@@ -191,7 +191,7 @@ async def test_second_draft_while_one_is_open_returns_409(
         "conflict",
         f"{article} '{parent['id']}' ya tiene un borrador; "
         "edítalo en vez de crear uno nuevo.",
-        {case.fk: parent["id"]},
+        {case.parent_fk_column: parent["id"]},
     )
 
 
@@ -236,7 +236,7 @@ async def test_draft_over_inactive_parent_returns_422(
         "inactive_reference",
         f"{case.parent_noun[:1].upper() + case.parent_noun[1:]} "
         f"«{parent['code']}» está {case.inactive_adjective}.",
-        {case.fk: parent["id"]},
+        {case.parent_fk_column: parent["id"]},
     )
 
 
@@ -403,7 +403,7 @@ async def test_version_of_other_parent_or_unknown_returns_404(
                 "not_found",
                 f"No existe una version con id '{version_id}' para "
                 f"{case.parent_noun} '{parent['id']}'.",
-                {case.fk: parent["id"], "id": version_id},
+                {case.parent_fk_column: parent["id"], "id": version_id},
             )
 
 
@@ -426,10 +426,17 @@ async def test_list_versions_paginates_newest_first_and_filters_by_status(
 
     body = everything.json()
     assert body["total"] == 2
-    assert [v["version_number"] for v in body["items"]] == [2, 1]
-    assert [v["id"] for v in published.json()["items"]] == [first["id"]]
+    assert [version_entry["version_number"] for version_entry in body["items"]] == [
+        2,
+        1,
+    ]
+    assert [version_entry["id"] for version_entry in published.json()["items"]] == [
+        first["id"]
+    ]
     assert published.json()["total"] == 1
-    assert [v["version_number"] for v in page.json()["items"]] == [1]
+    assert [
+        version_entry["version_number"] for version_entry in page.json()["items"]
+    ] == [1]
     assert page.json()["total"] == 2
     assert page.json()["page"] == 2
 

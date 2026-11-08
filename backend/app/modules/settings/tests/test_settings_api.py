@@ -57,7 +57,7 @@ async def test_list_groups_the_declared_settings(client: AsyncClient) -> None:
     response = await client.get(BASE)
 
     assert response.status_code == 200
-    groups = {g["group"]: g["settings"] for g in response.json()["groups"]}
+    groups = {group["group"]: group["settings"] for group in response.json()["groups"]}
     assert set(groups) == {"files", "pagination"}
     (files,) = groups["files"]
     assert files["key"] == "files.consent_max_mib"
@@ -87,7 +87,11 @@ async def test_edit_changes_value_history_and_audits(
     assert (entry["old_value"], entry["new_value"]) == (200, 300)
     assert entry["reason"] == "ajuste de prueba"
 
-    event = next(e for e in leo.events if e["action_tag"] == p.UPDATE_EVENT)
+    event = next(
+        leo_event
+        for leo_event in leo.events
+        if leo_event["action_tag"] == p.UPDATE_EVENT
+    )
     assert event["entity_type"] == "setting"
     assert event["entity_id"] == KEY
     assert event["reason"] == "ajuste de prueba"
@@ -158,10 +162,16 @@ async def test_no_session_returns_401(client: AsyncClient, leo: FakeLeo) -> None
 def test_catalog_declares_the_module() -> None:
     auth.check_catalog()
     prefix = "vladimir.settings."
-    declared = {t for t in catalog.tags if t.startswith(prefix)}
-    used = {t for t in auth.used_tags if t.startswith(prefix)}
+    declared = {
+        declared_tag for declared_tag in catalog.tags if declared_tag.startswith(prefix)
+    }
+    used = {used_tag for used_tag in auth.used_tags if used_tag.startswith(prefix)}
     assert declared == {p.VIEW, p.EDIT, p.EDIT_SECURITY, p.UPDATE_EVENT}
     # `update` es solo el evento de auditoria: ninguna ruta lo exige.
     assert used == {p.VIEW, p.EDIT, p.EDIT_SECURITY}
-    (module,) = [m for m in catalog.to_payload()["modules"] if m["slug"] == "settings"]
+    (module,) = [
+        module_entry
+        for module_entry in catalog.to_payload()["modules"]
+        if module_entry["slug"] == "settings"
+    ]
     assert module["name"] == "Ajustes"

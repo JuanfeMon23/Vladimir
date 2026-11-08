@@ -71,8 +71,8 @@ async def _areas(session: AsyncSession, token: str, *names: str) -> list[LabArea
     return rows
 
 
-async def _search(session: AsyncSession, q: str) -> set[str]:
-    stmt = SearchFilter(q=q).apply(select(LabArea), LabArea.code, LabArea.name)
+async def _search(session: AsyncSession, query_text: str) -> set[str]:
+    stmt = SearchFilter(q=query_text).apply(select(LabArea), LabArea.code, LabArea.name)
     return {row.name for row in (await session.execute(stmt)).scalars()}
 
 
@@ -257,7 +257,9 @@ SEARCH_CASES: list[tuple[str, Factory]] = [
 
 
 @pytest.mark.parametrize(
-    "factory", [c[1] for c in SEARCH_CASES], ids=[c[0] for c in SEARCH_CASES]
+    "factory",
+    [case[1] for case in SEARCH_CASES],
+    ids=[case[0] for case in SEARCH_CASES],
 )
 async def test_listado_con_q_filtra_total_y_combina_con_active(
     client: AsyncClient, session: AsyncSession, factory: Factory
@@ -301,7 +303,7 @@ async def test_q_se_combina_con_paginacion_y_total_refleja_el_filtro(
     client: AsyncClient, session: AsyncSession
 ) -> None:
     token = _token()
-    await _areas(session, token, *[f"Area {n} {token}" for n in range(5)])
+    await _areas(session, token, *[f"Area {number} {token}" for number in range(5)])
 
     page = (
         await client.get(
@@ -336,7 +338,10 @@ async def test_openapi_documenta_q_en_cada_listado(client: AsyncClient) -> None:
         "/api/v1/units",
     }
     for path in expected:
-        params = {p["name"]: p for p in paths[path]["get"]["parameters"]}
+        params = {
+            parameter["name"]: parameter
+            for parameter in paths[path]["get"]["parameters"]
+        }
         assert "q" in params, path
         assert "sin distinguir" in params["q"]["description"], path
         assert params["q"]["schema"]["anyOf"][0]["maxLength"] == 100

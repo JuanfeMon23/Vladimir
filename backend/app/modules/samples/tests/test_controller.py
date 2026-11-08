@@ -91,9 +91,16 @@ async def test_list_samples_includes_nested_types(
         ActiveOnlyFilter(active=None),
     )
 
-    found = next((s for s in page.items if s.id == sample.id), None)
+    found = next(
+        (
+            listed_sample
+            for listed_sample in page.items
+            if listed_sample.id == sample.id
+        ),
+        None,
+    )
     assert found is not None
-    assert {t.id for t in found.types} == {sample_type.id}
+    assert {listed_type.id for listed_type in found.types} == {sample_type.id}
 
 
 async def test_update_sample(session: AsyncSession, sample_payload: dict) -> None:

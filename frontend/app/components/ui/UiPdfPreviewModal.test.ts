@@ -13,8 +13,8 @@ let revokeObjectURL: ReturnType<typeof vi.fn>
 
 beforeEach(() => {
   document.body.innerHTML = ''
-  let n = 0
-  createObjectURL = vi.fn(() => `blob:test/${++n}`)
+  let callCount = 0
+  createObjectURL = vi.fn(() => `blob:test/${++callCount}`)
   revokeObjectURL = vi.fn()
   Object.assign(URL, { createObjectURL, revokeObjectURL })
 })
@@ -80,8 +80,8 @@ describe('UiPdfPreviewModal', () => {
   })
 
   it('si se cierra antes de que llegue el archivo no crea ni deja un Blob URL', async () => {
-    let resolve!: (v: { base64: string }) => void
-    const load = vi.fn(() => new Promise<{ base64: string }>((r) => { resolve = r }))
+    let resolve!: (value: { base64: string }) => void
+    const load = vi.fn(() => new Promise<{ base64: string }>((resolveValue) => { resolve = resolveValue }))
     const { wrapper } = await mountModal(true, load)
     await wrapper.setProps({ open: false })
     resolve({ base64: BASE64 })

@@ -22,12 +22,12 @@ describe('buildLabTestAssignmentRows', () => {
       ],
       catalog
     )
-    expect(rows.map(r => [r.id, r.assigned, r.selectable])).toEqual([
+    expect(rows.map(row => [row.id, row.assigned, row.selectable])).toEqual([
       ['a', true, true],
       ['b', true, true],
       ['d', false, true]
     ])
-    expect(rows.map(r => r.index)).toEqual([0, 1, 2])
+    expect(rows.map(row => row.index)).toEqual([0, 1, 2])
     expect(rows[2]!.indent).toBe(true)
   })
 
@@ -35,7 +35,7 @@ describe('buildLabTestAssignmentRows', () => {
     const rows = buildLabTestAssignmentRows([{ id: 'c', isActive: true, sortOrder: 1 }], catalog)
     expect(rows[0]).toMatchObject({ id: 'c', label: 'C', assigned: true, selectable: true, elementInactive: true })
     // El elemento inactivo no se ofrece para agregar.
-    expect(rows.filter(r => r.id === 'c')).toHaveLength(1)
+    expect(rows.filter(row => row.id === 'c')).toHaveLength(1)
   })
 
   it('un elemento desconocido asignado usa la etiqueta de respaldo y queda como inactivo', () => {
@@ -45,12 +45,12 @@ describe('buildLabTestAssignmentRows', () => {
 
   it('una asignación quitada (inactiva) de un elemento activo se ofrece de nuevo y se marca', () => {
     const rows = buildLabTestAssignmentRows([{ id: 'a', isActive: false, sortOrder: 1 }], catalog)
-    expect(rows.find(r => r.id === 'a')).toMatchObject({ assigned: false, selectable: true, linkInactive: true })
+    expect(rows.find(row => row.id === 'a')).toMatchObject({ assigned: false, selectable: true, linkInactive: true })
   })
 
   it('una asignación quitada de un elemento inactivo queda solo como historial (no seleccionable)', () => {
     const rows = buildLabTestAssignmentRows([{ id: 'c', isActive: false, sortOrder: 1 }], catalog)
-    expect(rows.find(r => r.id === 'c')).toMatchObject({
+    expect(rows.find(row => row.id === 'c')).toMatchObject({
       assigned: false,
       selectable: false,
       linkInactive: true,
@@ -69,7 +69,7 @@ describe('linkId (historial de la asignación)', () => {
       ],
       catalog
     )
-    const byId = Object.fromEntries(rows.map(r => [r.id, r.linkId]))
+    const byId = Object.fromEntries(rows.map(row => [row.id, row.linkId]))
     expect(byId).toEqual({ a: 'L-a', b: 'L-b', d: null, c: 'L-c' })
   })
 })
@@ -78,8 +78,8 @@ describe('visibleLabTestAssignmentRows', () => {
   const rows = buildLabTestAssignmentRows([{ id: 'c', isActive: false, sortOrder: 1 }], catalog)
 
   it('oculta el historial no seleccionable salvo con "Mostrar inactivos"', () => {
-    expect(visibleLabTestAssignmentRows(rows, false).map(r => r.id)).toEqual(['a', 'b', 'd'])
-    expect(visibleLabTestAssignmentRows(rows, true).map(r => r.id)).toEqual(['a', 'b', 'd', 'c'])
+    expect(visibleLabTestAssignmentRows(rows, false).map(row => row.id)).toEqual(['a', 'b', 'd'])
+    expect(visibleLabTestAssignmentRows(rows, true).map(row => row.id)).toEqual(['a', 'b', 'd', 'c'])
   })
 })
 

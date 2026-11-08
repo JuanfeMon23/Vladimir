@@ -56,15 +56,15 @@ describe('página de ajustes', () => {
     await flushAll()
     expect(readOnly.find('input').exists()).toBe(false)
     expect(readOnly.find('[role="switch"]').exists()).toBe(false)
-    expect(readOnly.findAll('button').map(b => b.text())).not.toContain('Guardar')
-    expect(readOnly.findAll('button').map(b => b.text())).not.toContain('Restablecer')
+    expect(readOnly.findAll('button').map(button => button.text())).not.toContain('Guardar')
+    expect(readOnly.findAll('button').map(button => button.text())).not.toContain('Restablecer')
     expect(readOnly.find('[data-testid="setting-readonly"]').text()).toContain('200')
 
     signInWith([VIEW, 'vladimir.settings.edit'])
     const editable = await mountSuspended(SettingsPage)
     await flushAll()
     expect(editable.find('input').attributes('disabled')).toBeUndefined()
-    expect(editable.findAll('button').map(b => b.text())).toEqual(expect.arrayContaining(['Guardar', 'Restablecer']))
+    expect(editable.findAll('button').map(button => button.text())).toEqual(expect.arrayContaining(['Guardar', 'Restablecer']))
   })
 
   it('sin vladimir.settings.edit-security un ajuste de seguridad es solo texto, con su motivo; con él se edita', async () => {
@@ -75,7 +75,7 @@ describe('página de ajustes', () => {
     const locked = await mountSuspended(SettingsPage)
     await flushAll()
     expect(locked.find('input').exists()).toBe(false)
-    expect(locked.findAll('button').map(b => b.text())).not.toContain('Guardar')
+    expect(locked.findAll('button').map(button => button.text())).not.toContain('Guardar')
     expect(locked.find('[data-testid="setting-readonly"]').text()).toContain('5')
     expect(locked.find('[data-testid="setting-locked"]').exists()).toBe(true)
 

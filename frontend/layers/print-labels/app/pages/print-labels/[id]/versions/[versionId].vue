@@ -69,7 +69,7 @@ const { submit, isSubmitting, formError, reset, values } = useZodForm(schema, {
 })
 
 const editor = useVersionEditor<PrintLabelVersionRead>({
-  load: async () => (await printLabelsApi.listVersions(labelId, { page_size: 100 })).items.find(v => v.id === versionId),
+  load: async () => (await printLabelsApi.listVersions(labelId, { page_size: 100 })).items.find(version => version.id === versionId),
   publish: () => printLabelsApi.publishVersion(labelId, versionId),
   retire: () => printLabelsApi.retireVersion(labelId, versionId),
   onChange: (version) => {

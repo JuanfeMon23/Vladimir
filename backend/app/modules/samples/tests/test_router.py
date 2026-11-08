@@ -64,9 +64,11 @@ async def test_create_sample_type_and_list_nested(
     assert list_response.status_code == 200
     body = list_response.json()
 
-    found = next((s for s in body["items"] if s["id"] == sample_id), None)
+    found = next(
+        (sample for sample in body["items"] if sample["id"] == sample_id), None
+    )
     assert found is not None
-    assert [t["id"] for t in found["types"]] == [sample_type["id"]]
+    assert [listed_type["id"] for listed_type in found["types"]] == [sample_type["id"]]
 
 
 async def test_list_types_of_sample(

@@ -99,8 +99,8 @@ async def client(session: AsyncSession, leo: FakeLeo) -> AsyncGenerator[AsyncCli
     app.dependency_overrides[real_get_session] = override_get_session
     app.dependency_overrides[auth.current_user] = override_current_user
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        yield ac
+    async with AsyncClient(transport=transport, base_url="http://test") as http_client:
+        yield http_client
     app.dependency_overrides.clear()
 
 

@@ -6,14 +6,14 @@ import type { VersionPermissionTags } from '~/utils/versioning'
  */
 export function useVersionPermissions(tags: () => VersionPermissionTags | undefined) {
   const session = useLeoSession()
-  const allowed = (pick: (t: VersionPermissionTags) => string | undefined) => computed(() => {
+  const allowed = (pick: (tags: VersionPermissionTags) => string | undefined) => computed(() => {
     const tag = pick(tags() ?? {})
     return !!tag && session.can(tag)
   })
   return reactive({
-    create: allowed(t => t.create),
-    edit: allowed(t => t.edit),
-    publish: allowed(t => t.publish),
-    retire: allowed(t => t.retire)
+    create: allowed(tags => tags.create),
+    edit: allowed(tags => tags.edit),
+    publish: allowed(tags => tags.publish),
+    retire: allowed(tags => tags.retire)
   })
 }

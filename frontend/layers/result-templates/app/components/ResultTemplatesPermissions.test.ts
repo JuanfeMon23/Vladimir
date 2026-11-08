@@ -44,18 +44,18 @@ function version(overrides: Partial<ResultTemplateVersionRead> = {}): ResultTemp
   }
 }
 
-const P = 'vladimir.result-templates.'
-const VIEW = `${P}view`
-const EDIT = `${P}edit`
-const STATUS = `${P}change-status`
-const CREATE_VERSION = `${P}create-version`
-const EDIT_VERSION = `${P}edit-version`
-const PUBLISH = `${P}publish-version`
-const RETIRE = `${P}retire-version`
-const EDIT_CONTENT = `${P}edit-content`
-const MANAGE_UNITS = `${P}manage-units`
-const MANAGE_ANALYTES = `${P}manage-analytes`
-const MANAGE_SETS = `${P}manage-option-sets`
+const permissionPrefix = 'vladimir.result-templates.'
+const VIEW = `${permissionPrefix}view`
+const EDIT = `${permissionPrefix}edit`
+const STATUS = `${permissionPrefix}change-status`
+const CREATE_VERSION = `${permissionPrefix}create-version`
+const EDIT_VERSION = `${permissionPrefix}edit-version`
+const PUBLISH = `${permissionPrefix}publish-version`
+const RETIRE = `${permissionPrefix}retire-version`
+const EDIT_CONTENT = `${permissionPrefix}edit-content`
+const MANAGE_UNITS = `${permissionPrefix}manage-units`
+const MANAGE_ANALYTES = `${permissionPrefix}manage-analytes`
+const MANAGE_SETS = `${permissionPrefix}manage-option-sets`
 
 beforeEach(() => {
   fake.reset()
@@ -103,11 +103,11 @@ describe('rutas y menú de result-templates', () => {
   it('los 4 ítems del módulo aparecen con view y no sin él', async () => {
     const names = ['Analitos', 'Unidades de medida', 'Conjuntos de opciones', 'Plantillas de resultados']
     signInWith([VIEW])
-    const withView = (await mountSuspended(DefaultLayout)).findAll('a').map(a => a.text())
+    const withView = (await mountSuspended(DefaultLayout)).findAll('a').map(link => link.text())
     for (const name of names) expect(withView).toContain(name)
 
     signInWith([MANAGE_UNITS, EDIT_CONTENT, 'vladimir.lab-tests.view'])
-    const without = (await mountSuspended(DefaultLayout)).findAll('a').map(a => a.text())
+    const without = (await mountSuspended(DefaultLayout)).findAll('a').map(link => link.text())
     for (const name of names) expect(without).not.toContain(name)
     expect(without).toContain('Exámenes')
   })
@@ -116,12 +116,12 @@ describe('rutas y menú de result-templates', () => {
 describe('plantillas: listado y datos', () => {
   it('"Nueva plantilla" exige create', async () => {
     expect((await mountPage(ResultTemplatesPage, [VIEW])).text()).not.toContain('Nueva plantilla')
-    expect((await mountPage(ResultTemplatesPage, [VIEW, `${P}create`])).text()).toContain('Nueva plantilla')
+    expect((await mountPage(ResultTemplatesPage, [VIEW, `${permissionPrefix}create`])).text()).toContain('Nueva plantilla')
   })
 
   it('solo con view la acción es "Ver"; con edit-content, "Ver / Editar"', async () => {
-    expect((await mountPage(ResultTemplatesPage, [VIEW])).findAll('button').map(b => b.text())).toContain('Ver')
-    expect((await mountPage(ResultTemplatesPage, [VIEW, EDIT_CONTENT])).findAll('button').map(b => b.text())).toContain('Ver / Editar')
+    expect((await mountPage(ResultTemplatesPage, [VIEW])).findAll('button').map(button => button.text())).toContain('Ver')
+    expect((await mountPage(ResultTemplatesPage, [VIEW, EDIT_CONTENT])).findAll('button').map(button => button.text())).toContain('Ver / Editar')
   })
 
   it('con solo view el modal es de lectura', async () => {
@@ -257,10 +257,10 @@ describe('catálogos de apoyo: una acción manage-* por catálogo', () => {
     const other = [MANAGE_UNITS, MANAGE_ANALYTES, MANAGE_SETS].filter(tag => tag !== manage)
     const readOnly = await mountPage(page, [VIEW, ...other, EDIT_CONTENT])
     expect(readOnly.text()).not.toContain(create)
-    expect(readOnly.findAll('button').map(b => b.text())).toContain('Ver')
+    expect(readOnly.findAll('button').map(button => button.text())).toContain('Ver')
     const managed = await mountPage(page, [VIEW, manage])
     expect(managed.text()).toContain(create)
-    expect(managed.findAll('button').map(b => b.text())).toContain('Ver / Editar')
+    expect(managed.findAll('button').map(button => button.text())).toContain('Ver / Editar')
   })
 
   it('unidad: sin manage-units es de lectura; con él el PATCH lleva los datos', async () => {

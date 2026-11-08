@@ -12,8 +12,8 @@ const PERMISSIONS = { create: 'v.create', edit: 'v.edit', publish: 'v.publish', 
 
 type FileVersion = VersionRecord & { has_file: boolean }
 
-function record(id: string, n: number, status: VersionRecord['status'], hasFile: boolean): FileVersion {
-  return { id, version_number: n, status, published_at: null, change_notes: null, has_file: hasFile }
+function record(id: string, versionNumber: number, status: VersionRecord['status'], hasFile: boolean): FileVersion {
+  return { id, version_number: versionNumber, status, published_at: null, change_notes: null, has_file: hasFile }
 }
 
 async function mountSection(versions: FileVersion[], extra: Partial<UiVersionSectionApi> = {}) {
@@ -41,7 +41,7 @@ describe('UiVersionSection', () => {
   it('muestra los chips del módulo junto al estado', async () => {
     const { root } = await mountSection(
       [record('a', 1, 'published', true), record('b', 2, 'draft', false)],
-      { badges: v => [(v as FileVersion).has_file ? { label: 'PDF adjunto', variant: 'success' } : { label: 'Sin archivo', variant: 'neutral' }] }
+      { badges: version => [(version as FileVersion).has_file ? { label: 'PDF adjunto', variant: 'success' } : { label: 'Sin archivo', variant: 'neutral' }] }
     )
     expect(root.textContent).toContain('PDF adjunto')
     expect(root.textContent).toContain('Sin archivo')
@@ -50,7 +50,7 @@ describe('UiVersionSection', () => {
   it('deshabilita Publicar de un borrador bloqueado y explica el motivo', async () => {
     const { root } = await mountSection(
       [record('a', 1, 'draft', false)],
-      { publishBlockedReason: v => (v as FileVersion).has_file ? null : 'Adjunta el PDF antes de publicar.' }
+      { publishBlockedReason: version => (version as FileVersion).has_file ? null : 'Adjunta el PDF antes de publicar.' }
     )
     const publish = button(root, 'Publicar') as HTMLButtonElement
     expect(publish.disabled).toBe(true)
@@ -61,7 +61,7 @@ describe('UiVersionSection', () => {
   it('habilita Publicar cuando el módulo no lo bloquea', async () => {
     const { root } = await mountSection(
       [record('a', 1, 'draft', true)],
-      { publishBlockedReason: v => (v as FileVersion).has_file ? null : 'Adjunta el PDF antes de publicar.' }
+      { publishBlockedReason: version => (version as FileVersion).has_file ? null : 'Adjunta el PDF antes de publicar.' }
     )
     expect((button(root, 'Publicar') as HTMLButtonElement).disabled).toBe(false)
   })

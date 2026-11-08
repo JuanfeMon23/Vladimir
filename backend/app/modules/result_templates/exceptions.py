@@ -60,7 +60,7 @@ class ResultTemplateAnalyteFormulaError(ValidationAppError):
 
     def __init__(self, problems: list[dict]) -> None:
         super().__init__(
-            message=" ".join(p["message"] for p in problems),
+            message=" ".join(problem["message"] for problem in problems),
             details={"field": "formula", "problems": problems},
         )
 

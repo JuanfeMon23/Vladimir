@@ -104,7 +104,12 @@ class SearchFilter:
             escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
             pattern = normalized_pattern(escaped)
             stmt = stmt.where(
-                or_(*(normalized(c).like(pattern, escape="\\") for c in columns))
+                or_(
+                    *(
+                        normalized(column).like(pattern, escape="\\")
+                        for column in columns
+                    )
+                )
             )
         return stmt
 

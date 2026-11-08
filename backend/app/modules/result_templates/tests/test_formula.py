@@ -89,7 +89,7 @@ def test_problems_none_for_valid_formula() -> None:
 
 def test_problems_detects_transitive_cycle_not_involving_the_node() -> None:
     nodes = _nodes(A="B", B="C", C="B")
-    reasons = [p.reason for p in formula_problems(nodes[0], nodes)]
+    reasons = [problem.reason for problem in formula_problems(nodes[0], nodes)]
     assert reasons == ["cycle"]
 
 
@@ -171,12 +171,14 @@ def _problems(error: ValidationAppError) -> list[dict]:
 async def test_create_calculated_with_valid_formula(
     session: AsyncSession, draft: ResultTemplateVersionRead, unit: Unit
 ) -> None:
-    a, b = _code(), _code()
-    await _numeric(session, draft, unit, a)
-    await _numeric(session, draft, unit, b)
+    first_code, second_code = _code(), _code()
+    await _numeric(session, draft, unit, first_code)
+    await _numeric(session, draft, unit, second_code)
 
-    created = await _calculated(session, draft, unit, _code(), f"({a} + {b}) / 2")
-    assert created.formula == f"({a} + {b}) / 2"
+    created = await _calculated(
+        session, draft, unit, _code(), f"({first_code} + {second_code}) / 2"
+    )
+    assert created.formula == f"({first_code} + {second_code}) / 2"
 
 
 async def test_create_rejects_unknown_code(
@@ -241,11 +243,11 @@ async def test_update_rejects_cycle_between_calculated_analytes(
 ) -> None:
     base, a_code, b_code = _code(), _code(), _code()
     await _numeric(session, draft, unit, base)
-    a = await _calculated(session, draft, unit, a_code, f"{base} + 1")
+    calculated_analyte = await _calculated(session, draft, unit, a_code, f"{base} + 1")
     await _calculated(session, draft, unit, b_code, f"{a_code} * 2")
 
     with pytest.raises(ValidationAppError) as exc_info:
-        await _set_formula(session, draft, a, formula=f"{b_code} + 1")
+        await _set_formula(session, draft, calculated_analyte, formula=f"{b_code} + 1")
     problem = _problems(exc_info.value)[0]
     assert problem["reason"] == "cycle"
     assert problem["codes"] == [a_code, b_code, a_code]
@@ -254,7 +256,10 @@ async def test_update_rejects_cycle_between_calculated_analytes(
     kept = await controller.list_template_analytes(
         session, draft.result_template_id, draft.id
     )
-    assert next(t for t in kept if t.id == a.id).formula == f"{base} + 1"
+    assert (
+        next(analyte for analyte in kept if analyte.id == calculated_analyte.id).formula
+        == f"{base} + 1"
+    )
 
 
 async def test_create_rejects_invalid_syntax(

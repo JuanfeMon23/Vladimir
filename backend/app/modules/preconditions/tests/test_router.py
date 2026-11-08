@@ -96,7 +96,14 @@ async def test_list_preconditions_returns_nested_tree(
     assert list_response.status_code == 200
     body = list_response.json()
 
-    found = next((p for p in body["items"] if p["id"] == root_id), None)
+    found = next(
+        (
+            precondition
+            for precondition in body["items"]
+            if precondition["id"] == root_id
+        ),
+        None,
+    )
     assert found is not None
     assert [i["id"] for i in found["items"]] == [item_id]
 

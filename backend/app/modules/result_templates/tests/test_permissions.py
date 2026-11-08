@@ -13,11 +13,11 @@ BASE = f"{API}/result-templates"
 SLUG = "result-templates"
 MODULE_NAME = "Plantillas de resultados"
 ID1 = "00000000-0000-0000-0000-000000000001"
-V1 = "00000000-0000-0000-0000-000000000002"
-A1 = "00000000-0000-0000-0000-000000000003"
-R1 = "00000000-0000-0000-0000-000000000004"
-VER = f"{BASE}/{ID1}/versions/{V1}"
-ANALYTE = f"{VER}/analytes/{A1}"
+VERSION_ID = "00000000-0000-0000-0000-000000000002"
+CHILD_ID = "00000000-0000-0000-0000-000000000003"
+RANGE_ID = "00000000-0000-0000-0000-000000000004"
+VER = f"{BASE}/{ID1}/versions/{VERSION_ID}"
+ANALYTE = f"{VER}/analytes/{CHILD_ID}"
 
 ALL_TAGS = {
     p.VIEW,
@@ -48,7 +48,7 @@ CASES = [
     ("GET", BASE, p.VIEW, None),
     ("GET", f"{BASE}/{ID1}", p.VIEW, None),
     ("GET", f"{BASE}/{ID1}/versions", p.VIEW, None),
-    ("GET", f"{API}/result-template-versions/{V1}", p.VIEW, None),
+    ("GET", f"{API}/result-template-versions/{VERSION_ID}", p.VIEW, None),
     ("GET", f"{VER}/sections", p.VIEW, None),
     ("GET", f"{VER}/analytes", p.VIEW, None),
     ("GET", f"{ANALYTE}/reference-ranges", p.VIEW, None),
@@ -63,16 +63,16 @@ CASES = [
     ("POST", f"{VER}/retire", p.RETIRE_VERSION, None),
     # Contenido del borrador.
     ("POST", f"{VER}/sections", p.EDIT_CONTENT, {"name": "S", "sort_order": 1}),
-    ("PATCH", f"{VER}/sections/{A1}", p.EDIT_CONTENT, {"name": "S"}),
+    ("PATCH", f"{VER}/sections/{CHILD_ID}", p.EDIT_CONTENT, {"name": "S"}),
     (
         "POST",
         f"{VER}/analytes",
         p.EDIT_CONTENT,
-        {"analyte_id": A1, "sort_order": 1, "result_type": "numeric"},
+        {"analyte_id": CHILD_ID, "sort_order": 1, "result_type": "numeric"},
     ),
     ("PATCH", ANALYTE, p.EDIT_CONTENT, {"sort_order": 2}),
     ("POST", f"{ANALYTE}/reference-ranges", p.EDIT_CONTENT, RANGE_BODY),
-    ("PATCH", f"{ANALYTE}/reference-ranges/{R1}", p.EDIT_CONTENT, {"low": 1}),
+    ("PATCH", f"{ANALYTE}/reference-ranges/{RANGE_ID}", p.EDIT_CONTENT, {"low": 1}),
     # Catalogos de apoyo.
     ("POST", f"{API}/units", p.MANAGE_UNITS, UNIT_BODY),
     ("PATCH", f"{API}/units/{ID1}", p.MANAGE_UNITS, {"name": "Y"}),
@@ -110,7 +110,9 @@ async def test_missing_tag_returns_403_and_denied_event(
     response = await client.request(method, path, json=body)
     assert response.status_code == 403
     assert response.json()["details"] == {"action": tag}
-    assert [(e["action_tag"], e["result"]) for e in leo.events] == [(tag, "denied")]
+    assert [(event["action_tag"], event["result"]) for event in leo.events] == [
+        (tag, "denied")
+    ]
 
 
 async def test_with_view_tag_returns_200(client: AsyncClient, leo: FakeLeo) -> None:
@@ -182,7 +184,7 @@ async def test_failing_audit_never_propagates(
     result_template_payload: dict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    async def boom(*_a: object, **_k: object) -> bool:
+    async def boom(*_args: object, **_kwargs: object) -> bool:
         raise RuntimeError("fallo inesperado")
 
     monkeypatch.setattr(auth.audit, "record", boom)
@@ -192,16 +194,22 @@ async def test_failing_audit_never_propagates(
 def test_catalog_matches_require_action() -> None:
     auth.check_catalog()  # ningun tag usado sin declarar
     prefix = f"vladimir.{SLUG}."
-    declared = {t for t in catalog.tags if t.startswith(prefix)}
-    used = {t for t in auth.used_tags if t.startswith(prefix)}
+    declared = {
+        declared_tag for declared_tag in catalog.tags if declared_tag.startswith(prefix)
+    }
+    used = {used_tag for used_tag in auth.used_tags if used_tag.startswith(prefix)}
     assert declared == used == ALL_TAGS
 
 
 def test_catalog_payload_has_readable_unique_names() -> None:
     payload = catalog.to_payload()
-    (module,) = [m for m in payload["modules"] if m["slug"] == SLUG]
+    (module,) = [
+        module_entry
+        for module_entry in payload["modules"]
+        if module_entry["slug"] == SLUG
+    ]
     assert module["name"] == MODULE_NAME
-    names = [a["name"] for a in module["actions"]]
+    names = [action_entry["name"] for action_entry in module["actions"]]
     assert len(set(names)) == len(names) == len(ALL_TAGS)
 
 
@@ -230,7 +238,7 @@ async def test_support_catalogs_are_audited_with_their_own_tag(
     ).json()
     await client.patch(f"{API}/result-options/{option['id']}", json={"label": "Pos"})
 
-    assert [(e["action_tag"], e["entity_type"]) for e in leo.events] == [
+    assert [(event["action_tag"], event["entity_type"]) for event in leo.events] == [
         (p.MANAGE_UNITS, "unit"),
         (p.MANAGE_UNITS, "unit"),
         (p.MANAGE_ANALYTES, "analyte"),

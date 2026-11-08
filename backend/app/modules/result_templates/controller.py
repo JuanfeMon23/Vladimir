@@ -572,11 +572,13 @@ async def _validate_publish(
     )
     catalogs: dict[str, Mapping[UUID, Any]] = {
         "analyte_id": await get_by_ids(
-            session, Analyte, [a.analyte_id for a in analytes]
+            session, Analyte, [analyte.analyte_id for analyte in analytes]
         ),
-        "unit_id": await get_by_ids(session, Unit, [a.unit_id for a in analytes]),
+        "unit_id": await get_by_ids(
+            session, Unit, [analyte.unit_id for analyte in analytes]
+        ),
         "option_set_id": await get_by_ids(
-            session, ResultOptionSet, [a.option_set_id for a in analytes]
+            session, ResultOptionSet, [analyte.option_set_id for analyte in analytes]
         ),
     }
     sections = {
@@ -588,7 +590,11 @@ async def _validate_publish(
     options = await get_by_ids(
         session,
         ResultOption,
-        [r.expected_option_id for rows in ranges.values() for r in rows],
+        [
+            reference_range.expected_option_id
+            for rows in ranges.values()
+            for reference_range in rows
+        ],
     )
 
     formula_nodes = await _version_formula_nodes(session, version_id)
@@ -600,8 +606,8 @@ async def _validate_publish(
     for template_analyte in analytes:
         if template_analyte.formula is not None:
             formula_report.extend(
-                {"template_analyte_id": str(template_analyte.id), **p.as_dict()}
-                for p in formula_problems(
+                {"template_analyte_id": str(template_analyte.id), **problem.as_dict()}
+                for problem in formula_problems(
                     formula_nodes[template_analyte.id], all_formula_nodes
                 )
             )
@@ -609,9 +615,11 @@ async def _validate_publish(
         active_ranges = ranges[template_analyte.id]
         missing = _missing_fields_for_result_type(template_analyte, len(active_ranges))
         incompatible = [
-            str(r.id)
-            for r in active_ranges
-            if _not_allowed_range_fields(template_analyte.result_type, r.__dict__)
+            str(reference_range.id)
+            for reference_range in active_ranges
+            if _not_allowed_range_fields(
+                template_analyte.result_type, reference_range.__dict__
+            )
         ]
         if missing or incompatible:
             entry: dict[str, Any] = {
@@ -629,7 +637,8 @@ async def _validate_publish(
         ]
         refs.append(("section_id", template_analyte.section_id, sections))
         refs.extend(
-            ("expected_option_id", r.expected_option_id, options) for r in active_ranges
+            ("expected_option_id", reference_range.expected_option_id, options)
+            for reference_range in active_ranges
         )
         inactive_report.extend(
             {
@@ -704,7 +713,7 @@ async def list_sections(
     sections = await repository.list_sections_by_version(
         session, version_id, include_inactive=include_inactive
     )
-    return [ResultTemplateSectionRead.model_validate(s) for s in sections]
+    return [ResultTemplateSectionRead.model_validate(section) for section in sections]
 
 
 async def create_section(
@@ -858,7 +867,9 @@ async def _validate_formula(
     ]
     problems = formula_problems(node, [*others, node])
     if problems:
-        raise ResultTemplateAnalyteFormulaError([p.as_dict() for p in problems])
+        raise ResultTemplateAnalyteFormulaError(
+            [problem.as_dict() for problem in problems]
+        )
 
 
 async def get_template_analyte(
@@ -964,17 +975,22 @@ def _normalized_condition(condition: str | None) -> str:
     return " ".join((condition or "").split()).casefold()
 
 
-def _ranges_overlap(a: Mapping[str, Any], b: Mapping[str, Any]) -> bool:
+def _ranges_overlap(
+    first_range: Mapping[str, Any], second_range: Mapping[str, Any]
+) -> bool:
     """Misma combinacion (sexo compatible -- `any` solapa con todos --,
     condicion normalizada igual) y edades `[min, max)` que se cruzan."""
-    if a["sex"] != b["sex"] and "any" not in (a["sex"], b["sex"]):
-        return False
-    if _normalized_condition(a.get("condition")) != _normalized_condition(
-        b.get("condition")
+    if first_range["sex"] != second_range["sex"] and "any" not in (
+        first_range["sex"],
+        second_range["sex"],
     ):
         return False
-    a_low, a_high = _age_interval(a)
-    b_low, b_high = _age_interval(b)
+    if _normalized_condition(first_range.get("condition")) != _normalized_condition(
+        second_range.get("condition")
+    ):
+        return False
+    a_low, a_high = _age_interval(first_range)
+    b_low, b_high = _age_interval(second_range)
     return a_low < b_high and b_low < a_high
 
 
@@ -1064,7 +1080,9 @@ async def list_reference_ranges(
     ranges = await repository.list_reference_ranges_by_template_analyte(
         session, template_analyte_id, include_inactive=include_inactive
     )
-    return [ReferenceRangeRead.model_validate(r) for r in ranges]
+    return [
+        ReferenceRangeRead.model_validate(reference_range) for reference_range in ranges
+    ]
 
 
 async def create_reference_range(

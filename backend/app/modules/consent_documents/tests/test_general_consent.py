@@ -122,10 +122,12 @@ async def test_deactivate_then_activate_another_general_works(
     second = await _created(client, is_active=False)
 
     off = await client.patch(f"{DOCS}/{first['id']}", json={"is_active": False})
-    on = await client.patch(f"{DOCS}/{second['id']}", json={"is_active": True})
+    activation_response = await client.patch(
+        f"{DOCS}/{second['id']}", json={"is_active": True}
+    )
 
     assert off.status_code == 200
-    assert on.status_code == 200
+    assert activation_response.status_code == 200
 
 
 async def test_patching_the_active_general_itself_does_not_conflict(

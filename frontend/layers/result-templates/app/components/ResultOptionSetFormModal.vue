@@ -48,7 +48,7 @@ const options = useChildCollection<ResultOptionRead>({
   refetch: async () => {
     if (!props.entity) return []
     const page = await optionSetsApi.listOptions(props.entity.id, { page_size: 200 })
-    return [...page.items].sort((a, b) => a.sort_order - b.sort_order)
+    return [...page.items].sort((left, right) => left.sort_order - right.sort_order)
   },
   errorMessage: 'No se pudieron cargar las opciones.'
 })

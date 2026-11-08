@@ -42,7 +42,10 @@ async def test_activity_lista_eventos_con_motivo_mas_reciente_primero(
     assert response.status_code == 200
     body = response.json()
     assert body["total"] == 3
-    assert [(e["action"], e["reason"]) for e in body["items"]] == [
+    assert [
+        (activity_item["action"], activity_item["reason"])
+        for activity_item in body["items"]
+    ] == [
         ("activated", None),
         ("deactivated", "Cierre temporal"),
         ("activated", None),

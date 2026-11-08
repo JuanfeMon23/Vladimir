@@ -9,7 +9,7 @@ enableAutoUnmount(afterEach)
 async function menuLabels(tags: string[]) {
   signInWith(tags)
   const wrapper = await mountSuspended(DefaultLayout)
-  return wrapper.findAll('nav a').map(a => a.text())
+  return wrapper.findAll('nav a').map(link => link.text())
 }
 
 describe('menú lateral por permiso', () => {
@@ -20,7 +20,7 @@ describe('menú lateral por permiso', () => {
     ]
     signInWith(tags)
     const wrapper = await mountSuspended(DefaultLayout)
-    expect(wrapper.findAll('nav a').map(a => a.text())).toEqual([
+    expect(wrapper.findAll('nav a').map(link => link.text())).toEqual([
       'Personal', 'Áreas', 'Exámenes', 'Precondiciones', 'Muestras', 'Etiquetas de impresión',
       'Analitos', 'Unidades de medida', 'Conjuntos de opciones', 'Plantillas de resultados', 'Documentos a firmar', 'Ajustes del sistema'
     ])

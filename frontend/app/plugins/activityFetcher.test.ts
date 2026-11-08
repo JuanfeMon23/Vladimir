@@ -49,7 +49,7 @@ describe('plugin activityFetcher + useActivity', () => {
     expect(getMock).toHaveBeenCalledWith('/activity', {
       params: { entity_type: 'units', entity_id: 'u1', page: 1, page_size: 20 }
     })
-    expect(activity.events.map(e => e.id)).toEqual(['e1'])
+    expect(activity.events.map(event => event.id)).toEqual(['e1'])
     expect(activity.total).toBe(1)
     expect(activity.hasMore).toBe(false)
     expect(activity.loading).toBe(false)
@@ -65,7 +65,7 @@ describe('plugin activityFetcher + useActivity', () => {
     expect(getMock).toHaveBeenLastCalledWith('/activity', {
       params: { entity_type: 'units', entity_id: 'u1', page: 2, page_size: 1 }
     })
-    expect(activity.events.map(e => e.id)).toEqual(['e1', 'e2'])
+    expect(activity.events.map(event => event.id)).toEqual(['e1', 'e2'])
     expect(activity.hasMore).toBe(false)
   })
 

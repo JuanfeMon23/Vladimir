@@ -363,6 +363,7 @@ async def test_list_ranges_hides_inactive_unless_requested(
 
     assert (await client.get(url)).json() == []
     everything = (await client.get(url, params={"include_inactive": True})).json()
-    assert [(r["id"], r["is_active"]) for r in everything] == [
-        (str(reference_range.id), False)
-    ]
+    assert [
+        (reference_range_entry["id"], reference_range_entry["is_active"])
+        for reference_range_entry in everything
+    ] == [(str(reference_range.id), False)]

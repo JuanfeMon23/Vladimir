@@ -66,10 +66,10 @@ describe('ruta y menú de preconditions', () => {
   it('el ítem "Precondiciones" aparece con view y no sin él (los módulos con view siguen)', async () => {
     signInWith([VIEW])
     const withView = await mountSuspended(DefaultLayout)
-    expect(withView.findAll('a').find(a => a.text() === 'Precondiciones')?.attributes('href')).toBe('/preconditions')
+    expect(withView.findAll('a').find(link => link.text() === 'Precondiciones')?.attributes('href')).toBe('/preconditions')
 
     signInWith(['vladimir.preconditions.create', 'vladimir.lab-tests.view'])
-    const labels = (await mountSuspended(DefaultLayout)).findAll('a').map(a => a.text())
+    const labels = (await mountSuspended(DefaultLayout)).findAll('a').map(link => link.text())
     expect(labels).not.toContain('Precondiciones')
     expect(labels).toContain('Exámenes')
   })
@@ -82,10 +82,10 @@ describe('listado de precondiciones', () => {
   })
 
   it('solo con view las acciones son "Ver"; con edit, "Ver / Editar" y "Editar"', async () => {
-    const buttons = async (tags: string[]) => (await mountPage(tags)).findAll('button').map(b => b.text())
+    const buttons = async (tags: string[]) => (await mountPage(tags)).findAll('button').map(button => button.text())
     const readOnly = await buttons([VIEW])
-    expect(readOnly.filter(t => t === 'Ver')).toHaveLength(2)
-    expect(readOnly.some(t => t.includes('Editar'))).toBe(false)
+    expect(readOnly.filter(label => label === 'Ver')).toHaveLength(2)
+    expect(readOnly.some(label => label.includes('Editar'))).toBe(false)
     const edit = await buttons([VIEW, EDIT])
     expect(edit).toContain('Ver / Editar')
     expect(edit).toContain('Editar')

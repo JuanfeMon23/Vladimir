@@ -70,10 +70,10 @@ describe('ruta y menú de samples', () => {
   it('el ítem "Muestras" aparece con view y no sin él', async () => {
     signInWith([VIEW])
     const withView = await mountSuspended(DefaultLayout)
-    expect(withView.findAll('a').find(a => a.text() === 'Muestras')?.attributes('href')).toBe('/samples')
+    expect(withView.findAll('a').find(link => link.text() === 'Muestras')?.attributes('href')).toBe('/samples')
 
     signInWith([ADD_TYPE])
-    expect((await mountSuspended(DefaultLayout)).findAll('a').map(a => a.text())).not.toContain('Muestras')
+    expect((await mountSuspended(DefaultLayout)).findAll('a').map(link => link.text())).not.toContain('Muestras')
   })
 })
 
@@ -84,8 +84,8 @@ describe('listado de muestras', () => {
   })
 
   it('solo con view la acción es "Ver"; con edit, "Ver / Editar"', async () => {
-    expect((await mountPage([VIEW])).findAll('button').map(b => b.text())).not.toContain('Ver / Editar')
-    expect((await mountPage([VIEW, EDIT])).findAll('button').map(b => b.text())).toContain('Ver / Editar')
+    expect((await mountPage([VIEW])).findAll('button').map(button => button.text())).not.toContain('Ver / Editar')
+    expect((await mountPage([VIEW, EDIT])).findAll('button').map(button => button.text())).toContain('Ver / Editar')
   })
 })
 

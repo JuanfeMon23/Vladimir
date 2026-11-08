@@ -29,8 +29,8 @@ beforeEach(() => {
   invalidateCaches()
   clearNuxtData()
   fake.routes['GET /staff'] = (options: unknown) => {
-    const q = (options as { params?: { q?: string } }).params?.q
-    return fakePage(q ? everyone.filter(p => p.last_name.toLowerCase().includes(q.toLowerCase())) : everyone)
+    const searchTerm = (options as { params?: { q?: string } }).params?.q
+    return fakePage(searchTerm ? everyone.filter(person => person.last_name.toLowerCase().includes(searchTerm.toLowerCase())) : everyone)
   }
 })
 
