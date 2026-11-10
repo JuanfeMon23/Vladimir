@@ -20,11 +20,27 @@ from sqlalchemy.dialects.postgresql import CHAR, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db.base import Base
-from app.core.db.mixins import CatalogMixin, Timestamps, UUIDv7PK, VersionMixin
+from app.core.db.mixins import (
+    CatalogMixin,
+    CategoryMixin,
+    Timestamps,
+    UUIDv7PK,
+    VersionMixin,
+)
 
-DOCUMENT_TYPE_VALUES = ("consentimiento_informado", "tratamiento_datos", "otro")
 
-SIGNER_VALUES = ("paciente", "paciente_o_representante")
+class ConsentDocumentType(CategoryMixin, UUIDv7PK, Timestamps, Base):
+    """Tipo de documento a firmar (catálogo de categoría). `tratamiento_datos`
+    es código de sistema: el índice único parcial de `consent_documents` y el
+    endpoint abierto dependen de él."""
+
+    __tablename__ = "consent_document_types"
+
+
+class ConsentSigner(CategoryMixin, UUIDv7PK, Timestamps, Base):
+    """Quién debe firmar un documento (catálogo de categoría)."""
+
+    __tablename__ = "consent_signers"
 
 
 class ConsentDocument(CatalogMixin, UUIDv7PK, Timestamps, Base):
@@ -33,10 +49,6 @@ class ConsentDocument(CatalogMixin, UUIDv7PK, Timestamps, Base):
 
     __tablename__ = "consent_documents"
     __table_args__ = (
-        CheckConstraint(
-            f"document_type IN {DOCUMENT_TYPE_VALUES}",
-            name="document_type",
-        ),
         # A lo sumo un consentimiento general de datos personales activo.
         Index(
             "uq_consent_documents_one_active_data_treatment",
@@ -48,7 +60,12 @@ class ConsentDocument(CatalogMixin, UUIDv7PK, Timestamps, Base):
 
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    document_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    document_type: Mapped[str] = mapped_column(
+        String(32),
+        ForeignKey("consent_document_types.code"),
+        nullable=False,
+        index=True,
+    )
 
 
 class ConsentDocumentVersion(VersionMixin, UUIDv7PK, Timestamps, Base):
@@ -61,10 +78,6 @@ class ConsentDocumentVersion(VersionMixin, UUIDv7PK, Timestamps, Base):
     __tablename__ = "consent_document_versions"
     __table_args__ = (
         VersionMixin.status_check(),
-        CheckConstraint(
-            f"signer IN {SIGNER_VALUES}",
-            name="signer",
-        ),
         CheckConstraint(
             "file_content_type IN ('application/pdf')",
             name="file_content_type",
@@ -94,7 +107,12 @@ class ConsentDocumentVersion(VersionMixin, UUIDv7PK, Timestamps, Base):
         index=True,
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    signer: Mapped[str] = mapped_column(String(32), nullable=False)
+    signer: Mapped[str] = mapped_column(
+        String(32),
+        ForeignKey("consent_signers.code"),
+        nullable=False,
+        index=True,
+    )
     # Archivo (PDF) del consentimiento: artefacto legal; `content` es su texto
     # equivalente. Los 4 campos van todos o ninguno. `file_base64` es diferido
     # (cientos de KB): solo se carga al acceder o con `undefer`. El sha256 y el

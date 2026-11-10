@@ -1,10 +1,8 @@
-import { RESULT_TYPE_LABELS } from '../types/result-templates'
 import { describeFormulaProblem } from './formulaProblems'
 import type {
   ResultTemplatePublishInactiveEntry,
   ResultTemplatePublishInvalidFormulaEntry,
-  ResultTemplatePublishMissingEntry,
-  ResultType
+  ResultTemplatePublishMissingEntry
 } from '../types/result-templates'
 
 /** Qué falta, en español, por cada `missing_fields` del backend. */
@@ -30,6 +28,8 @@ export interface ResultTemplatePublishErrorNames {
   templateAnalyte: (templateAnalyteId: string) => string
   /** Nombre legible de un elemento referenciado (`field` de `details.inactive`). */
   reference: (field: string, id: string) => string
+  /** Nombre legible de un tipo de resultado (catálogo `result-types`). */
+  resultType: (resultTypeCode: string) => string
 }
 
 function joinSpanish(items: string[]) {
@@ -55,7 +55,7 @@ export function describeResultTemplatePublishErrors(
   const lines: string[] = []
 
   for (const entry of asArray<ResultTemplatePublishMissingEntry>(missing)) {
-    const type = RESULT_TYPE_LABELS[entry.result_type as ResultType] ?? entry.result_type
+    const type = names.resultType(entry.result_type)
     const parts: string[] = []
     const fields = (entry.missing_fields ?? []).map(field => MISSING_LABELS[field] ?? field)
     if (fields.length) parts.push(`falta ${joinSpanish(fields)}`)

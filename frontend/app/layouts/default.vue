@@ -39,6 +39,8 @@ const navItems: NavItem[] = [
   { label: 'Plantillas de resultados', to: '/result-templates', tag: RESULT_TEMPLATES_TAGS.view, icon: 'M4 4h16v16H4zM4 9h16M9 9v11' },
   // Documento con firma.
   { label: 'Documentos a firmar', to: '/consent-documents', tag: CONSENT_DOCUMENTS_TAGS.view, icon: 'M6 3h8l4 4v14H6zM14 3v4h4M9 17c1-2 2-2 3 0s2 1 3-1' },
+  // Pila de capas (listas de categoría).
+  { label: 'Catálogos', to: '/catalogs', tag: CATALOGS_TAGS.view, icon: 'M12 3l9 4.5-9 4.5-9-4.5zM3 12l9 4.5 9-4.5M3 16.5l9 4.5 9-4.5' },
   // Controles deslizantes.
   { label: 'Ajustes del sistema', to: '/settings', tag: SETTINGS_TAGS.view, icon: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4' }
 ]

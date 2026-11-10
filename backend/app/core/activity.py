@@ -25,13 +25,19 @@ from app.core.schemas import Page
 # el OpenAPI la publique como enum sin que el nucleo importe los modulos;
 # `core/tests/test_activity.py` verifica que coincide con `Base.metadata`.
 ACTIVATABLE_TABLES = (
+    "age_units",
     "analytes",
+    "consent_document_types",
     "consent_documents",
+    "consent_signers",
+    "duration_units",
     "lab_areas",
     "lab_test_consent_documents",
     "lab_test_preconditions",
     "lab_test_sample_types",
     "lab_tests",
+    "precondition_categories",
+    "precondition_kinds",
     "preconditions",
     "print_labels",
     "reference_ranges",
@@ -40,8 +46,11 @@ ACTIVATABLE_TABLES = (
     "result_template_analytes",
     "result_template_sections",
     "result_templates",
+    "result_types",
     "sample_types",
     "samples",
+    "sexes",
+    "specimen_types",
     "staff",
     "units",
 )

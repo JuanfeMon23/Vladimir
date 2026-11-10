@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { ResultTemplateVersionContent } from '../composables/useResultTemplateVersionContent'
-import { RESULT_TYPES_WITH_OPTION_SET, RESULT_TYPE_LABELS } from '../types/result-templates'
 import type { ResultTemplateAnalyteRead } from '../types/result-templates'
 
 /**
@@ -47,9 +46,10 @@ function unitText(item: ResultTemplateAnalyteRead) {
 }
 
 function detail(item: ResultTemplateAnalyteRead) {
-  if (item.result_type === 'numeric') return `Unidad: ${unitText(item)} · Decimales: ${item.decimals ?? '—'}`
-  if (RESULT_TYPES_WITH_OPTION_SET.includes(item.result_type)) return `Conjunto: ${props.content.optionSetName(item.option_set_id)}`
-  if (item.result_type === 'calculated') return `Fórmula: ${item.formula || '—'} · Unidad: ${unitText(item)}`
+  const behavior = props.content.resultTypeBehavior(item.result_type)
+  if (behavior?.uses_formula) return `Fórmula: ${item.formula || '—'} · Unidad: ${unitText(item)}`
+  if (behavior?.uses_unit) return `Unidad: ${unitText(item)} · Decimales: ${item.decimals ?? '—'}`
+  if (behavior?.uses_option_set) return `Conjunto: ${props.content.optionSetName(item.option_set_id)}`
   return `Valor por defecto: ${item.default_value || '—'}`
 }
 </script>
@@ -101,7 +101,7 @@ function detail(item: ResultTemplateAnalyteRead) {
 
           <template #summary="{ item }">
             <div class="flex items-center gap-2">
-              <UiStatusBadge variant="primary" :label="RESULT_TYPE_LABELS[item.result_type] ?? item.result_type" />
+              <UiStatusBadge variant="primary" :label="content.resultTypes.nameOf(item.result_type)" />
               <UiStatusBadge v-if="!item.is_reportable" variant="neutral" label="No reportable" />
               <UiStatusBadge v-if="!content.isAnalyteActive(item.analyte_id)" variant="warning" label="Analito del catálogo inactivo" />
               <UiStatusBadge v-if="!item.is_active" :active="false" />

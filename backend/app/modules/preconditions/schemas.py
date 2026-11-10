@@ -10,22 +10,19 @@ fija el endpoint que se use (`POST /preconditions` siempre crea una raiz,
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Annotated
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.schemas import ActivityReasonInput, CodeStr
-from app.modules.preconditions.models import (
-    CATEGORY_VALUES,
-    DURATION_UNIT_VALUES,
-    KIND_VALUES,
-)
 
-# Enums derivados de los CHECK de `models.py` (fuente unica de los valores).
-Category = Literal[CATEGORY_VALUES]
-DurationUnit = Literal[DURATION_UNIT_VALUES]
-Kind = Literal[KIND_VALUES]
+# `category`, `duration_unit` y `kind` son `code` de los catalogos
+# `precondition_categories`, `duration_units` y `precondition_kinds`: el
+# controller valida contra la BD las referencias nuevas.
+Category = Annotated[str, Field(max_length=32)]
+DurationUnit = Annotated[str, Field(max_length=16)]
+Kind = Annotated[str, Field(max_length=16)]
 
 
 class PreconditionBase(BaseModel):
@@ -80,9 +77,6 @@ class PreconditionRead(PreconditionBase):
 
 
 __all__ = [
-    "CATEGORY_VALUES",
-    "DURATION_UNIT_VALUES",
-    "KIND_VALUES",
     "PreconditionBase",
     "PreconditionCreate",
     "PreconditionItemCreate",

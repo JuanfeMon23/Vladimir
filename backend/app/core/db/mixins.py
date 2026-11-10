@@ -68,6 +68,21 @@ class CatalogMixin(ActivatableMixin):
     code: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
 
 
+class CategoryMixin(CatalogMixin):
+    """Catalogo de categoria (tipos, estados, sexo, unidades...): `code`
+    estable que referencian las demas tablas por FK, `name` visible,
+    `sort_order` e `is_active` (se desactiva, no se borra).
+
+    Las columnas de comportamiento que una regla necesite las declara cada
+    tabla; el codigo no lleva listas de opciones ni etiquetas.
+    """
+
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    sort_order: Mapped[int] = mapped_column(
+        Integer, server_default=text("0"), nullable=False
+    )
+
+
 class VersionMixin:
     """Columnas comunes de las tablas `<x>_versions`.
 

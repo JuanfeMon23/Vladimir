@@ -1,11 +1,5 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import {
-  PRECONDITION_CATEGORIES,
-  PRECONDITION_CATEGORY_LABELS,
-  PRECONDITION_DURATION_UNITS,
-  PRECONDITION_DURATION_UNIT_LABELS
-} from '../types/preconditions'
 import type { PreconditionRead } from '../types/preconditions'
 
 /**
@@ -35,17 +29,17 @@ const open = defineModel<boolean>('open', { required: true })
 const schema = z.object({
   code: zRequiredText('El código es obligatorio.', 64),
   name: zRequiredText('El nombre es obligatorio.', 150),
-  category: zRequiredEnum(PRECONDITION_CATEGORIES, 'Selecciona una categoría.'),
+  category: zRequiredText('Selecciona una categoría.', 64),
   duration_value: zOptionalNumber({ min: 0 }),
-  duration_unit: zOptionalEnum(PRECONDITION_DURATION_UNITS),
+  duration_unit: zOptionalText(64),
   description: zOptionalText(),
   patient_instructions: zOptionalText(),
   is_active: z.boolean(),
   activity_reason: zActivityReason()
 })
 
-const categoryOptions = toSelectOptions(PRECONDITION_CATEGORY_LABELS)
-const durationUnitOptions = toSelectOptions(PRECONDITION_DURATION_UNIT_LABELS)
+const categories = useCatalog('precondition-categories')
+const durationUnits = useCatalog('duration-units')
 
 const isEdit = computed(() => props.entity !== null)
 const isItem = computed(() => (props.entity ? props.entity.kind === 'condition' : props.parent !== null))
@@ -135,15 +129,16 @@ function onItemSaved() {
       <UiFormField name="name" label="Nombre" required>
         <UiTextInput :disabled="dataLocked" />
       </UiFormField>
+      <UiAlert v-if="categories.error" :message="categories.error" class="sm:col-span-2" />
       <UiFormField name="category" label="Categoría" required>
-        <UiSelect :options="categoryOptions" placeholder="Seleccionar categoría" :disabled="dataLocked" />
+        <UiSelect :options="categories.optionsFor(entity?.category ?? parent?.category)" placeholder="Seleccionar categoría" :disabled="dataLocked" />
       </UiFormField>
       <div class="grid grid-cols-2 gap-3">
         <UiFormField name="duration_value" label="Duración">
           <UiTextInput type="number" min="0" step="any" :disabled="dataLocked" />
         </UiFormField>
         <UiFormField name="duration_unit" label="Unidad">
-          <UiSelect :options="durationUnitOptions" empty-label="Sin unidad" :disabled="dataLocked" />
+          <UiSelect :options="durationUnits.optionsFor(entity?.duration_unit)" empty-label="Sin unidad" :disabled="dataLocked" />
         </UiFormField>
       </div>
       <UiFormField name="description" label="Descripción" class="sm:col-span-2">

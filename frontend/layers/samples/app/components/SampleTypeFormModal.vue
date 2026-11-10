@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import { SAMPLE_SPECIMENS, SAMPLE_SPECIMEN_LABELS } from '../types/samples'
 import type { SampleTypeRead } from '../types/samples'
 
 /**
@@ -21,7 +20,7 @@ const open = defineModel<boolean>('open', { required: true })
 const schema = z.object({
   code: zRequiredText('El código es obligatorio.', 64),
   name: zRequiredText('El nombre es obligatorio.', 150),
-  specimen: zRequiredEnum(SAMPLE_SPECIMENS, 'Selecciona un espécimen.'),
+  specimen: zRequiredText('Selecciona un espécimen.', 64),
   cap_color_hex: zOptionalText(7).refine(
     value => value === null || /^#[0-9a-fA-F]{6}$/.test(value),
     'Usa el formato #RRGGBB, p. ej. #F97316.'
@@ -36,7 +35,7 @@ const schema = z.object({
   activity_reason: zActivityReason()
 })
 
-const specimenOptions = toSelectOptions(SAMPLE_SPECIMEN_LABELS)
+const specimenTypes = useCatalog('specimen-types')
 const isEdit = computed(() => props.entity !== null)
 
 const { submit, isSubmitting, formError } = useZodForm(schema, {
@@ -97,8 +96,9 @@ const onSubmit = submit(async (values) => {
       <UiFormField name="name" label="Nombre" required>
         <UiTextInput :disabled="dataLocked" />
       </UiFormField>
+      <UiAlert v-if="specimenTypes.error" :message="specimenTypes.error" class="sm:col-span-2" />
       <UiFormField name="specimen" label="Espécimen" required>
-        <UiSelect :options="specimenOptions" placeholder="Seleccionar espécimen" :disabled="dataLocked" />
+        <UiSelect :options="specimenTypes.optionsFor(entity?.specimen)" placeholder="Seleccionar espécimen" :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="cap_color_hex" label="Color de tapa" hint="Código hex, p. ej. #F97316">
         <UiTextInput placeholder="#RRGGBB" :disabled="dataLocked" />

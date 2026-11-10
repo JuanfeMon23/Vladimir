@@ -73,7 +73,8 @@ const onSubmit = submit(async (payload) => {
 function publishErrorLines(details: unknown) {
   return describeResultTemplatePublishErrors(details, {
     templateAnalyte: content.templateAnalyteName,
-    reference: content.referenceName
+    reference: content.referenceName,
+    resultType: code => content.resultTypes.nameOf(code)
   })
 }
 

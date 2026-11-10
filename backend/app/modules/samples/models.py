@@ -9,22 +9,18 @@ llenado).
 
 import uuid
 
-from sqlalchemy import CheckConstraint, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db.base import Base
-from app.core.db.mixins import CatalogMixin, Timestamps, UUIDv7PK
+from app.core.db.mixins import CatalogMixin, CategoryMixin, Timestamps, UUIDv7PK
 
-SPECIMEN_VALUES = (
-    "suero",
-    "plasma",
-    "sangre_total",
-    "orina",
-    "heces",
-    "secrecion",
-    "otro",
-)
+
+class SpecimenType(CategoryMixin, UUIDv7PK, Timestamps, Base):
+    """Espécimen (suero, plasma, orina...): catálogo de categoría."""
+
+    __tablename__ = "specimen_types"
 
 
 class Sample(CatalogMixin, UUIDv7PK, Timestamps, Base):
@@ -39,13 +35,6 @@ class SampleType(CatalogMixin, UUIDv7PK, Timestamps, Base):
     """Tipo de tubo/recipiente de toma de una muestra."""
 
     __tablename__ = "sample_types"
-    __table_args__ = (
-        CheckConstraint(
-            f"specimen IN {SPECIMEN_VALUES}",
-            name="specimen",
-        ),
-    )
-
     sample_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("samples.id"),
@@ -55,7 +44,12 @@ class SampleType(CatalogMixin, UUIDv7PK, Timestamps, Base):
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     cap_color_hex: Mapped[str | None] = mapped_column(String(7), nullable=True)
     additive: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    specimen: Mapped[str] = mapped_column(String(16), nullable=False)
+    specimen: Mapped[str] = mapped_column(
+        String(16),
+        ForeignKey("specimen_types.code"),
+        nullable=False,
+        index=True,
+    )
     volume_ml: Mapped[float | None] = mapped_column(Numeric, nullable=True)
     storage_temperature: Mapped[str | None] = mapped_column(String(32), nullable=True)
     stability_hours: Mapped[int | None] = mapped_column(Integer, nullable=True)

@@ -4,6 +4,7 @@ Otros modulos solo pueden importar lo que se expone aqui (nunca
 `repository`, `models` ni `schemas` internos directamente).
 """
 
+from app.modules.result_templates.models import AgeUnit, ResultType, Sex
 from app.modules.result_templates.router import (
     analytes_router,
     result_option_sets_router,
@@ -14,6 +15,9 @@ from app.modules.result_templates.router import (
 )
 
 __all__ = [
+    "AgeUnit",
+    "ResultType",
+    "Sex",
     "analytes_router",
     "result_option_sets_router",
     "result_options_router",

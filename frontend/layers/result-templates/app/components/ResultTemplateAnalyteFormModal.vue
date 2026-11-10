@@ -1,13 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { ResultTemplateVersionContent } from '../composables/useResultTemplateVersionContent'
-import {
-  RESULT_TYPES,
-  RESULT_TYPES_WITH_OPTION_SET,
-  RESULT_TYPES_WITH_UNIT,
-  RESULT_TYPE_LABELS
-} from '../types/result-templates'
-import type { ResultTemplateAnalyteCreate, ResultTemplateAnalyteRead, ResultType } from '../types/result-templates'
+import type { ResultTemplateAnalyteCreate, ResultTemplateAnalyteRead } from '../types/result-templates'
 
 /**
  * Agregar o editar un analito de una versión de plantilla (solo en
@@ -26,13 +20,11 @@ const props = defineProps<{
 const emit = defineEmits<{ saved: [] }>()
 const open = defineModel<boolean>('open', { required: true })
 
-const resultTypeOptions = toSelectOptions(RESULT_TYPE_LABELS)
-
 const schema = z.object({
   analyte_id: zRequiredId('Selecciona un analito.'),
   section_id: zOptionalId(),
   sort_order: zRequiredNumber('El orden es obligatorio.', { min: 0, integer: true }),
-  result_type: zRequiredEnum(RESULT_TYPES, 'Selecciona un tipo de resultado.'),
+  result_type: zRequiredText('Selecciona un tipo de resultado.', 64),
   unit_id: zOptionalId(),
   decimals: zOptionalNumber({ min: 0, integer: true }),
   option_set_id: zOptionalId(),
@@ -53,7 +45,7 @@ const { submit, isSubmitting, formError, values, setFieldError } = useZodForm(sc
       analyte_id: source?.analyte_id ?? '',
       section_id: source?.section_id ?? '',
       sort_order: source?.sort_order ?? nextSortOrder.value,
-      result_type: source?.result_type ?? 'numeric',
+      result_type: source?.result_type ?? '',
       unit_id: source?.unit_id ?? '',
       decimals: source?.decimals ?? '',
       option_set_id: source?.option_set_id ?? '',
@@ -66,11 +58,12 @@ const { submit, isSubmitting, formError, values, setFieldError } = useZodForm(sc
   resetOn: open
 })
 
-const resultType = computed(() => values.result_type as ResultType | '')
-/** Unidad y decimales: numérico y calculado (el backend los exige al publicar). */
-const usesUnit = computed(() => RESULT_TYPES_WITH_UNIT.includes(resultType.value as ResultType))
-const usesOptionSet = computed(() => resultType.value !== '' && RESULT_TYPES_WITH_OPTION_SET.includes(resultType.value))
-const isCalculated = computed(() => resultType.value === 'calculated')
+const resultTypeOptions = computed(() => props.content.resultTypes.optionsFor(props.entity?.result_type))
+const behavior = computed(() => props.content.resultTypeBehavior(values.result_type))
+/** Unidad y decimales: el backend los exige al publicar si el tipo `uses_unit`. */
+const usesUnit = computed(() => behavior.value?.uses_unit === true)
+const usesOptionSet = computed(() => behavior.value?.uses_option_set === true)
+const isCalculated = computed(() => behavior.value?.uses_formula === true)
 
 // Al elegir un analito, si la unidad está vacía se precarga su unidad por defecto.
 const setUnitId = useSetFieldValue<string>('unit_id')
@@ -90,10 +83,10 @@ const formulaCodes = computed(() => props.content.formulaCodes(props.entity?.id)
 const onSubmit = submit(async (form) => {
   const payload: ResultTemplateAnalyteCreate = {
     ...form,
-    unit_id: RESULT_TYPES_WITH_UNIT.includes(form.result_type) ? form.unit_id : null,
-    decimals: RESULT_TYPES_WITH_UNIT.includes(form.result_type) ? form.decimals : null,
-    option_set_id: RESULT_TYPES_WITH_OPTION_SET.includes(form.result_type) ? form.option_set_id : null,
-    formula: form.result_type === 'calculated' ? form.formula : null
+    unit_id: usesUnit.value ? form.unit_id : null,
+    decimals: usesUnit.value ? form.decimals : null,
+    option_set_id: usesOptionSet.value ? form.option_set_id : null,
+    formula: isCalculated.value ? form.formula : null
   }
   const api = useResultTemplates()
   const { templateId, versionId } = props.content
@@ -124,6 +117,7 @@ const onSubmit = submit(async (form) => {
     @submit="onSubmit"
   >
     <UiAlert v-if="content.catalogError" :message="content.catalogError" />
+    <UiAlert v-if="content.resultTypes.error" :message="content.resultTypes.error" />
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <UiFormField name="analyte_id" label="Analito" required>
@@ -140,10 +134,10 @@ const onSubmit = submit(async (form) => {
       </UiFormField>
 
       <template v-if="usesUnit">
-        <UiFormField name="unit_id" label="Unidad (UCUM)" hint="Obligatoria para publicar (numérico o calculado).">
+        <UiFormField name="unit_id" label="Unidad (UCUM)" hint="Obligatoria para publicar con este tipo de resultado.">
           <UiSelect :options="unitOptions" empty-label="Sin unidad" />
         </UiFormField>
-        <UiFormField name="decimals" label="Decimales" hint="Obligatorios para publicar (numérico o calculado).">
+        <UiFormField name="decimals" label="Decimales" hint="Obligatorios para publicar con este tipo de resultado.">
           <UiTextInput type="number" step="1" min="0" />
         </UiFormField>
       </template>
@@ -153,7 +147,7 @@ const onSubmit = submit(async (form) => {
         name="option_set_id"
         label="Conjunto de opciones"
         class="sm:col-span-2"
-        hint="Obligatorio para publicar un analito cualitativo, semicuantitativo o de título (dilución)."
+        hint="Obligatorio para publicar con este tipo de resultado."
       >
         <UiSelect :options="optionSetOptions" empty-label="Sin conjunto" />
       </UiFormField>

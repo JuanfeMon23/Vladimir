@@ -9,16 +9,15 @@ cliente en `SampleTypeCreate`: lo fija el endpoint
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Annotated
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.schemas import ActivityReasonInput, CodeStr
-from app.modules.samples.models import SPECIMEN_VALUES
 
-# Enum derivado del CHECK `specimen` de `models.py`.
-Specimen = Literal[SPECIMEN_VALUES]
+# `code` del catalogo `specimen_types`; el controller valida contra la BD.
+Specimen = Annotated[str, Field(max_length=16)]
 
 
 class SampleBase(BaseModel):
@@ -100,7 +99,6 @@ class SampleRead(SampleBase):
 
 
 __all__ = [
-    "SPECIMEN_VALUES",
     "SampleBase",
     "SampleCreate",
     "SampleRead",

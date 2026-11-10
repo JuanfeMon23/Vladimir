@@ -1,7 +1,10 @@
 """Tests end-to-end (HTTP) del modulo `samples`."""
 
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.categories import get_category
+from app.modules.samples.models import SpecimenType
 from app.modules.samples.tests.conftest import unique_code
 
 
@@ -166,7 +169,7 @@ async def test_update_sample_type_duplicate_code_returns_409(
     assert patch_response.json()["code"] == "conflict"
 
 
-async def test_create_sample_type_invalid_specimen_returns_422(
+async def test_create_sample_type_unknown_specimen_returns_422(
     client: AsyncClient, sample_payload: dict, sample_type_payload: dict
 ) -> None:
     sample_response = await client.post("/api/v1/samples", json=sample_payload)
@@ -176,5 +179,46 @@ async def test_create_sample_type_invalid_specimen_returns_422(
         f"/api/v1/samples/{sample_id}/types",
         json={**sample_type_payload, "specimen": "saliva"},
     )
+
     assert response.status_code == 422
-    assert response.json()["detail"][0]["loc"] == ["body", "specimen"]
+    assert response.json()["code"] == "invalid_reference"
+    assert response.json()["details"] == {"specimen": "saliva"}
+
+
+async def test_create_sample_type_inactive_specimen_returns_422(
+    client: AsyncClient,
+    session: AsyncSession,
+    sample_payload: dict,
+    sample_type_payload: dict,
+) -> None:
+    sample_id = (await client.post("/api/v1/samples", json=sample_payload)).json()["id"]
+    row = await get_category(session, SpecimenType, "heces")
+    assert row is not None
+    row.is_active = False
+    await session.flush()
+
+    response = await client.post(
+        f"/api/v1/samples/{sample_id}/types",
+        json={**sample_type_payload, "specimen": "heces"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "inactive_reference"
+
+
+async def test_patch_sample_type_unknown_specimen_returns_422(
+    client: AsyncClient, sample_payload: dict, sample_type_payload: dict
+) -> None:
+    sample_id = (await client.post("/api/v1/samples", json=sample_payload)).json()["id"]
+    created = (
+        await client.post(
+            f"/api/v1/samples/{sample_id}/types", json=sample_type_payload
+        )
+    ).json()
+
+    response = await client.patch(
+        f"/api/v1/sample-types/{created['id']}", json={"specimen": "saliva"}
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "invalid_reference"

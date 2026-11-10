@@ -17,20 +17,6 @@ export interface LabTestBase {
   result_template_version_id?: string | null
 }
 
-/** Unidades de duración válidas para los overrides (`Literal` del backend). */
-export const LAB_TEST_DURATION_UNIT_LABELS = {
-  minutos: 'Minutos',
-  horas: 'Horas',
-  dias: 'Días'
-} as const
-
-export type LabTestDurationUnit = keyof typeof LAB_TEST_DURATION_UNIT_LABELS
-
-export const LAB_TEST_DURATION_UNITS = Object.keys(LAB_TEST_DURATION_UNIT_LABELS) as [
-  LabTestDurationUnit,
-  ...LabTestDurationUnit[]
-]
-
 /**
  * Precondición asignada al examen: el valor efectivo ya resuelto (override
  * si existe, si no el del catálogo `preconditions`) y los overrides crudos
@@ -47,12 +33,12 @@ export interface LabTestPreconditionRead {
   name: string
   description: string | null
   duration_value: number | null
-  duration_unit: LabTestDurationUnit | null
+  duration_unit: string | null
   patient_instructions: string | null
   name_override: string | null
   description_override: string | null
   duration_value_override: number | null
-  duration_unit_override: LabTestDurationUnit | null
+  duration_unit_override: string | null
   patient_instructions_override: string | null
 }
 
@@ -64,7 +50,7 @@ export interface LabTestPreconditionInput {
   name_override?: string | null
   description_override?: string | null
   duration_value_override?: number | null
-  duration_unit_override?: LabTestDurationUnit | null
+  duration_unit_override?: string | null
   patient_instructions_override?: string | null
 }
 

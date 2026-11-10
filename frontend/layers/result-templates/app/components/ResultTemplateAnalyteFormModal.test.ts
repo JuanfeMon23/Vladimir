@@ -2,6 +2,7 @@ import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiError } from '~/testing/apiError'
+import { CATALOG_FIXTURES, catalogContentStub } from '~/testing/catalogs'
 import { control, fieldError, flushAll, optionLabels, setValue, submitForm } from '#andromeda/testing/dom'
 import type { ResultTemplateVersionContent } from '../composables/useResultTemplateVersionContent'
 import type { ResultTemplateAnalyteRead } from '../types/result-templates'
@@ -25,7 +26,8 @@ const content = {
   optionSetOptionsFor: () => [{ value: 'os1', label: 'Títulos (titulos)' }],
   unitOptionsFor: () => [],
   analyteDefaultUnitId: () => null,
-  formulaCodes: () => ['CHOL', 'HDL-C']
+  formulaCodes: () => ['CHOL', 'HDL-C'],
+  ...catalogContentStub()
 } as unknown as ResultTemplateVersionContent
 
 function entity(over: Partial<ResultTemplateAnalyteRead> = {}): ResultTemplateAnalyteRead {
@@ -53,9 +55,9 @@ beforeEach(() => {
   document.body.innerHTML = ''
 })
 
-async function mountModal(lab: ResultTemplateAnalyteRead | null) {
+async function mountModal(lab: ResultTemplateAnalyteRead | null, versionContent: ResultTemplateVersionContent = content) {
   const wrapper = await mountSuspended(ResultTemplateAnalyteFormModal, {
-    props: { entity: lab, content, open: true },
+    props: { entity: lab, content: versionContent, open: true },
     attachTo: document.body
   })
   await flushAll()
@@ -118,5 +120,43 @@ describe('ResultTemplateAnalyteFormModal: título (dilución)', () => {
     await setValue(set, 'os1')
     await submitForm(form)
     expect(fake.bodies('PATCH', `${BASE}/ta1`)).toMatchObject([{ result_type: 'titer', option_set_id: 'os1', unit_id: null, decimals: null }])
+  })
+})
+
+describe('ResultTemplateAnalyteFormModal: tipos de resultado del catálogo', () => {
+  const MOLECULAR = {
+    id: 'mol', code: 'molecular', name: 'Molecular', sort_order: 9, is_active: true, created_at: '', updated_at: '',
+    uses_option_set: false, uses_numeric_range: false, uses_boolean_range: false, uses_unit: true, uses_formula: true, requires_reference_range: false
+  }
+  const withMolecular = {
+    ...content,
+    ...catalogContentStub({ 'result-types': [...CATALOG_FIXTURES['result-types'], MOLECULAR] })
+  } as unknown as ResultTemplateVersionContent
+
+  it('los tipos salen de la API y un tipo nuevo gobierna los campos por sus banderas, no por su código', async () => {
+    const { dialog } = await mountModal(entity({ result_type: 'text', formula: null }), withMolecular)
+    expect(optionLabels(control<HTMLSelectElement>(dialog, 'Tipo de resultado'))).toContain('Molecular')
+    expect(() => control(dialog, 'Fórmula')).toThrow()
+
+    await setValue(control<HTMLSelectElement>(dialog, 'Tipo de resultado'), 'molecular')
+    expect(control(dialog, 'Fórmula')).toBeTruthy()
+    expect(control(dialog, 'Decimales')).toBeTruthy()
+    expect(() => control(dialog, 'Conjunto de opciones')).toThrow()
+  })
+
+  it('un tipo desactivado ya guardado se muestra con "(inactivo)"', async () => {
+    const inactive = catalogContentStub({ 'result-types': CATALOG_FIXTURES['result-types'].map(item => item.code === 'text' ? { ...item, is_active: false } : item) })
+    const { dialog } = await mountModal(entity({ result_type: 'text', formula: null }), { ...content, ...inactive } as unknown as ResultTemplateVersionContent)
+    expect(optionLabels(control<HTMLSelectElement>(dialog, 'Tipo de resultado'))).toContain('Texto (inactivo)')
+  })
+
+  it.each([
+    ['invalid_reference', 'El tipo de resultado «zzz» no existe.'],
+    ['inactive_reference', 'El tipo de resultado «calculated» está inactivo.']
+  ])('el 422 %s se muestra en Tipo de resultado', async (code, message) => {
+    fake.failures[`PATCH ${BASE}/ta1`] = apiError({ code, message, details: { result_type: 'calculated' } }, 422)
+    const { dialog, form } = await mountModal(entity())
+    await submitForm(form)
+    expect(fieldError(dialog, 'Tipo de resultado')).toBe(message)
   })
 })

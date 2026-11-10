@@ -9,6 +9,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.activation import ensure_active
+from app.core.categories import ensure_category
 from app.core.dependencies import (
     NO_SEARCH,
     ActiveOnlyFilter,
@@ -19,13 +20,45 @@ from app.core.exceptions import CodeConflictError
 from app.core.repository import create_entity, get_or_404, update_entity
 from app.core.schemas import Page
 from app.modules.preconditions import repository
-from app.modules.preconditions.models import Precondition
+from app.modules.preconditions.models import (
+    DurationUnit,
+    Precondition,
+    PreconditionCategory,
+)
 from app.modules.preconditions.schemas import (
     PreconditionCreate,
     PreconditionItemCreate,
     PreconditionRead,
     PreconditionUpdate,
 )
+
+
+async def _ensure_categories(
+    session: AsyncSession,
+    category: str | None,
+    duration_unit: str | None,
+    current: Precondition | None = None,
+) -> None:
+    """Referencias NUEVAS a los catalogos `precondition_categories` y
+    `duration_units` (lo que la fila ya tenia no se revalida)."""
+    await ensure_category(
+        session,
+        PreconditionCategory,
+        category,
+        subject="la categoría",
+        field="category",
+        feminine=True,
+        current=current.category if current else None,
+    )
+    await ensure_category(
+        session,
+        DurationUnit,
+        duration_unit,
+        subject="la unidad de duración",
+        field="duration_unit",
+        feminine=True,
+        current=current.duration_unit if current else None,
+    )
 
 
 def _to_read(
@@ -72,6 +105,7 @@ async def create_precondition(
     existing = await repository.get_by_code(session, data.code)
     if existing is not None:
         raise CodeConflictError("una precondición", data.code)
+    await _ensure_categories(session, data.category, data.duration_unit)
     precondition = await create_entity(
         session, Precondition, data, parent_id=None, kind="precondition"
     )
@@ -87,6 +121,7 @@ async def create_item(
     existing = await repository.get_by_code(session, data.code)
     if existing is not None:
         raise CodeConflictError("una precondición", data.code)
+    await _ensure_categories(session, data.category, data.duration_unit)
 
     item = await repository.create_item(session, parent_id, data)
     return _to_read(item)
@@ -116,6 +151,7 @@ async def update_precondition(
         existing = await repository.get_by_code(session, new_code)
         if existing is not None:
             raise CodeConflictError("una precondición", new_code)
+    await _ensure_categories(session, data.category, data.duration_unit, precondition)
 
     precondition = await update_entity(session, precondition, data)
 

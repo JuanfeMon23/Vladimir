@@ -15,6 +15,7 @@ from collections.abc import AsyncGenerator
 from pathlib import Path
 
 import asyncpg
+import pytest
 import pytest_asyncio
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
@@ -31,6 +32,7 @@ REV_LAB_TESTS = "db1a126fd56b"
 REV_SOFT_DELETE = "6be0a4509512"
 REV_UNITS = "98b5c90d1b86"
 REV_BEFORE_ACTOR = "f7d3a9c25e18"
+REV_BEFORE_CATALOGS = "a4c8e1d27b53"
 
 
 def _urls() -> tuple[str, str, str]:
@@ -255,3 +257,37 @@ async def test_migracion_de_unidades_convierte_texto_a_catalogo_y_vuelve(
     }
 
     alembic("upgrade", "head")
+
+
+async def test_migracion_de_catalogos_conserva_datos_y_vuelve_a_los_check(
+    db: asyncpg.Connection,
+) -> None:
+    alembic("upgrade", "head")
+    alembic("downgrade", REV_BEFORE_CATALOGS)
+    tables = {
+        row["tablename"] for row in await db.fetch("SELECT tablename FROM pg_tables")
+    }
+    assert "sexes" not in tables and "result_types" not in tables
+    with pytest.raises(asyncpg.CheckViolationError):
+        await db.execute(
+            "INSERT INTO preconditions (code, name, kind, category) "
+            "VALUES ('mig-cat-bad', 'P', 'precondition', 'inventada')"
+        )
+    precondition_id = await db.fetchval(
+        "INSERT INTO preconditions (code, name, kind, category, duration_unit) "
+        "VALUES ('mig-cat-ok', 'P', 'precondition', 'ayuno', 'horas') RETURNING id"
+    )
+
+    alembic("upgrade", "head")
+
+    row = await db.fetchrow(
+        "SELECT kind, category, duration_unit FROM preconditions WHERE id = $1",
+        precondition_id,
+    )
+    assert tuple(row) == ("precondition", "ayuno", "horas")
+    with pytest.raises(asyncpg.ForeignKeyViolationError):
+        await db.execute(
+            "INSERT INTO preconditions (code, name, kind, category) "
+            "VALUES ('mig-cat-bad2', 'P', 'precondition', 'inventada')"
+        )
+    assert await _schema_diff() == []

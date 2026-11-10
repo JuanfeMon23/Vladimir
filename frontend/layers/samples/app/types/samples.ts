@@ -5,20 +5,11 @@
  * cada uno con su propio tubo/tapa, aditivo, volumen, etc.
  */
 
-/** Especímenes válidos (`SPECIMEN_VALUES` del backend) con su etiqueta en la interfaz. */
-export const SAMPLE_SPECIMEN_LABELS = {
-  suero: 'Suero',
-  plasma: 'Plasma',
-  sangre_total: 'Sangre total',
-  orina: 'Orina',
-  heces: 'Heces',
-  secrecion: 'Secreción',
-  otro: 'Otro'
-} as const
-
-export type SampleSpecimen = keyof typeof SAMPLE_SPECIMEN_LABELS
-
-export const SAMPLE_SPECIMENS = Object.keys(SAMPLE_SPECIMEN_LABELS) as [SampleSpecimen, ...SampleSpecimen[]]
+/**
+ * `specimen` es el `code` de un valor del catálogo `specimen-types`
+ * (`/catalogs/specimen-types`); las etiquetas salen de la API, no de una lista
+ * en el código.
+ */
 
 export interface SampleBase {
   code: string
@@ -52,7 +43,7 @@ export type SampleListParams = {
 export interface SampleTypeBase {
   code: string
   name: string
-  specimen: SampleSpecimen
+  specimen: string
   cap_color_hex?: string | null
   additive?: string | null
   volume_ml?: number | null

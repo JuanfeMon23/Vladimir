@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { preconditionCategoryLabel } from '../../types/preconditions'
 import type { PreconditionRead } from '../../types/preconditions'
 
 definePageMeta({ layout: 'default', leo: { tag: PRECONDITIONS_TAGS.view } })
 
 const createTag = PRECONDITIONS_TAGS.create
+const categories = useCatalog('precondition-categories')
 
 // Quien solo consulta ve "Ver"; con algún permiso de cambio, "Ver / Editar".
 const canModify = useCan([PRECONDITIONS_TAGS.edit, PRECONDITIONS_TAGS.changeStatus, PRECONDITIONS_TAGS.addItem], 'any')
@@ -77,7 +77,7 @@ const modal = useEntityModal<PreconditionRead>()
             <span class="font-normal text-text-muted">({{ root.code }})</span>
           </p>
           <p class="text-xs text-text-muted">
-            {{ preconditionCategoryLabel(root.category) }}
+            {{ categories.nameOf(root.category) }}
           </p>
         </div>
       </template>

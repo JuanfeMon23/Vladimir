@@ -10,18 +10,18 @@ controller, no el schema.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Annotated
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from app.core.schemas import ActivityReasonInput, CodeStr
 from app.core.versioning import VersionOwnerRead, VersionStatus
-from app.modules.consent_documents.models import DOCUMENT_TYPE_VALUES, SIGNER_VALUES
 
-# Enums derivados de los CHECK de `models.py` (fuente unica de los valores).
-DocumentType = Literal[DOCUMENT_TYPE_VALUES]
-Signer = Literal[SIGNER_VALUES]
+# `document_type` y `signer` son `code` de los catalogos `consent_document_types`
+# y `consent_signers`: el controller los valida contra la BD.
+DocumentType = Annotated[str, Field(max_length=32)]
+Signer = Annotated[str, Field(max_length=32)]
 
 # Consentimiento general (se firma primero, aplica a todo paciente, no se
 # enlaza a examenes): a lo sumo uno activo.
@@ -173,8 +173,6 @@ class DataTreatmentConsentRead(BaseModel):
 
 __all__ = [
     "DATA_TREATMENT_TYPE",
-    "DOCUMENT_TYPE_VALUES",
-    "SIGNER_VALUES",
     "ConsentDocumentBase",
     "ConsentDocumentCreate",
     "ConsentDocumentFileRead",

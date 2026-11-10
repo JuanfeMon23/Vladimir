@@ -23,6 +23,11 @@ import type {
 export function useResultTemplateVersionContent(templateId: string, versionId: string) {
   const api = useResultTemplates()
 
+  // Catálogos de categoría (BD): tipos de resultado (con sus banderas de comportamiento), sexos y unidades de edad.
+  const resultTypes = useCatalog('result-types')
+  const sexes = useCatalog('sexes')
+  const ageUnits = useCatalog('age-units')
+
   const sections = ref<ResultTemplateSectionRead[]>([])
   const sectionsLoading = ref(false)
   const sectionsError = ref<string | null>(null)
@@ -135,6 +140,15 @@ export function useResultTemplateVersionContent(templateId: string, versionId: s
     return activeSelectOptions(units.value, unitLabel, current)
   }
 
+  /** Fila del tipo de resultado (banderas `uses_*`), o `undefined` si el catálogo no la trae. */
+  function resultTypeBehavior(resultTypeCode: string | null | undefined) {
+    return resultTypes.itemOf(resultTypeCode)
+  }
+  /** Etiqueta del sexo de un rango; `null` si es el comodín («cualquiera») o no hay valor. */
+  function sexLabel(sexCode: string) {
+    return sexes.itemOf(sexCode)?.is_wildcard ? null : sexes.nameOf(sexCode)
+  }
+
   function analyteName(analyteId: string) {
     const analyte = analytesById.value.get(analyteId)
     return analyte ? analyteLabel(analyte) : analyteId
@@ -211,6 +225,11 @@ export function useResultTemplateVersionContent(templateId: string, versionId: s
     analytesLoading,
     analytesError,
     catalogError,
+    resultTypes,
+    sexes,
+    ageUnits,
+    resultTypeBehavior,
+    sexLabel,
     units,
     sectionOptionsFor,
     analyteOptionsFor,

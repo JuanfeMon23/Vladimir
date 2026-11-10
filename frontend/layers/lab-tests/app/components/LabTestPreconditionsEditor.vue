@@ -9,7 +9,6 @@
  * asignadas, en su orden).
  */
 import { z } from 'zod'
-import { LAB_TEST_DURATION_UNIT_LABELS, LAB_TEST_DURATION_UNITS } from '../types/lab-tests'
 import type { LabTestPreconditionInput, LabTestPreconditionRead } from '../types/lab-tests'
 import type { LabTestAssignmentCatalogEntry, LabTestAssignmentRow } from '../utils/assignmentRows'
 
@@ -18,7 +17,7 @@ const props = defineProps<{ labTestId: string }>()
 const labTestsApi = useLabTests()
 /** Sin el `view` del módulo del catálogo no se pide nada (el panel avisa el permiso que falta). */
 const canConsult = useCan(MODULE_VIEW.preconditions.tag)
-const durationUnitOptions = toSelectOptions(LAB_TEST_DURATION_UNIT_LABELS)
+const durationUnits = useCatalog('duration-units')
 
 const rowSchema = z.object({
   precondition_id: z.string(),
@@ -27,14 +26,14 @@ const rowSchema = z.object({
   name_override: zOptionalText(150),
   description_override: zOptionalText(),
   duration_value_override: zOptionalNumber({ min: 0 }),
-  duration_unit_override: zOptionalEnum(LAB_TEST_DURATION_UNITS),
+  duration_unit_override: zOptionalText(64),
   patient_instructions_override: zOptionalText()
 })
 const schema = z.object({ rows: z.array(rowSchema) })
 type RowValues = z.input<typeof rowSchema>
 
 const form = useZodForm(schema, { initialValues: { rows: [] } })
-const { submit, isSubmitting, formError, reset } = form
+const { submit, isSubmitting, formError, reset, setFieldError } = form
 
 function emptyRow(id: string, selected = false): RowValues {
   return {
@@ -95,7 +94,19 @@ const savedMessage = ref<string | null>(null)
 const onSubmit = submit(async ({ rows }) => {
   savedMessage.value = null
   const items: LabTestPreconditionInput[] = labTestOrderedAssignmentPayload(rows)
-  await labTestsApi.putPreconditions(props.labTestId, items)
+  try {
+    await labTestsApi.putPreconditions(props.labTestId, items)
+  } catch (err) {
+    // 422 `invalid_reference`/`inactive_reference` con `details = { duration_unit_override: <código> }`:
+    // se marca en el selector de cada fila elegida que usa ese valor.
+    const badUnit = err instanceof LeoApiError ? (err.details as { duration_unit_override?: unknown } | null)?.duration_unit_override : undefined
+    const badRows = typeof badUnit === 'string'
+      ? rows.flatMap((row, index) => (row.selected && row.duration_unit_override === badUnit ? [index] : []))
+      : []
+    if (!badRows.length) throw err
+    for (const index of badRows) setFieldError(`rows[${index}].duration_unit_override`, (err as Error).message)
+    return
+  }
   savedMessage.value = 'Precondiciones guardadas.'
 })
 </script>
@@ -138,7 +149,7 @@ const onSubmit = submit(async ({ rows }) => {
               <UiTextInput type="number" min="0" step="any" />
             </UiFormField>
             <UiFormField :name="`rows[${row.index}].duration_unit_override`" label="Unidad de duración (override)">
-              <UiSelect :options="durationUnitOptions" empty-label="Sin override" />
+              <UiSelect :options="durationUnits.optionsFor(form.values.rows?.[row.index]?.duration_unit_override)" empty-label="Sin override" />
             </UiFormField>
             <UiFormField :name="`rows[${row.index}].description_override`" label="Descripción (override)" class="sm:col-span-2">
               <UiTextarea :rows="2" />

@@ -19,16 +19,16 @@ resolucion de overrides en cada fila de un listado:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Annotated
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.schemas import ActivityReasonInput, CodeStr
-from app.modules.lab_tests.models import DURATION_UNIT_VALUES
 
-# Enum derivado del CHECK `duration_unit_override` de `models.py`.
-DurationUnit = Literal[DURATION_UNIT_VALUES]
+# `code` del catalogo `duration_units`; el controller valida las referencias
+# nuevas contra la BD.
+DurationUnit = Annotated[str, Field(max_length=16)]
 
 
 class LabTestSampleTypeInput(BaseModel):

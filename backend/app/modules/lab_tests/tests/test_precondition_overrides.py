@@ -2,8 +2,10 @@
 override) ademas del valor efectivo resuelto."""
 
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.preconditions.models import Precondition
+from app.core.categories import get_category
+from app.modules.preconditions.models import DurationUnit, Precondition
 
 OVERRIDE_FIELDS = (
     "name_override",
@@ -74,3 +76,58 @@ async def test_precondition_read_exposes_raw_overrides_and_resolved_values(
     for source in (listed, detail["preconditions"][0]):
         assert source["duration_value_override"] == 12
         assert source["name_override"] is None
+
+
+async def test_unknown_duration_unit_override_returns_422(
+    client: AsyncClient, lab_test_payload: dict, precondition: Precondition
+) -> None:
+    lab_test_id = (
+        await client.post("/api/v1/lab-tests", json=lab_test_payload)
+    ).json()["id"]
+
+    response = await client.put(
+        f"/api/v1/lab-tests/{lab_test_id}/preconditions",
+        json=[
+            {
+                "precondition_id": str(precondition.id),
+                "sort_order": 1,
+                "duration_unit_override": "semanas",
+            }
+        ],
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "invalid_reference"
+    assert response.json()["details"] == {"duration_unit_override": "semanas"}
+
+
+async def test_inactive_duration_unit_override_returns_422_but_kept_value_passes(
+    client: AsyncClient,
+    session: AsyncSession,
+    lab_test_payload: dict,
+    precondition: Precondition,
+) -> None:
+    item = {
+        "precondition_id": str(precondition.id),
+        "sort_order": 1,
+        "duration_unit_override": "dias",
+    }
+    lab_test_id, _ = await _assign(client, lab_test_payload, item)
+    unit = await get_category(session, DurationUnit, "dias")
+    assert unit is not None
+    unit.is_active = False
+    await session.flush()
+    url = f"/api/v1/lab-tests/{lab_test_id}/preconditions"
+
+    kept = await client.put(url, json=[item])
+    changed = await client.put(url, json=[{**item, "duration_unit_override": "dias"}])
+    other = await get_category(session, DurationUnit, "horas")
+    assert other is not None
+    other.is_active = False
+    await session.flush()
+    rejected = await client.put(url, json=[{**item, "duration_unit_override": "horas"}])
+
+    assert kept.status_code == 200
+    assert changed.status_code == 200
+    assert rejected.status_code == 422
+    assert rejected.json()["code"] == "inactive_reference"

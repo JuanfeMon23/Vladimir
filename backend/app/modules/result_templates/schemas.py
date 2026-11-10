@@ -19,23 +19,19 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from datetime import datetime
-from typing import Any, Literal, Self
+from typing import Annotated, Any, Self
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.core.schemas import ActivityReasonInput, CodeStr
 from app.core.versioning import VersionOwnerRead, VersionStatus
-from app.modules.result_templates.models import (
-    AGE_UNIT_VALUES,
-    RESULT_TYPE_VALUES,
-    SEX_VALUES,
-)
 
-# Enums derivados de los CHECK de `models.py` (fuente unica de los valores).
-ResultType = Literal[RESULT_TYPE_VALUES]
-Sex = Literal[SEX_VALUES]
-AgeUnit = Literal[AGE_UNIT_VALUES]
+# `code` de los catalogos `result_types`, `sexes` y `age_units`; el controller
+# valida contra la BD las referencias nuevas.
+ResultType = Annotated[str, Field(max_length=32)]
+Sex = Annotated[str, Field(max_length=8)]
+AgeUnit = Annotated[str, Field(max_length=16)]
 
 # --------------------------------------------------------------------------
 # Units (UCUM)
@@ -437,9 +433,6 @@ class ReferenceRangeRead(BaseModel):
 
 
 __all__ = [
-    "AGE_UNIT_VALUES",
-    "RESULT_TYPE_VALUES",
-    "SEX_VALUES",
     "AnalyteBase",
     "AnalyteCreate",
     "AnalyteRead",

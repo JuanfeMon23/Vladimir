@@ -1,4 +1,3 @@
-import { REFERENCE_RANGE_AGE_UNIT_LABELS, REFERENCE_RANGE_SEX_LABELS, RESULT_TYPE_LABELS } from '../types/result-templates'
 import type {
   ReferenceRangeRead,
   ResultTemplateAnalyteRead,
@@ -13,6 +12,10 @@ export interface ReferenceRangeFormatContext {
   decimals: number | null
   /** Etiqueta de una opción de resultado (para `expected_option_id`). */
   option: (optionId: string) => string
+  /** Etiqueta del sexo de un rango; `null` si es el comodín («cualquiera»), que no se muestra. */
+  sex: (sexCode: string) => string | null
+  /** Etiqueta de la unidad de edad (catálogo `age-units`). */
+  ageUnit: (ageUnitCode: string) => string
 }
 
 function withUnit(text: string, unit: string | null) {
@@ -46,9 +49,10 @@ export function formatReferenceRange(range: ReferenceRangeRead, ctx: ReferenceRa
   }
 
   const who: string[] = []
-  if (range.sex !== 'any') who.push(REFERENCE_RANGE_SEX_LABELS[range.sex] ?? range.sex)
+  const sexLabel = ctx.sex(range.sex)
+  if (sexLabel) who.push(sexLabel)
   if (range.age_min !== null || range.age_max !== null) {
-    const unit = range.age_unit ? ` ${(REFERENCE_RANGE_AGE_UNIT_LABELS[range.age_unit] ?? range.age_unit).toLowerCase()}` : ''
+    const unit = range.age_unit ? ` ${ctx.ageUnit(range.age_unit).toLowerCase()}` : ''
     if (range.age_min !== null && range.age_max !== null) who.push(`${range.age_min}–${range.age_max}${unit}`)
     else if (range.age_min !== null) who.push(`≥ ${range.age_min}${unit}`)
     else who.push(`≤ ${range.age_max}${unit}`)
@@ -87,6 +91,9 @@ export interface ReportPreviewInput {
     analyte: (analyteId: string) => string
     unit: (unitId: string | null) => string | null
     option: (optionId: string) => string
+    resultType: (resultTypeCode: string) => string
+    sex: (sexCode: string) => string | null
+    ageUnit: (ageUnitCode: string) => string
   }
 }
 
@@ -103,11 +110,17 @@ export function buildReportPreview(input: ReportPreviewInput): ReportPreviewGrou
 
   const toRow = (item: ResultTemplateAnalyteRead): ReportPreviewRow => {
     const unit = input.names.unit(item.unit_id)
-    const ctx: ReferenceRangeFormatContext = { unit, decimals: item.decimals, option: input.names.option }
+    const ctx: ReferenceRangeFormatContext = {
+      unit,
+      decimals: item.decimals,
+      option: input.names.option,
+      sex: input.names.sex,
+      ageUnit: input.names.ageUnit
+    }
     return {
       id: item.id,
       name: input.names.analyte(item.analyte_id),
-      resultType: RESULT_TYPE_LABELS[item.result_type] ?? item.result_type,
+      resultType: input.names.resultType(item.result_type),
       unit,
       decimals: item.decimals,
       required: item.is_required,

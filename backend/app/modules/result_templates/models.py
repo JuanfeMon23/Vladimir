@@ -1,6 +1,8 @@
 """Modelos del modulo `result_templates`: plantillas de resultados.
 
-Ocho tablas:
+Tablas:
+- Catalogos de categoria: `result_types`, `sexes`, `age_units` (propiedad de
+  Vladimir; Incubus los consume por API).
 - Catalogos simples (no versionados): `units` (unidades de medida UCUM),
   `analytes` (analito medible), `result_option_sets` y `result_options`
   (opciones de un resultado cualitativo, p. ej. "positivo/negativo").
@@ -38,24 +40,80 @@ from app.core.db.base import Base
 from app.core.db.mixins import (
     ActivatableMixin,
     CatalogMixin,
+    CategoryMixin,
     Timestamps,
     UUIDv7PK,
     VersionMixin,
 )
 
-RESULT_TYPE_VALUES = (
-    "numeric",
-    "boolean",
-    "qualitative",
-    "semi_quantitative",
-    "titer",
-    "text",
-    "calculated",
-)
 
-SEX_VALUES = ("any", "male", "female")
+class ResultType(CategoryMixin, UUIDv7PK, Timestamps, Base):
+    """Tipo de resultado de un analito (catálogo de categoría, propiedad de
+    Vladimir; Incubus lo consume por API). Las columnas `uses_*` /
+    `requires_*` son el comportamiento: qué campos admite el tipo en el
+    analito y en sus rangos, y qué exige para publicar."""
 
-AGE_UNIT_VALUES = ("dias", "meses", "anos")
+    __tablename__ = "result_types"
+
+    # Elige su valor de un conjunto de opciones (`option_set_id` obligatorio;
+    # el rango admite `expected_option_id`).
+    uses_option_set: Mapped[bool] = mapped_column(
+        Boolean, server_default=text("false"), nullable=False
+    )
+    # El rango admite `low`/`high`/`critical_low`/`critical_high`.
+    uses_numeric_range: Mapped[bool] = mapped_column(
+        Boolean, server_default=text("false"), nullable=False
+    )
+    # El rango admite `expected_boolean`.
+    uses_boolean_range: Mapped[bool] = mapped_column(
+        Boolean, server_default=text("false"), nullable=False
+    )
+    # `unit_id` y `decimals` obligatorios para publicar.
+    uses_unit: Mapped[bool] = mapped_column(
+        Boolean, server_default=text("false"), nullable=False
+    )
+    # `formula` obligatoria para publicar.
+    uses_formula: Mapped[bool] = mapped_column(
+        Boolean, server_default=text("false"), nullable=False
+    )
+    # Si el analito es reportable, >= 1 rango activo para publicar.
+    requires_reference_range: Mapped[bool] = mapped_column(
+        Boolean, server_default=text("false"), nullable=False
+    )
+
+
+class Sex(CategoryMixin, UUIDv7PK, Timestamps, Base):
+    """Sexo para segmentar rangos de referencia (catálogo de categoría,
+    propiedad de Vladimir; Incubus lo consume por API).
+
+    `is_wildcard`: marca la fila comodín ("cualquiera", `any`), que coincide
+    con todos los sexos al comprobar solapamientos. Índice único parcial: a lo
+    sumo una fila comodín.
+    """
+
+    __tablename__ = "sexes"
+    __table_args__ = (
+        Index(
+            "uq_sexes_one_wildcard",
+            "is_wildcard",
+            unique=True,
+            postgresql_where=text("is_wildcard"),
+        ),
+    )
+
+    is_wildcard: Mapped[bool] = mapped_column(
+        Boolean, server_default=text("false"), nullable=False
+    )
+
+
+class AgeUnit(CategoryMixin, UUIDv7PK, Timestamps, Base):
+    """Unidad de edad de un rango de referencia (catálogo de categoría).
+    `days` = días que equivale una unidad (meses 30,4375; años 365,25)."""
+
+    __tablename__ = "age_units"
+    __table_args__ = (CheckConstraint("days > 0", name="days_positive"),)
+
+    days: Mapped[float] = mapped_column(Numeric(10, 4), nullable=False)
 
 
 class Unit(CatalogMixin, UUIDv7PK, Timestamps, Base):
@@ -182,10 +240,6 @@ class ResultTemplateAnalyte(ActivatableMixin, UUIDv7PK, Timestamps, Base):
 
     __tablename__ = "result_template_analytes"
     __table_args__ = (
-        CheckConstraint(
-            f"result_type IN {RESULT_TYPE_VALUES}",
-            name="result_type",
-        ),
         Index(
             "uq_result_template_analytes_version_id_analyte_id_active",
             "version_id",
@@ -214,7 +268,12 @@ class ResultTemplateAnalyte(ActivatableMixin, UUIDv7PK, Timestamps, Base):
         index=True,
     )
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False)
-    result_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    result_type: Mapped[str] = mapped_column(
+        String(32),
+        ForeignKey("result_types.code"),
+        nullable=False,
+        index=True,
+    )
     unit_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("units.id"),
@@ -249,11 +308,6 @@ class ReferenceRange(ActivatableMixin, UUIDv7PK, Timestamps, Base):
 
     __tablename__ = "reference_ranges"
     __table_args__ = (
-        CheckConstraint(f"sex IN {SEX_VALUES}", name="sex"),
-        CheckConstraint(
-            f"age_unit IS NULL OR age_unit IN {AGE_UNIT_VALUES}",
-            name="age_unit",
-        ),
         CheckConstraint(
             "low IS NULL OR high IS NULL OR low <= high", name="low_le_high"
         ),
@@ -277,10 +331,14 @@ class ReferenceRange(ActivatableMixin, UUIDv7PK, Timestamps, Base):
         nullable=False,
         index=True,
     )
-    sex: Mapped[str] = mapped_column(String(8), nullable=False)
+    sex: Mapped[str] = mapped_column(
+        String(8), ForeignKey("sexes.code"), nullable=False, index=True
+    )
     age_min: Mapped[float | None] = mapped_column(Numeric, nullable=True)
     age_max: Mapped[float | None] = mapped_column(Numeric, nullable=True)
-    age_unit: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    age_unit: Mapped[str | None] = mapped_column(
+        String(16), ForeignKey("age_units.code"), nullable=True, index=True
+    )
     condition: Mapped[str | None] = mapped_column(String(255), nullable=True)
     low: Mapped[float | None] = mapped_column(Numeric, nullable=True)
     high: Mapped[float | None] = mapped_column(Numeric, nullable=True)

@@ -9,6 +9,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.activation import ensure_active
+from app.core.categories import ensure_category
 from app.core.dependencies import (
     NO_SEARCH,
     ActiveOnlyFilter,
@@ -19,7 +20,7 @@ from app.core.exceptions import CodeConflictError
 from app.core.repository import create_entity, get_or_404, update_entity
 from app.core.schemas import Page
 from app.modules.samples import repository
-from app.modules.samples.models import Sample, SampleType
+from app.modules.samples.models import Sample, SampleType, SpecimenType
 from app.modules.samples.schemas import (
     SampleCreate,
     SampleRead,
@@ -121,6 +122,19 @@ async def list_sample_types(
     )
 
 
+async def _ensure_specimen(
+    session: AsyncSession, code: str | None, current: str | None = None
+) -> None:
+    await ensure_category(
+        session,
+        SpecimenType,
+        code,
+        subject="el espécimen",
+        field="specimen",
+        current=current,
+    )
+
+
 async def create_sample_type(
     session: AsyncSession, sample_id: UUID, data: SampleTypeCreate
 ) -> SampleTypeRead:
@@ -130,6 +144,7 @@ async def create_sample_type(
     existing = await repository.get_type_by_code(session, data.code)
     if existing is not None:
         raise CodeConflictError("un tipo de muestra", data.code)
+    await _ensure_specimen(session, data.specimen)
 
     sample_type = await create_entity(session, SampleType, data, sample_id=sample_id)
     return SampleTypeRead.model_validate(sample_type)
@@ -156,6 +171,7 @@ async def update_sample_type(
         existing = await repository.get_type_by_code(session, new_code)
         if existing is not None:
             raise CodeConflictError("un tipo de muestra", new_code)
+    await _ensure_specimen(session, data.specimen, sample_type.specimen)
 
     sample_type = await update_entity(session, sample_type, data)
     return SampleTypeRead.model_validate(sample_type)

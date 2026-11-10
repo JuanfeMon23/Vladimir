@@ -10,47 +10,11 @@
 
 export type PreconditionKind = 'precondition' | 'condition'
 
-/** Categorías válidas (`CATEGORY_VALUES` del backend) con su etiqueta en la interfaz. */
-export const PRECONDITION_CATEGORY_LABELS = {
-  ayuno: 'Ayuno',
-  dieta: 'Dieta',
-  alcohol_sustancias: 'Alcohol y sustancias',
-  tabaco: 'Tabaco',
-  medicamentos: 'Medicamentos',
-  actividad_fisica: 'Actividad física',
-  abstinencia_sexual: 'Abstinencia sexual',
-  recoleccion_muestra: 'Recolección de muestra',
-  horario_toma: 'Horario de toma',
-  reposo: 'Reposo',
-  higiene: 'Higiene',
-  otro: 'Otro'
-} as const
-
-export type PreconditionCategory = keyof typeof PRECONDITION_CATEGORY_LABELS
-
-export const PRECONDITION_CATEGORIES = Object.keys(PRECONDITION_CATEGORY_LABELS) as [
-  PreconditionCategory,
-  ...PreconditionCategory[]
-]
-
-/** Unidades de duración válidas (`DURATION_UNIT_VALUES` del backend). */
-export const PRECONDITION_DURATION_UNIT_LABELS = {
-  minutos: 'Minutos',
-  horas: 'Horas',
-  dias: 'Días'
-} as const
-
-export type PreconditionDurationUnit = keyof typeof PRECONDITION_DURATION_UNIT_LABELS
-
-export const PRECONDITION_DURATION_UNITS = Object.keys(PRECONDITION_DURATION_UNIT_LABELS) as [
-  PreconditionDurationUnit,
-  ...PreconditionDurationUnit[]
-]
-
-/** Etiqueta de una categoría; si el backend devuelve un valor desconocido, el valor tal cual. */
-export function preconditionCategoryLabel(category: string): string {
-  return (PRECONDITION_CATEGORY_LABELS as Record<string, string>)[category] ?? category
-}
+/**
+ * `category` y `duration_unit` son el `code` de un valor de los catálogos
+ * `precondition-categories` y `duration-units` (`/catalogs/*`); las etiquetas
+ * salen de la API, no de una lista en el código.
+ */
 
 export interface PreconditionBase {
   code: string

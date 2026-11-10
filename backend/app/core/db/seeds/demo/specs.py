@@ -7,18 +7,12 @@ memoria (`tests/test_demo_dataset.py`) sin tocar ninguna BD.
 """
 
 from dataclasses import dataclass, field
-from typing import Literal
 
-ResultType = Literal[
-    "numeric",
-    "boolean",
-    "qualitative",
-    "semi_quantitative",
-    "titer",
-    "text",
-    "calculated",
-]
-Sex = Literal["any", "male", "female"]
+# `code` de los catalogos result_types, sexes y age_units (ver
+# `seeds/catalogs.py`); la API los valida contra la BD.
+ResultType = str
+Sex = str
+AgeUnit = str
 
 
 @dataclass(frozen=True)
@@ -41,7 +35,7 @@ class RangeSpec:
     sex: Sex = "any"
     age_min: float | None = None
     age_max: float | None = None
-    age_unit: Literal["dias", "meses", "anos"] | None = None
+    age_unit: AgeUnit | None = None
     condition: str | None = None
     low: float | None = None
     high: float | None = None

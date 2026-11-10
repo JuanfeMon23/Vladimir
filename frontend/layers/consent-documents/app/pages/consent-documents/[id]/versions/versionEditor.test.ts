@@ -2,10 +2,11 @@ import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiError } from '~/testing/apiError'
+import { fakeCatalogs } from '~/testing/catalogs'
 import { fakePage } from '~/testing/fakeApi'
 import { ALL_CONSENT_DOCUMENTS_TAGS } from '~/testing/session'
 import { signInWith } from '#leo-client/testing/session'
-import { button, click, control, flushAll, setValue } from '#andromeda/testing/dom'
+import { button, click, control, fieldError, flushAll, optionLabels, setValue, submitForm } from '#andromeda/testing/dom'
 import type { ConsentDocumentVersionRead } from '../../../../types/consent-documents'
 import VersionEditorPage from './[versionId].vue'
 
@@ -38,8 +39,9 @@ const WITH_FILE = { has_file: true, file_content_type: 'application/pdf', file_s
 
 beforeEach(() => {
   // La navegación pasa por el middleware de leo-client: requiere sesión.
-  signInWith(ALL_CONSENT_DOCUMENTS_TAGS)
+  signInWith([...ALL_CONSENT_DOCUMENTS_TAGS, MODULE_VIEW.catalogs.tag])
   fake.reset()
+  fakeCatalogs(fake, ['consent-signers'])
   document.body.innerHTML = ''
   fake.routes['GET /consent-documents/d1'] = { id: 'd1', code: 'CONSENT_VIH', name: 'Consentimiento VIH', document_type: 'consentimiento_informado', is_active: true }
 })
@@ -107,5 +109,22 @@ describe('editor de versión de documento a firmar', () => {
     await click(publishButton(root))
     const alert = [...root.querySelectorAll('[role="alert"]')].find(el => el.textContent?.includes('Faltan campos'))!
     expect(alert.textContent).toContain('Adjunta el PDF antes de publicar.')
+  })
+
+  it('los firmantes salen del catálogo de la API', async () => {
+    useVersion(version())
+    const root = await mountPage()
+    expect(optionLabels(control<HTMLSelectElement>(root, 'Firmante'))).toEqual(['Seleccionar firmante', 'Paciente', 'Paciente o representante'])
+  })
+
+  it('el 422 inactive_reference del firmante se muestra en el campo Firmante', async () => {
+    useVersion(version())
+    fake.failures['PATCH /consent-documents/d1/versions/v1'] = apiError(
+      { code: 'inactive_reference', message: 'El firmante «paciente» está inactivo.', details: { signer: 'paciente' } },
+      422
+    )
+    const root = await mountPage()
+    await submitForm(root.querySelector('form')!)
+    expect(fieldError(root, 'Firmante')).toBe('El firmante «paciente» está inactivo.')
   })
 })

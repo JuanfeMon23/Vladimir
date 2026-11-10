@@ -1,6 +1,10 @@
 """Tests end-to-end (HTTP) del modulo `consent_documents`."""
 
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.categories import get_category
+from app.modules.consent_documents.models import ConsentDocumentType, ConsentSigner
 
 
 async def test_create_and_get_consent_document(
@@ -171,3 +175,112 @@ async def test_create_second_draft_while_one_open_returns_409(
     )
     assert response.status_code == 409
     assert response.json()["code"] == "conflict"
+
+
+async def _deactivate_category(session: AsyncSession, model: type, code: str) -> None:
+    row = await get_category(session, model, code)
+    assert row is not None
+    row.is_active = False
+    await session.flush()
+
+
+async def test_create_document_with_unknown_type_returns_422(
+    client: AsyncClient, consent_document_payload: dict
+) -> None:
+    response = await client.post(
+        "/api/v1/consent-documents",
+        json={**consent_document_payload, "document_type": "no-existe"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "invalid_reference"
+    assert response.json()["details"] == {"document_type": "no-existe"}
+
+
+async def test_create_document_with_inactive_type_returns_422(
+    client: AsyncClient, session: AsyncSession, consent_document_payload: dict
+) -> None:
+    await _deactivate_category(session, ConsentDocumentType, "otro")
+
+    response = await client.post(
+        "/api/v1/consent-documents",
+        json={**consent_document_payload, "document_type": "otro"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "inactive_reference"
+
+
+async def test_patch_document_with_unknown_type_returns_422(
+    client: AsyncClient, consent_document_payload: dict
+) -> None:
+    created = (
+        await client.post("/api/v1/consent-documents", json=consent_document_payload)
+    ).json()
+
+    response = await client.patch(
+        f"/api/v1/consent-documents/{created['id']}",
+        json={"document_type": "no-existe"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "invalid_reference"
+
+
+async def test_patch_document_keeps_its_inactive_type(
+    client: AsyncClient, session: AsyncSession, consent_document_payload: dict
+) -> None:
+    created = (
+        await client.post("/api/v1/consent-documents", json=consent_document_payload)
+    ).json()
+    await _deactivate_category(session, ConsentDocumentType, "consentimiento_informado")
+
+    response = await client.patch(
+        f"/api/v1/consent-documents/{created['id']}",
+        json={"name": "Nuevo nombre", "document_type": "consentimiento_informado"},
+    )
+
+    assert response.status_code == 200
+
+
+async def test_create_version_with_unknown_signer_returns_422(
+    client: AsyncClient, consent_document_payload: dict
+) -> None:
+    created = (
+        await client.post("/api/v1/consent-documents", json=consent_document_payload)
+    ).json()
+
+    response = await client.post(
+        f"/api/v1/consent-documents/{created['id']}/versions",
+        json={"content": "Texto", "signer": "no-existe"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "invalid_reference"
+    assert response.json()["details"] == {"signer": "no-existe"}
+
+
+async def test_patch_version_with_inactive_signer_returns_422(
+    client: AsyncClient,
+    session: AsyncSession,
+    consent_document_payload: dict,
+    consent_document_version_payload: dict,
+) -> None:
+    created = (
+        await client.post("/api/v1/consent-documents", json=consent_document_payload)
+    ).json()
+    version = (
+        await client.post(
+            f"/api/v1/consent-documents/{created['id']}/versions",
+            json=consent_document_version_payload,
+        )
+    ).json()
+    await _deactivate_category(session, ConsentSigner, "paciente_o_representante")
+
+    response = await client.patch(
+        f"/api/v1/consent-documents/{created['id']}/versions/{version['id']}",
+        json={"signer": "paciente_o_representante"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "inactive_reference"

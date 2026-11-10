@@ -14,6 +14,7 @@ from datetime import UTC, datetime
 
 import pytest
 
+from app.core.db.seeds.catalogs import CATALOGS
 from app.core.db.seeds.demo import (
     consent_documents,
     consent_files,
@@ -38,17 +39,35 @@ from app.core.db.seeds.demo.result_templates.catalogs import (
 from app.core.db.seeds.result_option_sets import RESULT_OPTION_SETS
 from app.core.db.seeds.units import UNITS
 from app.modules.consent_documents.files import MIB
-from app.modules.consent_documents.models import DOCUMENT_TYPE_VALUES, SIGNER_VALUES
 from app.modules.consent_documents.schemas import DATA_TREATMENT_TYPE
-from app.modules.preconditions.models import CATEGORY_VALUES, DURATION_UNIT_VALUES
 from app.modules.print_labels.models import OUTPUT_FORMAT_VALUES
 from app.modules.result_templates.controller import (
     _not_allowed_range_fields,
     _ranges_overlap,
 )
 from app.modules.result_templates.formula import FormulaNode, formula_problems
+from app.modules.result_templates.models import ResultType
 from app.modules.result_templates.schemas import reference_range_bound_errors
-from app.modules.samples.models import SPECIMEN_VALUES
+
+# Catalogos de categoria sembrados (`seeds/catalogs.py`): fuente de los codigos
+# y banderas contra los que la API valida el dataset de demostracion.
+SEEDED = {
+    seed.table: {
+        code: dict(zip(seed.extra_columns, extras, strict=True))
+        for code, _name, *extras in seed.rows
+    }
+    for seed in CATALOGS
+}
+RESULT_TYPES = {
+    code: ResultType(code=code, **flags)
+    for code, flags in SEEDED["result_types"].items()
+}
+WILDCARD_SEXES = frozenset(
+    code for code, columns in SEEDED["sexes"].items() if columns["is_wildcard"]
+)
+AGE_DAYS = {
+    code: float(columns["days"]) for code, columns in SEEDED["age_units"].items()
+}
 
 
 def _duplicates(values) -> list:
@@ -123,7 +142,7 @@ def test_tipos_de_muestra_con_enums_validos():
     all_types = [t for s in samples.SAMPLES for t in s.types]
     all_types.append(samples.DISCONTINUED_SAMPLE_TYPE)
     for sample_type in all_types:
-        assert sample_type.specimen in SPECIMEN_VALUES, sample_type.code
+        assert sample_type.specimen in SEEDED["specimen_types"], sample_type.code
         if sample_type.cap_color_hex is not None:
             assert re.fullmatch(r"#[0-9A-F]{6}", sample_type.cap_color_hex)
 
@@ -131,12 +150,12 @@ def test_tipos_de_muestra_con_enums_validos():
 def test_precondiciones_con_enums_validos_y_unidad_junto_a_la_duracion():
     for root in preconditions.PRECONDITIONS:
         for node in (root, *root.items):
-            assert node.category in CATEGORY_VALUES, node.code
+            assert node.category in SEEDED["precondition_categories"], node.code
             assert (node.duration_value is None) == (node.duration_unit is None), (
                 node.code
             )
             if node.duration_unit is not None:
-                assert node.duration_unit in DURATION_UNIT_VALUES, node.code
+                assert node.duration_unit in SEEDED["duration_units"], node.code
 
 
 # --- etiquetas y documentos ------------------------------------------------
@@ -153,8 +172,8 @@ def test_etiquetas_declaran_los_placeholders_que_usan():
 
 def test_documentos_a_firmar_con_enums_validos_y_cuerpo_real():
     for consent in consent_documents.CONSENTS:
-        assert consent.document_type in DOCUMENT_TYPE_VALUES
-        assert consent.signer in SIGNER_VALUES
+        assert consent.document_type in SEEDED["consent_document_types"]
+        assert consent.signer in SEEDED["consent_signers"]
         assert len(consent.content) > 500
         assert "lorem" not in consent.content.lower()
 
@@ -235,7 +254,6 @@ OPTION_SETS = {s.code: {o.code for o in s.options} for s in RESULT_OPTION_SETS} 
     s.code: {o.code for o in s.options} for s in EXTRA_OPTION_SETS
 }
 ANALYTES_BY_CODE = {a.code: a for a in ANALYTES}
-OPTION_RESULT_TYPES = {"qualitative", "semi_quantitative", "titer"}
 
 
 def test_analitos_con_unidad_existente_y_sin_huerfanos():
@@ -265,9 +283,10 @@ def test_plantilla_cumple_las_reglas_de_publicacion(template):
         if field.unit is not None:
             assert field.unit in ALL_UNITS, field.analyte
             assert field.unit == analyte.unit, f"{field.analyte}: unidad distinta"
-        if field.result_type in ("numeric", "calculated"):
+        result_type = RESULT_TYPES[field.result_type]
+        if result_type.uses_unit:
             assert field.unit and field.decimals is not None, field.analyte
-        if field.result_type == "calculated":
+        if result_type.uses_formula:
             assert field.formula
             problems = formula_problems(
                 FormulaNode(field.analyte, field.formula, True), nodes
@@ -275,25 +294,25 @@ def test_plantilla_cumple_las_reglas_de_publicacion(template):
             assert not problems, f"{field.analyte}: {problems}"
         else:
             assert field.formula is None, field.analyte
-        if field.result_type in OPTION_RESULT_TYPES:
+        if result_type.uses_option_set:
             assert field.option_set in OPTION_SETS, field.analyte
         else:
             assert field.option_set is None, field.analyte
-        if field.result_type == "numeric" and field.reportable:
+        if result_type.requires_reference_range and field.reportable:
             assert field.ranges, f"{field.analyte}: numérico reportable sin rangos"
 
         range_dicts = [asdict(r) for r in field.ranges]
         for spec, values in zip(field.ranges, range_dicts, strict=True):
             assert not reference_range_bound_errors(values), field.analyte
             values = {**values, "expected_option_id": spec.option}
-            assert not _not_allowed_range_fields(field.result_type, values), (
-                f"{field.analyte}: campo no admitido por {field.result_type}"
-            )
+            assert not _not_allowed_range_fields(
+                RESULT_TYPES[field.result_type], values
+            ), f"{field.analyte}: campo no admitido por {field.result_type}"
             if spec.option is not None:
                 assert spec.option in OPTION_SETS[field.option_set], field.analyte
         for i, first in enumerate(range_dicts):
             for second in range_dicts[i + 1 :]:
-                assert not _ranges_overlap(first, second), (
+                assert not _ranges_overlap(first, second, WILDCARD_SEXES, AGE_DAYS), (
                     f"{field.analyte}: rangos solapados"
                 )
 
@@ -337,7 +356,7 @@ def test_cada_examen_referencia_codigos_que_existen():
                 link.duration_unit_override is None
             ), test.code
             if link.duration_unit_override is not None:
-                assert link.duration_unit_override in DURATION_UNIT_VALUES
+                assert link.duration_unit_override in SEEDED["duration_units"]
 
 
 def test_ninguna_plantilla_queda_sin_examen_y_hay_entre_25_y_40_examenes():

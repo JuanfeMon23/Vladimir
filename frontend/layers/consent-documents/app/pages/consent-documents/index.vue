@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { UiDataTableColumn } from '#andromeda/components/ui/UiDataTable.vue'
-import { CONSENT_DOCUMENT_TYPE_LABELS } from '../../types/consent-documents'
 import type { ConsentDocumentRead } from '../../types/consent-documents'
 import { isGeneralConsent } from '../../utils/consentDocuments'
 
 definePageMeta({ layout: 'default', leo: { tag: CONSENT_DOCUMENTS_TAGS.view } })
+
+const documentTypes = useCatalog('consent-document-types')
 
 const createTag = CONSENT_DOCUMENTS_TAGS.create
 
@@ -82,7 +83,7 @@ const columns: UiDataTableColumn<ConsentDocumentRead>[] = [
     >
       <template #cell-document_type="{ row }">
         <span class="inline-flex flex-wrap items-center gap-2">
-          {{ CONSENT_DOCUMENT_TYPE_LABELS[row.document_type] ?? row.document_type }}
+          {{ documentTypes.nameOf(row.document_type) }}
           <UiStatusBadge v-if="row.is_active && isGeneralConsent(row)" variant="primary" label="General vigente" dot />
         </span>
       </template>

@@ -24,6 +24,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.activation import ensure_active, ensure_active_reference
+from app.core.categories import categories_by_code, ensure_category, get_category
 from app.core.dependencies import (
     NO_SEARCH,
     ActiveOnlyFilter,
@@ -48,6 +49,7 @@ from app.modules.result_templates.formula import (
     formula_problems,
 )
 from app.modules.result_templates.models import (
+    AgeUnit,
     Analyte,
     ReferenceRange,
     ResultOption,
@@ -56,6 +58,8 @@ from app.modules.result_templates.models import (
     ResultTemplateAnalyte,
     ResultTemplateSection,
     ResultTemplateVersion,
+    ResultType,
+    Sex,
     Unit,
 )
 from app.modules.result_templates.schemas import (
@@ -489,31 +493,35 @@ _RANGE_COPY = (
 
 
 # --- reglas de reporte por result_type ---
+# El comportamiento de cada tipo vive en las banderas de la tabla `result_types`
+# (`uses_*`, `requires_reference_range`); el codigo no lista tipos.
 
 _NUMERIC_RANGE_FIELDS = frozenset({"low", "high", "critical_low", "critical_high"})
 _TYPED_RANGE_FIELDS = _NUMERIC_RANGE_FIELDS | {"expected_option_id", "expected_boolean"}
 
-# Campos "tipados" de un rango que admite cada `result_type`; los demas
-# (`display_text`, `interpretation`, sexo/edad/condicion) siempre se admiten.
-# `titer` se modela como `semi_quantitative` (decision de diseno 2026-10-03,
-# sujeta a validacion del laboratorio): conjunto ordenado de diluciones
-# (`option_set_id`) y valor esperado = una opcion del conjunto.
-_ALLOWED_RANGE_FIELDS: dict[str, frozenset[str]] = {
-    "numeric": _NUMERIC_RANGE_FIELDS,
-    "calculated": _NUMERIC_RANGE_FIELDS,
-    "qualitative": frozenset({"expected_option_id"}),
-    "semi_quantitative": frozenset({"expected_option_id"}),
-    "boolean": frozenset({"expected_boolean"}),
-    "text": frozenset(),
-    "titer": frozenset({"expected_option_id"}),
-}
-
-# `result_type` cuyo valor se elige de un conjunto de opciones.
-_OPTION_SET_RESULT_TYPES = ("qualitative", "semi_quantitative", "titer")
+# Edad de un rango sin `age_unit` pero con edades: se interpreta en anos.
+DEFAULT_AGE_UNIT = "anos"
 
 
-def _not_allowed_range_fields(result_type: str, values: Mapping[str, Any]) -> list[str]:
-    allowed = _ALLOWED_RANGE_FIELDS[result_type]
+def _allowed_range_fields(result_type: ResultType) -> frozenset[str]:
+    """Campos "tipados" de un rango que admite el tipo; los demas
+    (`display_text`, `interpretation`, sexo/edad/condicion) siempre se admiten.
+    `titer` es un tipo de conjunto ordenado de diluciones (`uses_option_set`)
+    cuyo valor esperado es una opcion del conjunto."""
+    allowed: set[str] = set()
+    if result_type.uses_numeric_range:
+        allowed |= _NUMERIC_RANGE_FIELDS
+    if result_type.uses_option_set:
+        allowed.add("expected_option_id")
+    if result_type.uses_boolean_range:
+        allowed.add("expected_boolean")
+    return frozenset(allowed)
+
+
+def _not_allowed_range_fields(
+    result_type: ResultType, values: Mapping[str, Any]
+) -> list[str]:
+    allowed = _allowed_range_fields(result_type)
     return sorted(
         field
         for field in _TYPED_RANGE_FIELDS - allowed
@@ -522,30 +530,29 @@ def _not_allowed_range_fields(result_type: str, values: Mapping[str, Any]) -> li
 
 
 def _missing_fields_for_result_type(
-    template_analyte: ResultTemplateAnalyte, active_range_count: int
+    template_analyte: ResultTemplateAnalyte,
+    result_type: ResultType,
+    active_range_count: int,
 ) -> list[str]:
-    """Campos obligatorios para publicar, segun `result_type`:
-    - `qualitative`/`semi_quantitative`/`titer`: `option_set_id`.
-    - `numeric`: `unit_id` + `decimals`; si es reportable, >= 1 rango activo
+    """Campos obligatorios para publicar, segun las banderas del tipo:
+    - `uses_option_set`: `option_set_id`.
+    - `uses_formula`: `formula`.
+    - `uses_unit`: `unit_id` + `decimals`.
+    - `requires_reference_range` y analito reportable: >= 1 rango activo
       (`reference_ranges`).
-    - `calculated`: `formula` + `unit_id` + `decimals`.
     """
-    result_type = template_analyte.result_type
     missing: list[str] = []
-    if (
-        result_type in _OPTION_SET_RESULT_TYPES
-        and template_analyte.option_set_id is None
-    ):
+    if result_type.uses_option_set and template_analyte.option_set_id is None:
         missing.append("option_set_id")
-    if result_type == "calculated" and template_analyte.formula is None:
+    if result_type.uses_formula and template_analyte.formula is None:
         missing.append("formula")
-    if result_type in ("numeric", "calculated"):
+    if result_type.uses_unit:
         if template_analyte.unit_id is None:
             missing.append("unit_id")
         if template_analyte.decimals is None:
             missing.append("decimals")
     if (
-        result_type == "numeric"
+        result_type.requires_reference_range
         and template_analyte.is_reportable
         and active_range_count == 0
     ):
@@ -570,6 +577,9 @@ async def _validate_publish(
     ranges = await repository.list_reference_ranges_by_template_analytes(
         session, [template_analyte.id for template_analyte in analytes]
     )
+    result_types = await categories_by_code(session, ResultType)
+    sexes = await categories_by_code(session, Sex)
+    age_units = await categories_by_code(session, AgeUnit)
     catalogs: dict[str, Mapping[UUID, Any]] = {
         "analyte_id": await get_by_ids(
             session, Analyte, [analyte.analyte_id for analyte in analytes]
@@ -613,13 +623,14 @@ async def _validate_publish(
             )
 
         active_ranges = ranges[template_analyte.id]
-        missing = _missing_fields_for_result_type(template_analyte, len(active_ranges))
+        result_type = result_types[template_analyte.result_type]
+        missing = _missing_fields_for_result_type(
+            template_analyte, result_type, len(active_ranges)
+        )
         incompatible = [
             str(reference_range.id)
             for reference_range in active_ranges
-            if _not_allowed_range_fields(
-                template_analyte.result_type, reference_range.__dict__
-            )
+            if _not_allowed_range_fields(result_type, reference_range.__dict__)
         ]
         if missing or incompatible:
             entry: dict[str, Any] = {
@@ -636,6 +647,11 @@ async def _validate_publish(
             for field, catalog in catalogs.items()
         ]
         refs.append(("section_id", template_analyte.section_id, sections))
+        # Categorias: la referencia es por `code`, que el reporte da como `id`.
+        refs.append(("result_type", template_analyte.result_type, result_types))
+        for reference_range in active_ranges:
+            refs.append(("sex", reference_range.sex, sexes))
+            refs.append(("age_unit", reference_range.age_unit, age_units))
         refs.extend(
             ("expected_option_id", reference_range.expected_option_id, options)
             for reference_range in active_ranges
@@ -805,6 +821,14 @@ async def _validate_template_analyte_references(
         )
     if _is_new_reference(changes, "unit_id", current):
         await _validate_new_unit(session, changes["unit_id"], "unit_id")
+    await ensure_category(
+        session,
+        ResultType,
+        changes.get("result_type"),
+        subject="el tipo de resultado",
+        field="result_type",
+        current=current.result_type if current else None,
+    )
     if _is_new_reference(changes, "section_id", current):
         section_id = changes["section_id"]
         section = await session.get(ResultTemplateSection, section_id)
@@ -957,14 +981,13 @@ async def update_template_analyte(
 # Reference ranges (editable solo en draft)
 # --------------------------------------------------------------------------
 
-# Edades normalizadas a dias para comparar rangos con distinta `age_unit`.
-# Sin `age_unit` (y con edades) se interpreta como anos.
-_AGE_UNIT_DAYS = {"dias": 1.0, "meses": 30.4375, "anos": 365.25}
 
-
-def _age_interval(values: Mapping[str, Any]) -> tuple[float, float]:
-    """`[age_min, age_max)` en dias; un extremo NULL es abierto (+-inf)."""
-    factor = _AGE_UNIT_DAYS[values.get("age_unit") or "anos"]
+def _age_interval(
+    values: Mapping[str, Any], age_days: Mapping[str, float]
+) -> tuple[float, float]:
+    """`[age_min, age_max)` en dias (`age_units.days`); un extremo NULL es
+    abierto (+-inf). Sin `age_unit` (y con edades) se interpreta como anos."""
+    factor = age_days[values.get("age_unit") or DEFAULT_AGE_UNIT]
     age_min, age_max = values.get("age_min"), values.get("age_max")
     low = -math.inf if age_min is None else float(age_min) * factor
     high = math.inf if age_max is None else float(age_max) * factor
@@ -976,21 +999,27 @@ def _normalized_condition(condition: str | None) -> str:
 
 
 def _ranges_overlap(
-    first_range: Mapping[str, Any], second_range: Mapping[str, Any]
+    first_range: Mapping[str, Any],
+    second_range: Mapping[str, Any],
+    wildcard_sexes: frozenset[str],
+    age_days: Mapping[str, float],
 ) -> bool:
-    """Misma combinacion (sexo compatible -- `any` solapa con todos --,
-    condicion normalizada igual) y edades `[min, max)` que se cruzan."""
-    if first_range["sex"] != second_range["sex"] and "any" not in (
-        first_range["sex"],
-        second_range["sex"],
+    """Misma combinacion (sexo compatible -- el comodin `sexes.is_wildcard`
+    solapa con todos --, condicion normalizada igual) y edades `[min, max)`
+    que se cruzan."""
+    first_sex, second_sex = first_range["sex"], second_range["sex"]
+    if (
+        first_sex != second_sex
+        and first_sex not in wildcard_sexes
+        and second_sex not in wildcard_sexes
     ):
         return False
     if _normalized_condition(first_range.get("condition")) != _normalized_condition(
         second_range.get("condition")
     ):
         return False
-    a_low, a_high = _age_interval(first_range)
-    b_low, b_high = _age_interval(second_range)
+    a_low, a_high = _age_interval(first_range, age_days)
+    b_low, b_high = _age_interval(second_range, age_days)
     return a_low < b_high and b_low < a_high
 
 
@@ -1018,11 +1047,30 @@ async def _validate_reference_range(
     if bound_errors:
         raise ReferenceRangeBoundsError(bound_errors)
 
-    not_allowed = _not_allowed_range_fields(template_analyte.result_type, values)
+    result_type = await get_category(session, ResultType, template_analyte.result_type)
+    not_allowed = _not_allowed_range_fields(result_type, values)  # type: ignore[arg-type]
     if not_allowed:
         raise ReferenceRangeFieldsNotAllowedError(
             template_analyte.result_type, not_allowed
         )
+
+    await ensure_category(
+        session,
+        Sex,
+        values.get("sex"),
+        subject="el sexo",
+        field="sex",
+        current=current.sex if current else None,
+    )
+    await ensure_category(
+        session,
+        AgeUnit,
+        values.get("age_unit"),
+        subject="la unidad de edad",
+        field="age_unit",
+        feminine=True,
+        current=current.age_unit if current else None,
+    )
 
     if _is_new_reference(values, "expected_option_id", current):
         option_id = values["expected_option_id"]
@@ -1045,10 +1093,21 @@ async def _validate_reference_range(
         siblings = await repository.list_reference_ranges_by_template_analyte(
             session, template_analyte.id
         )
+        wildcard_sexes = frozenset(
+            code
+            for code, sex in (await categories_by_code(session, Sex)).items()
+            if sex.is_wildcard
+        )
+        age_days = {
+            code: float(unit.days)
+            for code, unit in (await categories_by_code(session, AgeUnit)).items()
+        }
         for sibling in siblings:
             if current is not None and sibling.id == current.id:
                 continue
-            if _ranges_overlap(values, _range_values(sibling)):
+            if _ranges_overlap(
+                values, _range_values(sibling), wildcard_sexes, age_days
+            ):
                 raise ReferenceRangeOverlapError(str(sibling.id))
 
 

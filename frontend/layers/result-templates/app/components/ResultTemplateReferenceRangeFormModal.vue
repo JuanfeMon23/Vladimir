@@ -2,21 +2,15 @@
 import { z } from 'zod'
 import type { UiSelectOption } from '#andromeda/components/ui/UiSelect.vue'
 import type { ResultTemplateVersionContent } from '../composables/useResultTemplateVersionContent'
-import {
-  REFERENCE_RANGE_AGE_UNITS,
-  REFERENCE_RANGE_AGE_UNIT_LABELS,
-  REFERENCE_RANGE_SEXES,
-  REFERENCE_RANGE_SEX_LABELS
-} from '../types/result-templates'
 import type { ReferenceRangeRead, ReferenceRangeTypedField, ResultOptionRead, ResultTemplateAnalyteRead } from '../types/result-templates'
 
 /**
  * Crear o editar un rango de referencia de un analito de plantilla (solo en
  * borrador). Un único formulario para crear y editar. Los campos tipados
- * visibles dependen del `result_type` del analito
- * (`resultTemplateRangeFields`: numérico/calculado → límites; cualitativo/
- * semicuantitativo → opción esperada; booleano → booleano esperado; texto →
- * solo texto a mostrar e interpretación; titulación → todos). Los no
+ * visibles dependen de las banderas del `result_type` del analito en el
+ * catálogo (`resultTemplateRangeFields`: `uses_numeric_range` → límites;
+ * `uses_option_set` → opción esperada; `uses_boolean_range` → booleano
+ * esperado; sin banderas, solo texto a mostrar e interpretación). Los no
  * admitidos no se validan ni se envían.
  */
 const props = defineProps<{
@@ -28,11 +22,11 @@ const emit = defineEmits<{ saved: [] }>()
 const open = defineModel<boolean>('open', { required: true })
 
 /** Campos tipados que admite el tipo de resultado del analito. */
-const allowedFields = computed(() => new Set<ReferenceRangeTypedField>(resultTemplateRangeFields(props.templateAnalyte.result_type)))
+const allowedFields = computed(() => new Set<ReferenceRangeTypedField>(resultTemplateRangeFields(props.content.resultTypeBehavior(props.templateAnalyte.result_type))))
 const has = (field: ReferenceRangeTypedField) => allowedFields.value.has(field)
 
-const sexOptions = toSelectOptions(REFERENCE_RANGE_SEX_LABELS)
-const ageUnitOptions = toSelectOptions(REFERENCE_RANGE_AGE_UNIT_LABELS)
+const sexOptions = computed(() => props.content.sexes.optionsFor(props.entity?.sex))
+const ageUnitOptions = computed(() => props.content.ageUnits.optionsFor(props.entity?.age_unit))
 const booleanOptions: UiSelectOption[] = [
   { value: 'true', label: 'Verdadero' },
   { value: 'false', label: 'Falso' }
@@ -53,10 +47,10 @@ function orderedPair(low: number | null, high: number | null, path: string, ctx:
 
 const schema = z
   .object({
-    sex: zRequiredEnum(REFERENCE_RANGE_SEXES, 'Selecciona el sexo.'),
+    sex: zRequiredText('Selecciona el sexo.', 64),
     age_min: zOptionalNumber({ min: 0 }),
     age_max: zOptionalNumber({ min: 0 }),
-    age_unit: zOptionalEnum(REFERENCE_RANGE_AGE_UNITS),
+    age_unit: zOptionalText(64),
     condition: zOptionalText(255),
     low: zOptionalNumber(),
     high: zOptionalNumber(),
@@ -88,7 +82,7 @@ const { submit, isSubmitting, formError } = useZodForm(schema, {
   initialValues: () => {
     const source = props.entity
     return {
-      sex: source?.sex ?? 'any',
+      sex: source?.sex ?? props.content.sexes.items.find(sex => sex.is_wildcard && sex.is_active)?.code ?? '',
       age_min: numberText(source?.age_min),
       age_max: numberText(source?.age_max),
       age_unit: source?.age_unit ?? '',
@@ -126,7 +120,7 @@ watch(open, async (isOpen) => {
 const onSubmit = submit(async (values) => {
   const api = useResultTemplates()
   const { templateId, versionId } = props.content
-  const payload = pickResultTemplateRangeValues(values, props.templateAnalyte.result_type)
+  const payload = pickResultTemplateRangeValues(values, props.content.resultTypeBehavior(props.templateAnalyte.result_type))
   if (props.entity) {
     await api.updateReferenceRange(templateId, versionId, props.templateAnalyte.id, props.entity.id, payload)
   } else {
@@ -149,9 +143,10 @@ const onSubmit = submit(async (values) => {
     :submit-label="entity ? 'Guardar cambios' : 'Agregar'"
     @submit="onSubmit"
   >
+    <UiAlert v-if="content.sexes.error" :message="content.sexes.error" />
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
       <UiFormField name="sex" label="Sexo" required>
-        <UiSelect :options="sexOptions" />
+        <UiSelect :options="sexOptions" placeholder="Seleccionar sexo" />
       </UiFormField>
       <UiFormField name="age_min" label="Edad mín.">
         <UiTextInput type="number" step="any" min="0" />

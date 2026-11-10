@@ -1,7 +1,10 @@
 """Tests end-to-end (HTTP) del modulo `preconditions`."""
 
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.categories import get_category
+from app.modules.preconditions.models import PreconditionCategory
 from app.modules.preconditions.tests.conftest import unique_code
 
 
@@ -124,14 +127,62 @@ async def test_update_precondition(
     assert patch_response.json()["name"] == "Ayuno de 12 horas"
 
 
-async def test_create_precondition_invalid_enum_returns_422(
+async def test_create_precondition_unknown_category_returns_422(
     client: AsyncClient, precondition_payload: dict
 ) -> None:
-    """`category` y `duration_unit` se validan en el schema (antes llegaban
-    al CHECK de la BD)."""
+    """`category` y `duration_unit` se validan contra sus catalogos en BD."""
     for field, value in (("category", "inexistente"), ("duration_unit", "semanas")):
         response = await client.post(
             "/api/v1/preconditions", json={**precondition_payload, field: value}
         )
         assert response.status_code == 422, field
-        assert response.json()["detail"][0]["loc"] == ["body", field]
+        assert response.json()["code"] == "invalid_reference"
+        assert response.json()["details"] == {field: value}
+
+
+async def test_create_precondition_inactive_category_returns_422(
+    client: AsyncClient, session: AsyncSession, precondition_payload: dict
+) -> None:
+    row = await get_category(session, PreconditionCategory, "higiene")
+    assert row is not None
+    row.is_active = False
+    await session.flush()
+
+    response = await client.post(
+        "/api/v1/preconditions", json={**precondition_payload, "category": "higiene"}
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "inactive_reference"
+
+
+async def test_patch_precondition_unknown_duration_unit_returns_422(
+    client: AsyncClient, precondition_payload: dict
+) -> None:
+    created = (
+        await client.post("/api/v1/preconditions", json=precondition_payload)
+    ).json()
+
+    response = await client.patch(
+        f"/api/v1/preconditions/{created['id']}", json={"duration_unit": "semanas"}
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "invalid_reference"
+
+
+async def test_create_item_unknown_category_returns_422(
+    client: AsyncClient, precondition_payload: dict
+) -> None:
+    parent = (
+        await client.post("/api/v1/preconditions", json=precondition_payload)
+    ).json()
+    item = {**precondition_payload, "code": f"{precondition_payload['code']}-i"}
+
+    response = await client.post(
+        f"/api/v1/preconditions/{parent['id']}/items",
+        json={**item, "category": "inexistente"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "invalid_reference"

@@ -2,10 +2,11 @@ import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiError } from '~/testing/apiError'
+import { CATALOG_FIXTURES, fakeCatalogs } from '~/testing/catalogs'
 import { fakePage } from '~/testing/fakeApi'
 import { ALL_CONSENT_DOCUMENTS_TAGS } from '~/testing/session'
 import { signInWith } from '#leo-client/testing/session'
-import { control, fieldError, flushAll, optionLabels, setChecked, setValue, submitForm } from '#andromeda/testing/dom'
+import { button, click, control, fieldError, flushAll, optionLabels, setChecked, setValue, submitForm } from '#andromeda/testing/dom'
 import type { ConsentDocumentRead } from '../types/consent-documents'
 import ConsentDocumentFormModal from './ConsentDocumentFormModal.vue'
 
@@ -31,8 +32,9 @@ function entity(overrides: Partial<ConsentDocumentRead> = {}): ConsentDocumentRe
 }
 
 beforeEach(() => {
-  signInWith(ALL_CONSENT_DOCUMENTS_TAGS)
+  signInWith([...ALL_CONSENT_DOCUMENTS_TAGS, MODULE_VIEW.catalogs.tag])
   fake.reset()
+  fakeCatalogs(fake, ['consent-document-types', 'consent-signers'])
   document.body.innerHTML = ''
   fake.routes['GET /consent-documents/d1/versions'] = fakePage([])
   fake.routes['GET /activity'] = fakePage([])
@@ -108,5 +110,49 @@ describe('ConsentDocumentFormModal', () => {
     await setValue(control(dialog, 'Tipo de documento'), 'otro')
     await submitForm(form)
     expect(fieldError(dialog, 'Código')).toBe('Ya existe un documento con el código NUEVO.')
+  })
+
+  it('los tipos salen del catálogo de la API: un tipo nuevo aparece sin tocar el código', async () => {
+    fake.routes['GET /catalogs/consent-document-types'] = [
+      { id: 'x', code: 'autorizacion_imagen', name: 'Autorización de imagen', sort_order: 0, is_active: true, created_at: '', updated_at: '' }
+    ]
+    const { dialog } = await mountModal(null)
+    expect(optionLabels(control<HTMLSelectElement>(dialog, 'Tipo de documento'))).toEqual(['Seleccionar tipo', 'Autorización de imagen'])
+  })
+
+  it('un tipo inactivo ya guardado se sigue mostrando, marcado "(inactivo)"', async () => {
+    fake.routes['GET /catalogs/consent-document-types'] = [
+      ...CATALOG_FIXTURES['consent-document-types'],
+      { id: 'v', code: 'viejo', name: 'Tipo viejo', sort_order: 9, is_active: false, created_at: '', updated_at: '' }
+    ]
+    const { dialog } = await mountModal(entity({ document_type: 'viejo' }))
+    const select = control<HTMLSelectElement>(dialog, 'Tipo de documento')
+    expect(optionLabels(select)).toContain('Tipo viejo (inactivo)')
+    expect(select.value).toBe('viejo')
+  })
+
+  it.each([
+    ['invalid_reference', 'El tipo de documento «raro» no existe.'],
+    ['inactive_reference', 'El tipo de documento «otro» está inactivo.']
+  ])('el 422 %s se muestra en Tipo de documento', async (code, message) => {
+    fake.failures['POST /consent-documents'] = apiError({ code, message, details: { document_type: 'otro' } }, 422)
+    const { dialog, form } = await mountModal(null)
+    await setValue(control(dialog, 'Código'), 'NUEVO')
+    await setValue(control(dialog, 'Nombre'), 'Nuevo')
+    await setValue(control(dialog, 'Tipo de documento'), 'otro')
+    await submitForm(form)
+    expect(fieldError(dialog, 'Tipo de documento')).toBe(message)
+    expect(fieldError(dialog, 'Código')).toBeNull()
+  })
+
+  it('la primera versión se crea con el primer firmante activo del catálogo', async () => {
+    fake.routes['GET /catalogs/consent-signers'] = [
+      { id: 'a', code: 'tutor', name: 'Tutor', sort_order: 0, is_active: false, created_at: '', updated_at: '' },
+      { id: 'b', code: 'representante', name: 'Representante', sort_order: 1, is_active: true, created_at: '', updated_at: '' }
+    ]
+    const { dialog } = await mountModal(entity())
+    await click(button(dialog, 'Nueva versión'))
+    await flushAll()
+    expect(fake.bodies('POST', '/consent-documents/d1/versions')[0]).toMatchObject({ signer: 'representante' })
   })
 })

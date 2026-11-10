@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import runtime_settings
+from app.core.categories import ensure_category
 from app.core.dependencies import (
     NO_SEARCH,
     ActiveOnlyFilter,
@@ -25,7 +26,12 @@ from app.core.schemas import Page
 from app.core.versioning import VersioningService, VersionNotFoundError
 from app.modules.consent_documents import repository
 from app.modules.consent_documents.files import validate_pdf_base64
-from app.modules.consent_documents.models import ConsentDocument, ConsentDocumentVersion
+from app.modules.consent_documents.models import (
+    ConsentDocument,
+    ConsentDocumentType,
+    ConsentDocumentVersion,
+    ConsentSigner,
+)
 from app.modules.consent_documents.schemas import (
     DATA_TREATMENT_TYPE,
     ConsentDocumentCreate,
@@ -96,9 +102,9 @@ def _with_file(data: BaseModel, max_mib: int) -> BaseModel:
 async def create_version(
     session: AsyncSession, consent_document_id: UUID, data: BaseModel
 ) -> ConsentDocumentVersionRead:
-    return await versioning.create_version(
-        session, consent_document_id, _with_file(data, await _max_file_mib())
-    )
+    write = _with_file(data, await _max_file_mib())
+    await _ensure_signer(session, write.signer)  # type: ignore[attr-defined]
+    return await versioning.create_version(session, consent_document_id, write)
 
 
 async def update_version(
@@ -107,11 +113,16 @@ async def update_version(
     version_id: UUID,
     data: BaseModel,
 ) -> ConsentDocumentVersionRead:
+    write = _with_file(data, await _max_file_mib())
+    if write.signer is not None:  # type: ignore[attr-defined]
+        current = await session.get(ConsentDocumentVersion, version_id)
+        await _ensure_signer(
+            session,
+            write.signer,  # type: ignore[attr-defined]
+            current=current.signer if current is not None else None,
+        )
     return await versioning.update_version(
-        session,
-        consent_document_id,
-        version_id,
-        _with_file(data, await _max_file_mib()),
+        session, consent_document_id, version_id, write
     )
 
 
@@ -199,6 +210,32 @@ async def _translate_general_integrity_error(
     return error if existing is None else _general_conflict(existing)
 
 
+async def _ensure_document_type(
+    session: AsyncSession, code: str | None, current: str | None = None
+) -> None:
+    await ensure_category(
+        session,
+        ConsentDocumentType,
+        code,
+        subject="el tipo de documento",
+        field="document_type",
+        current=current,
+    )
+
+
+async def _ensure_signer(
+    session: AsyncSession, code: str | None, current: str | None = None
+) -> None:
+    await ensure_category(
+        session,
+        ConsentSigner,
+        code,
+        subject="el firmante",
+        field="signer",
+        current=current,
+    )
+
+
 async def list_documents(
     session: AsyncSession,
     pagination: PaginationParams,
@@ -222,6 +259,7 @@ async def create_document(
     existing = await repository.get_by_code(session, data.code)
     if existing is not None:
         raise CodeConflictError("un documento", data.code)
+    await _ensure_document_type(session, data.document_type)
     if data.document_type == DATA_TREATMENT_TYPE and data.is_active:
         await _ensure_single_general(session)
     try:
@@ -254,6 +292,9 @@ async def update_document(
             raise CodeConflictError("un documento", new_code)
 
     changes = data.model_dump(exclude_unset=True)
+    await _ensure_document_type(
+        session, changes.get("document_type"), current=document.document_type
+    )
     final_type = changes.get("document_type", document.document_type)
     final_active = changes.get("is_active", document.is_active)
     if final_type == DATA_TREATMENT_TYPE and final_active:

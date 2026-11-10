@@ -1,5 +1,5 @@
 import { pdfFileErrorMessage } from '#andromeda/utils/pdfFile'
-import type { ConsentDocumentType } from '../types/consent-documents'
+import { CONSENT_GENERAL_DOCUMENT_TYPE } from '../types/consent-documents'
 
 /** Nombre de la descarga de una versión: `<codigo>-v<N>.pdf`. */
 export function consentDocumentFilename(code: string, versionNumber: number): string {
@@ -7,8 +7,8 @@ export function consentDocumentFilename(code: string, versionNumber: number): st
 }
 
 /** El consentimiento general (se firma primero; a lo sumo uno activo; no se enlaza a exámenes). */
-export function isGeneralConsent(document: { document_type: ConsentDocumentType }): boolean {
-  return document.document_type === 'tratamiento_datos'
+export function isGeneralConsent(document: { document_type: string }): boolean {
+  return document.document_type === CONSENT_GENERAL_DOCUMENT_TYPE
 }
 
 /**

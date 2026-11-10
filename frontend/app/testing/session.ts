@@ -20,5 +20,6 @@ export const ALL_CONSENT_DOCUMENTS_TAGS = allOf('consent-documents')
 export const ALL_RESULT_TEMPLATES_TAGS = allOf('result-templates')
 export const ALL_LAB_TESTS_TAGS = allOf('lab-tests')
 export const ALL_LAB_AREAS_TAGS = allOf('lab-areas')
+export const ALL_CATALOGS_TAGS = allOf('catalogs')
 /** Los `view` de los módulos que el formulario de examen consulta para sus selectores. */
 export const LAB_TEST_SELECTOR_VIEW_TAGS: string[] = Object.values(MODULE_VIEW).map(module => module.tag)

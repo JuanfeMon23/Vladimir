@@ -3,9 +3,8 @@
 
 import pytest
 
-from app.core.tests.schema_checks import enum_values, schema_model_mismatches
+from app.core.tests.schema_checks import schema_model_mismatches
 from app.modules.lab_tests.models import (
-    DURATION_UNIT_VALUES,
     LabTest,
     LabTestPrecondition,
 )
@@ -26,10 +25,3 @@ from app.modules.lab_tests.schemas import (
 )
 def test_schema_matches_model(schema: type, model: type) -> None:
     assert schema_model_mismatches(schema, model) == []
-
-
-def test_duration_unit_override_is_enum() -> None:
-    assert (
-        enum_values(LabTestPreconditionInput, "duration_unit_override")
-        == DURATION_UNIT_VALUES
-    )

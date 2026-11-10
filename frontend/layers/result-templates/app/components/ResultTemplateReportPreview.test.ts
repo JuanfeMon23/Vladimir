@@ -2,7 +2,9 @@ import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
+import { fakeCatalogs } from '~/testing/catalogs'
 import { fakePage } from '~/testing/fakeApi'
+import { signInWith } from '#leo-client/testing/session'
 import { flushAll } from '#andromeda/testing/dom'
 import { useResultTemplateVersionContent } from '../composables/useResultTemplateVersionContent'
 import ResultTemplateReportPreview from './ResultTemplateReportPreview.vue'
@@ -28,7 +30,9 @@ const NO_VALUES = {
 }
 
 beforeEach(() => {
+  signInWith([MODULE_VIEW.catalogs.tag])
   fake.reset()
+  fakeCatalogs(fake, ['result-types', 'sexes', 'age-units'])
   document.body.innerHTML = ''
   fake.routes[`GET ${BASE}/sections`] = [{ id: 's1', name: 'Serología', sort_order: 1, is_active: true }]
   fake.routes[`GET ${BASE}/analytes`] = ANALYTES

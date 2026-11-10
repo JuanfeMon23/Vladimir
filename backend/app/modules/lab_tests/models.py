@@ -27,7 +27,6 @@ import uuid
 
 from sqlalchemy import (
     Boolean,
-    CheckConstraint,
     ForeignKey,
     Index,
     Integer,
@@ -42,11 +41,6 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db.base import Base
 from app.core.db.mixins import ActivatableMixin, CatalogMixin, Timestamps, UUIDv7PK
-
-# Mismo dominio de valores que `preconditions.models.DURATION_UNIT_VALUES`;
-# se redeclara aca porque `lab_test_preconditions` solo necesita el CHECK
-# del override, no el resto del modulo `preconditions`.
-DURATION_UNIT_VALUES = ("minutos", "horas", "dias")
 
 
 class LabTest(CatalogMixin, UUIDv7PK, Timestamps, Base):
@@ -88,13 +82,7 @@ class LabTestPrecondition(ActivatableMixin, UUIDv7PK, Timestamps, Base):
     """
 
     __tablename__ = "lab_test_preconditions"
-    __table_args__ = (
-        UniqueConstraint("lab_test_id", "precondition_id"),
-        CheckConstraint(
-            f"duration_unit_override IS NULL OR duration_unit_override IN {DURATION_UNIT_VALUES}",
-            name="duration_unit_override",
-        ),
-    )
+    __table_args__ = (UniqueConstraint("lab_test_id", "precondition_id"),)
 
     lab_test_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("lab_tests.id"), nullable=False, index=True
@@ -112,7 +100,10 @@ class LabTestPrecondition(ActivatableMixin, UUIDv7PK, Timestamps, Base):
         Numeric, nullable=True
     )
     duration_unit_override: Mapped[str | None] = mapped_column(
-        String(16), nullable=True
+        String(16),
+        ForeignKey("duration_units.code"),
+        nullable=True,
+        index=True,
     )
     patient_instructions_override: Mapped[str | None] = mapped_column(
         Text, nullable=True

@@ -40,7 +40,10 @@ const groups = computed(() => buildReportPreview({
   names: {
     analyte: id => props.content.analyteName(id),
     unit: id => props.content.unitSymbol(id),
-    option: id => props.content.referenceName('expected_option_id', id)
+    option: id => props.content.referenceName('expected_option_id', id),
+    resultType: code => props.content.resultTypes.nameOf(code),
+    sex: code => props.content.sexLabel(code),
+    ageUnit: code => props.content.ageUnits.nameOf(code)
   }
 }))
 </script>

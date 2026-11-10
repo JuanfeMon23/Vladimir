@@ -3,10 +3,8 @@
 
 import pytest
 
-from app.core.tests.schema_checks import enum_values, schema_model_mismatches
+from app.core.tests.schema_checks import schema_model_mismatches
 from app.modules.consent_documents.models import (
-    DOCUMENT_TYPE_VALUES,
-    SIGNER_VALUES,
     ConsentDocument,
     ConsentDocumentVersion,
 )
@@ -29,18 +27,6 @@ from app.modules.consent_documents.schemas import (
 )
 def test_schema_matches_model(schema: type, model: type) -> None:
     assert schema_model_mismatches(schema, model) == []
-
-
-@pytest.mark.parametrize("schema", [ConsentDocumentCreate, ConsentDocumentUpdate])
-def test_document_type_is_enum(schema: type) -> None:
-    assert enum_values(schema, "document_type") == DOCUMENT_TYPE_VALUES
-
-
-@pytest.mark.parametrize(
-    "schema", [ConsentDocumentVersionCreate, ConsentDocumentVersionUpdate]
-)
-def test_signer_is_enum(schema: type) -> None:
-    assert enum_values(schema, "signer") == SIGNER_VALUES
 
 
 def test_file_base64_is_write_only_and_has_file_is_derived() -> None:

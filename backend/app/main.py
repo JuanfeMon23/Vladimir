@@ -12,6 +12,7 @@ from app.core.activity import activity_router
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.leo import auth
+from app.modules.catalogs import catalogs_router
 from app.modules.consent_documents import (
     consent_document_versions_router,
     consent_documents_router,
@@ -63,6 +64,7 @@ register_version_usages()
 
 app.include_router(activity_router, prefix="/api/v1/activity")
 app.include_router(settings_router, prefix="/api/v1/settings")
+app.include_router(catalogs_router, prefix="/api/v1/catalogs")
 app.include_router(staff_router, prefix="/api/v1/staff")
 app.include_router(lab_areas_router, prefix="/api/v1/lab-areas")
 app.include_router(lab_tests_router, prefix="/api/v1/lab-tests")

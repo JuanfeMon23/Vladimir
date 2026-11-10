@@ -234,37 +234,12 @@ export type ResultTemplateContentListParams = {
 // Template analytes (editable solo en draft)
 // --------------------------------------------------------------------------
 
-/** Valores de `RESULT_TYPE_VALUES` en el backend (`Literal` en el OpenAPI). */
-export const RESULT_TYPES = [
-  'numeric',
-  'boolean',
-  'qualitative',
-  'semi_quantitative',
-  'titer',
-  'text',
-  'calculated'
-] as const
-export type ResultType = typeof RESULT_TYPES[number]
-
-export const RESULT_TYPE_LABELS: Record<ResultType, string> = {
-  numeric: 'Numérico',
-  boolean: 'Booleano',
-  qualitative: 'Cualitativo',
-  semi_quantitative: 'Semicuantitativo',
-  titer: 'Título (dilución)',
-  text: 'Texto',
-  calculated: 'Calculado'
-}
-
 /**
- * Tipos de resultado que eligen un conjunto de opciones. `titer` se modela
- * como `semi_quantitative` (conjunto semilla `titulos`, de "No reactivo" a
- * ">1:1024"; decisión sujeta a validación del laboratorio).
+ * `result_type` es el `code` de un valor del catálogo `result-types`
+ * (`/catalogs/result-types`): qué admite y exige cada tipo lo dicen sus
+ * banderas (`uses_option_set`, `uses_unit`, `uses_formula`…), no una lista de
+ * códigos en el código. Lo mismo `sex` (`sexes`) y `age_unit` (`age-units`).
  */
-export const RESULT_TYPES_WITH_OPTION_SET: readonly ResultType[] = ['qualitative', 'semi_quantitative', 'titer']
-
-/** Tipos de resultado con unidad y decimales (obligatorios para publicar). */
-export const RESULT_TYPES_WITH_UNIT: readonly ResultType[] = ['numeric', 'calculated']
 
 export interface ResultTemplateAnalyteRead {
   id: string
@@ -272,7 +247,7 @@ export interface ResultTemplateAnalyteRead {
   section_id: string | null
   analyte_id: string
   sort_order: number
-  result_type: ResultType
+  result_type: string
   unit_id: string | null
   /** Símbolo de la unidad (solo lectura). */
   unit?: string | null
@@ -292,7 +267,7 @@ export interface ResultTemplateAnalyteCreate {
   section_id?: string | null
   analyte_id: string
   sort_order: number
-  result_type: ResultType
+  result_type: string
   unit_id?: string | null
   decimals?: number | null
   option_set_id?: string | null
@@ -308,32 +283,13 @@ export type ResultTemplateAnalyteUpdate = Partial<ResultTemplateAnalyteCreate & 
 // Reference ranges (editable solo en draft)
 // --------------------------------------------------------------------------
 
-/** Valores de `SEX_VALUES` / `AGE_UNIT_VALUES` en el backend. */
-export const REFERENCE_RANGE_SEXES = ['any', 'male', 'female'] as const
-export type ReferenceRangeSex = typeof REFERENCE_RANGE_SEXES[number]
-
-export const REFERENCE_RANGE_SEX_LABELS: Record<ReferenceRangeSex, string> = {
-  any: 'Cualquiera',
-  male: 'Masculino',
-  female: 'Femenino'
-}
-
-export const REFERENCE_RANGE_AGE_UNITS = ['dias', 'meses', 'anos'] as const
-export type ReferenceRangeAgeUnit = typeof REFERENCE_RANGE_AGE_UNITS[number]
-
-export const REFERENCE_RANGE_AGE_UNIT_LABELS: Record<ReferenceRangeAgeUnit, string> = {
-  dias: 'Días',
-  meses: 'Meses',
-  anos: 'Años'
-}
-
 export interface ReferenceRangeRead {
   id: string
   template_analyte_id: string
-  sex: ReferenceRangeSex
+  sex: string
   age_min: number | null
   age_max: number | null
-  age_unit: ReferenceRangeAgeUnit | null
+  age_unit: string | null
   condition: string | null
   low: number | null
   high: number | null
@@ -349,10 +305,10 @@ export interface ReferenceRangeRead {
 }
 
 export interface ReferenceRangeCreate {
-  sex?: ReferenceRangeSex
+  sex?: string
   age_min?: number | null
   age_max?: number | null
-  age_unit?: ReferenceRangeAgeUnit | null
+  age_unit?: string | null
   condition?: string | null
   low?: number | null
   high?: number | null
@@ -373,7 +329,7 @@ export type ReferenceRangeTypedField = typeof REFERENCE_RANGE_TYPED_FIELDS[numbe
 /** `details.missing` del 422 de `publish` cuando la plantilla está incompleta. */
 export interface ResultTemplatePublishMissingEntry {
   template_analyte_id: string
-  result_type: ResultType
+  result_type: string
   /** `unit_id`, `decimals`, `option_set_id`, `formula`, `reference_ranges`. */
   missing_fields: string[]
   /** Rangos activos con campos que su `result_type` no admite. */

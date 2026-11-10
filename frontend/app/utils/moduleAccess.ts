@@ -16,7 +16,8 @@ export const MODULE_VIEW = {
   resultTemplates: { tag: 'vladimir.result-templates.view', label: 'plantillas de resultados' },
   preconditions: { tag: 'vladimir.preconditions.view', label: 'precondiciones' },
   samples: { tag: 'vladimir.samples.view', label: 'muestras' },
-  consentDocuments: { tag: 'vladimir.consent-documents.view', label: 'documentos a firmar' }
+  consentDocuments: { tag: 'vladimir.consent-documents.view', label: 'documentos a firmar' },
+  catalogs: { tag: 'vladimir.catalogs.view', label: 'catálogos' }
 } as const satisfies Record<string, ModuleView>
 
 /** Aviso cuando falta el `view` de un módulo del que depende un selector. */

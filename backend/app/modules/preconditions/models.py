@@ -11,31 +11,36 @@ para esta regla.
 
 import uuid
 
-from sqlalchemy import CheckConstraint, ForeignKey, Numeric, String, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db.base import Base
-from app.core.db.mixins import CatalogMixin, Timestamps, UUIDv7PK
+from app.core.db.mixins import CatalogMixin, CategoryMixin, Timestamps, UUIDv7PK
 
-KIND_VALUES = ("precondition", "condition")
 
-CATEGORY_VALUES = (
-    "ayuno",
-    "dieta",
-    "alcohol_sustancias",
-    "tabaco",
-    "medicamentos",
-    "actividad_fisica",
-    "abstinencia_sexual",
-    "recoleccion_muestra",
-    "horario_toma",
-    "reposo",
-    "higiene",
-    "otro",
-)
+class DurationUnit(CategoryMixin, UUIDv7PK, Timestamps, Base):
+    """Unidad de duración (catálogo de categoría). `minutes` = minutos que
+    equivale una unidad. También la usa `lab_test_preconditions`."""
 
-DURATION_UNIT_VALUES = ("minutos", "horas", "dias")
+    __tablename__ = "duration_units"
+    __table_args__ = (CheckConstraint("minutes > 0", name="minutes_positive"),)
+
+    minutes: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class PreconditionKind(CategoryMixin, UUIDv7PK, Timestamps, Base):
+    """Tipo de fila de `preconditions` (catálogo de categoría): `precondition`
+    (raíz) o `condition` (ítem). Los códigos son de sistema: el trigger de
+    profundidad y el backend dependen de ellos."""
+
+    __tablename__ = "precondition_kinds"
+
+
+class PreconditionCategory(CategoryMixin, UUIDv7PK, Timestamps, Base):
+    """Categoría de una precondición (catálogo de categoría)."""
+
+    __tablename__ = "precondition_categories"
 
 
 class Precondition(CatalogMixin, UUIDv7PK, Timestamps, Base):
@@ -48,20 +53,6 @@ class Precondition(CatalogMixin, UUIDv7PK, Timestamps, Base):
     """
 
     __tablename__ = "preconditions"
-    __table_args__ = (
-        CheckConstraint(
-            f"kind IN {KIND_VALUES}",
-            name="kind",
-        ),
-        CheckConstraint(
-            f"category IN {CATEGORY_VALUES}",
-            name="category",
-        ),
-        CheckConstraint(
-            f"duration_unit IS NULL OR duration_unit IN {DURATION_UNIT_VALUES}",
-            name="duration_unit",
-        ),
-    )
 
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
@@ -71,8 +62,23 @@ class Precondition(CatalogMixin, UUIDv7PK, Timestamps, Base):
     )
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    kind: Mapped[str] = mapped_column(String(16), nullable=False)
-    category: Mapped[str] = mapped_column(String(32), nullable=False)
+    kind: Mapped[str] = mapped_column(
+        String(16),
+        ForeignKey("precondition_kinds.code"),
+        nullable=False,
+        index=True,
+    )
+    category: Mapped[str] = mapped_column(
+        String(32),
+        ForeignKey("precondition_categories.code"),
+        nullable=False,
+        index=True,
+    )
     duration_value: Mapped[float | None] = mapped_column(Numeric, nullable=True)
-    duration_unit: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    duration_unit: Mapped[str | None] = mapped_column(
+        String(16),
+        ForeignKey("duration_units.code"),
+        nullable=True,
+        index=True,
+    )
     patient_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)

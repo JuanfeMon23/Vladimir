@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import {
-  CONSENT_DOCUMENT_SIGNERS,
-  CONSENT_DOCUMENT_SIGNER_LABELS
-} from '../../../../types/consent-documents'
 import type { ConsentDocumentRead, ConsentDocumentVersionRead } from '../../../../types/consent-documents'
 import { describeConsentPublishErrors } from '../../../../utils/consentDocuments'
 
@@ -29,10 +25,10 @@ const editable = computed(() => editor.isDraft && canEditVersion.value)
 
 const PUBLISH_BLOCKED_NO_FILE = 'Adjunta el PDF antes de publicar.'
 
-const signerOptions = toSelectOptions(CONSENT_DOCUMENT_SIGNER_LABELS)
+const signers = useCatalog('consent-signers')
 
 const schema = z.object({
-  signer: zRequiredEnum(CONSENT_DOCUMENT_SIGNERS, 'Selecciona quién firma.'),
+  signer: zRequiredText('Selecciona quién firma.', 64),
   content: zRequiredText('El contenido es obligatorio.'),
   change_notes: zOptionalText()
 })
@@ -104,9 +100,10 @@ onMounted(async () => {
         <UiAlert v-if="formError" :message="formError" />
         <UiAlert v-if="saved" variant="success" message="Borrador guardado." />
 
+        <UiAlert v-if="signers.error" :message="signers.error" />
         <fieldset :disabled="!editable" class="grid min-w-0 grid-cols-1 gap-4">
           <UiFormField name="signer" label="Firmante" required>
-            <UiSelect :options="signerOptions" placeholder="Seleccionar firmante" />
+            <UiSelect :options="signers.optionsFor(editor.version?.signer)" placeholder="Seleccionar firmante" />
           </UiFormField>
           <UiFormField name="change_notes" label="Notas del cambio">
             <UiTextarea :rows="2" />

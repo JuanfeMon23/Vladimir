@@ -9,9 +9,11 @@ describe('moduleAccess', () => {
     expect(MODULE_VIEW.preconditions.tag).toBe('vladimir.preconditions.view')
     expect(MODULE_VIEW.samples.tag).toBe('vladimir.samples.view')
     expect(MODULE_VIEW.consentDocuments.tag).toBe('vladimir.consent-documents.view')
+    expect(MODULE_VIEW.catalogs.tag).toBe('vladimir.catalogs.view')
   })
 
   it('el aviso nombra el módulo', () => {
     expect(noViewMessage(MODULE_VIEW.samples)).toBe('No tienes permiso para consultar muestras.')
+    expect(noViewMessage(MODULE_VIEW.catalogs)).toBe('No tienes permiso para consultar catálogos.')
   })
 })

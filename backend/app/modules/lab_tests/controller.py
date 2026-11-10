@@ -9,6 +9,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.activation import ensure_active
+from app.core.categories import ensure_category
 from app.core.dependencies import (
     NO_SEARCH,
     ActiveOnlyFilter,
@@ -43,7 +44,7 @@ from app.modules.lab_tests.schemas import (
     LabTestSampleTypeRead,
     LabTestUpdate,
 )
-from app.modules.preconditions.models import Precondition
+from app.modules.preconditions.models import DurationUnit, Precondition
 from app.modules.print_labels.models import PrintLabel, PrintLabelVersion
 from app.modules.result_templates.models import ResultTemplate, ResultTemplateVersion
 from app.modules.samples.models import SampleType
@@ -293,6 +294,18 @@ async def set_preconditions(
                 field="precondition_id",
                 feminine=True,
             )
+
+    current_units = {row.precondition_id: row.duration_unit_override for row in current}
+    for item in items:
+        await ensure_category(
+            session,
+            DurationUnit,
+            item.duration_unit_override,
+            subject="la unidad de duración",
+            field="duration_unit_override",
+            feminine=True,
+            current=current_units.get(item.precondition_id),
+        )
 
     desired = {
         item.precondition_id: item.model_dump(exclude={"precondition_id"})

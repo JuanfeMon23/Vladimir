@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { UiVersionSectionApi } from '~/components/ui/UiVersionSection.vue'
-import {
-  CONSENT_DOCUMENT_FIRST_VERSION_DEFAULTS,
-  CONSENT_DOCUMENT_TYPES,
-  CONSENT_DOCUMENT_TYPE_LABELS,
-  CONSENT_GENERAL_HINT
-} from '../types/consent-documents'
+import { CONSENT_DOCUMENT_FIRST_VERSION_CONTENT, CONSENT_GENERAL_HINT } from '../types/consent-documents'
 import type { ConsentDocumentRead, ConsentDocumentVersionRead } from '../types/consent-documents'
 import { isGeneralConsent, isGeneralDocumentConflict } from '../utils/consentDocuments'
 
@@ -22,12 +17,13 @@ const props = defineProps<{ entity: ConsentDocumentRead | null }>()
 const emit = defineEmits<{ saved: [] }>()
 const open = defineModel<boolean>('open', { required: true })
 
-const documentTypeOptions = toSelectOptions(CONSENT_DOCUMENT_TYPE_LABELS)
+const documentTypes = useCatalog('consent-document-types')
+const signers = useCatalog('consent-signers')
 
 const schema = z.object({
   code: zRequiredText('El código es obligatorio.', 64),
   name: zRequiredText('El nombre es obligatorio.', 150),
-  document_type: zRequiredEnum(CONSENT_DOCUMENT_TYPES, 'Selecciona un tipo de documento.'),
+  document_type: zRequiredText('Selecciona un tipo de documento.', 64),
   description: zOptionalText(),
   is_active: z.boolean(),
   activity_reason: zActivityReason()
@@ -77,12 +73,17 @@ const onSubmit = submit(async (values) => {
   open.value = false
 })
 
+/** Cuerpo de la primera versión: el backend exige contenido y firmante (el primero activo del catálogo). */
+function firstVersionBody() {
+  return { content: CONSENT_DOCUMENT_FIRST_VERSION_CONTENT, signer: signers.firstActiveCode() }
+}
+
 const versionsApi = computed<UiVersionSectionApi | null>(() => {
   const id = props.entity?.id
   if (!id) return null
   return {
     list: async () => (await consentDocumentsApi.listVersions(id, { page_size: 100 })).items,
-    create: isFirst => consentDocumentsApi.createVersion(id, isFirst ? { ...CONSENT_DOCUMENT_FIRST_VERSION_DEFAULTS } : {}),
+    create: isFirst => consentDocumentsApi.createVersion(id, isFirst ? firstVersionBody() : {}),
     publish: versionId => consentDocumentsApi.publishVersion(id, versionId),
     retire: versionId => consentDocumentsApi.retireVersion(id, versionId),
     editorPath: versionId => `/consent-documents/${id}/versions/${versionId}`,
@@ -105,6 +106,7 @@ const versionsApi = computed<UiVersionSectionApi | null>(() => {
     :submit-label="readOnly ? 'Cerrar' : entity ? 'Guardar cambios' : 'Crear'"
     @submit="onSubmit"
   >
+    <UiAlert v-if="documentTypes.error" :message="documentTypes.error" />
     <UiStatusBadge
       v-if="entity && entity.is_active && isGeneralConsent(entity)"
       variant="primary"
@@ -119,7 +121,7 @@ const versionsApi = computed<UiVersionSectionApi | null>(() => {
         <UiTextInput :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="document_type" label="Tipo de documento" required :hint="CONSENT_GENERAL_HINT" class="sm:col-span-2">
-        <UiSelect :options="documentTypeOptions" placeholder="Seleccionar tipo" :disabled="dataLocked" />
+        <UiSelect :options="documentTypes.optionsFor(entity?.document_type)" placeholder="Seleccionar tipo" :disabled="dataLocked" />
       </UiFormField>
       <UiFormField name="description" label="Descripción" class="sm:col-span-2">
         <UiTextarea :rows="2" :disabled="dataLocked" />

@@ -2,6 +2,41 @@
   "app": "vladimir",
   "modules": [
     {
+      "slug": "catalogs",
+      "name": "Catálogos de categoría",
+      "description": "Listas de categoría (unidades, tipos de resultado, sexos...) que usan los módulos.",
+      "actions": [
+        {
+          "tag": "vladimir.catalogs.change-status",
+          "verb": "change-status",
+          "name": "Activar o desactivar elementos de catálogos de categoría",
+          "description": "Desactivar un elemento de catálogo o reactivarlo.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.catalogs.create",
+          "verb": "create",
+          "name": "Crear elementos de catálogos de categoría",
+          "description": "Agregar un elemento a un catálogo de categoría.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.catalogs.edit",
+          "verb": "edit",
+          "name": "Editar elementos de catálogos de categoría",
+          "description": "Modificar nombre, orden y columnas de comportamiento.",
+          "assignable": true
+        },
+        {
+          "tag": "vladimir.catalogs.view",
+          "verb": "view",
+          "name": "Consultar catálogos de categoría",
+          "description": "Listar los catálogos de categoría con sus columnas de comportamiento.",
+          "assignable": true
+        }
+      ]
+    },
+    {
       "slug": "consent-documents",
       "name": "Documentos a firmar",
       "description": "Consentimientos y documentos que firma el paciente, con sus versiones y PDF.",

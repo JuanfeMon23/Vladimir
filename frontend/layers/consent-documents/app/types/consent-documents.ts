@@ -3,33 +3,21 @@
  * backend (`app/modules/consent_documents/schemas.py`).
  */
 
-/** Valores de `DOCUMENT_TYPE_VALUES` en el backend (`Literal` en el OpenAPI). */
-export const CONSENT_DOCUMENT_TYPES = ['consentimiento_informado', 'tratamiento_datos', 'otro'] as const
-export type ConsentDocumentType = typeof CONSENT_DOCUMENT_TYPES[number]
-
-export const CONSENT_DOCUMENT_TYPE_LABELS: Record<ConsentDocumentType, string> = {
-  consentimiento_informado: 'Consentimiento informado de examen',
-  tratamiento_datos: 'Tratamiento de datos (general)',
-  otro: 'Otro'
-}
+/**
+ * `document_type` y `signer` son el `code` de un valor de los catálogos
+ * `consent-document-types` y `consent-signers` (`/catalogs/*`); las etiquetas
+ * salen de la API, no de una lista en el código.
+ */
+export const CONSENT_GENERAL_DOCUMENT_TYPE = 'tratamiento_datos'
 
 /** Ayuda del tipo de documento: el general se firma primero y solo hay uno activo. */
 export const CONSENT_GENERAL_HINT = 'El consentimiento general se firma antes de cualquier examen; solo puede haber uno activo.'
-
-/** Valores de `SIGNER_VALUES` en el backend: quién debe firmar el documento. */
-export const CONSENT_DOCUMENT_SIGNERS = ['paciente', 'paciente_o_representante'] as const
-export type ConsentDocumentSigner = typeof CONSENT_DOCUMENT_SIGNERS[number]
-
-export const CONSENT_DOCUMENT_SIGNER_LABELS: Record<ConsentDocumentSigner, string> = {
-  paciente: 'Paciente',
-  paciente_o_representante: 'Paciente o representante'
-}
 
 export interface ConsentDocumentBase {
   code: string
   name: string
   description?: string | null
-  document_type: ConsentDocumentType
+  document_type: string
 }
 
 export interface ConsentDocumentRead extends ConsentDocumentBase {
@@ -64,7 +52,7 @@ export interface ConsentDocumentVersionRead {
   published_at: string | null
   change_notes: string | null
   content: string
-  signer: ConsentDocumentSigner
+  signer: string
   /** Metadatos del PDF adjunto; el contenido NO viaja aquí (`GET /consent-document-versions/{id}/file`). */
   has_file: boolean
   file_content_type: string | null
@@ -90,7 +78,7 @@ export interface ConsentDocumentFileRead {
  */
 export interface ConsentDocumentVersionCreate {
   content?: string
-  signer?: ConsentDocumentSigner
+  signer?: string
   change_notes?: string | null
   /**
    * PDF en base64 PURO (sin `data:`), ≤ 5 MB. En el PATCH: string = reemplaza,
@@ -102,11 +90,11 @@ export interface ConsentDocumentVersionCreate {
 /** Todos los campos opcionales: PATCH parcial. Solo aplica sobre un draft. */
 export type ConsentDocumentVersionUpdate = ConsentDocumentVersionCreate
 
-/** Valores de la primera versión (el backend exige `content` y `signer` si no hay versión que clonar). */
-export const CONSENT_DOCUMENT_FIRST_VERSION_DEFAULTS: Required<Pick<ConsentDocumentVersionCreate, 'content' | 'signer'>> = {
-  content: '# Título del documento\n\nRedacta aquí el contenido del documento.',
-  signer: 'paciente'
-}
+/**
+ * Contenido inicial de la primera versión (el backend exige `content` y
+ * `signer` si no hay versión que clonar; el firmante se toma del catálogo).
+ */
+export const CONSENT_DOCUMENT_FIRST_VERSION_CONTENT = '# Título del documento\n\nRedacta aquí el contenido del documento.'
 
 export type ConsentDocumentVersionListParams = {
   page?: number

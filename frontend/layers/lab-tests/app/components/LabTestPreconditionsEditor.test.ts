@@ -2,10 +2,11 @@ import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiError } from '~/testing/apiError'
+import { fakeCatalogs } from '~/testing/catalogs'
 import { fakePage } from '~/testing/fakeApi'
 import { ALL_LAB_TESTS_TAGS, LAB_TEST_SELECTOR_VIEW_TAGS } from '~/testing/session'
 import { signInWith } from '#leo-client/testing/session'
-import { control, flushAll, hasRow, rowOf, setChecked, setValue, submitForm } from '#andromeda/testing/dom'
+import { control, fieldError, flushAll, hasRow, optionLabels, rowOf, setChecked, setValue, submitForm } from '#andromeda/testing/dom'
 import type { LabTestPreconditionOption, LabTestPreconditionRead } from '../types/lab-tests'
 import LabTestPreconditionsEditor from './LabTestPreconditionsEditor.vue'
 
@@ -60,6 +61,7 @@ function assigned(preconditionId: string, extra: Partial<LabTestPreconditionRead
 beforeEach(() => {
   signInWith([...ALL_LAB_TESTS_TAGS, ...LAB_TEST_SELECTOR_VIEW_TAGS])
   fake.reset()
+  fakeCatalogs(fake, ['duration-units'])
   document.body.innerHTML = ''
   fake.routes['GET /preconditions'] = fakePage([
     option('ayuno', 'AYU', 'Ayuno', {
@@ -191,5 +193,26 @@ describe('LabTestPreconditionsEditor', () => {
     await setChecked(root, AYUNO_8H, true)
     await submitForm(form)
     expect(form.querySelector('[role="alert"]')?.textContent).toContain('La precondición «AYU8» está inactiva.')
+  })
+})
+
+describe('LabTestPreconditionsEditor: unidades de duración del catálogo', () => {
+  it('las unidades del override salen de la API (no de una lista en el código)', async () => {
+    fake.routes['GET /catalogs/duration-units'] = [
+      { id: 'sem', code: 'semanas', name: 'Semanas', sort_order: 0, is_active: true, minutes: 10080, created_at: '', updated_at: '' }
+    ]
+    const { root } = await mountEditor()
+    expect(optionLabels(control<HTMLSelectElement>(rowOf(root, AYUNO), 'Unidad de duración (override)'))).toEqual(['Sin override', 'Semanas', 'horas'])
+  })
+
+  it('el 422 inactive_reference de la unidad se muestra en el selector de la fila que la usa', async () => {
+    fake.failures['PUT /lab-tests/t1/preconditions'] = apiError(
+      { code: 'inactive_reference', message: 'La unidad de duración «horas» está inactiva.', details: { duration_unit_override: 'horas' } },
+      422
+    )
+    const { root, form } = await mountEditor()
+    await submitForm(form)
+    expect(fieldError(rowOf(root, AYUNO), 'Unidad de duración (override)')).toBe('La unidad de duración «horas» está inactiva.')
+    expect(root.textContent).not.toContain('Precondiciones guardadas.')
   })
 })

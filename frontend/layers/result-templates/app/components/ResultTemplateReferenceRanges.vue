@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { ResultTemplateVersionContent } from '../composables/useResultTemplateVersionContent'
-import { REFERENCE_RANGE_AGE_UNIT_LABELS, REFERENCE_RANGE_SEX_LABELS } from '../types/result-templates'
 import type { ReferenceRangeRead, ResultTemplateAnalyteRead } from '../types/result-templates'
 
 /**
@@ -49,9 +48,9 @@ function between(low: number | null, high: number | null) {
 }
 
 function describe(range: ReferenceRangeRead) {
-  const parts = [`Sexo: ${REFERENCE_RANGE_SEX_LABELS[range.sex] ?? range.sex}`]
+  const parts = [`Sexo: ${props.content.sexes.nameOf(range.sex)}`]
   if (range.age_min !== null || range.age_max !== null) {
-    const unit = range.age_unit ? ` ${REFERENCE_RANGE_AGE_UNIT_LABELS[range.age_unit] ?? range.age_unit}` : ''
+    const unit = range.age_unit ? ` ${props.content.ageUnits.nameOf(range.age_unit)}` : ''
     parts.push(`Edad: ${between(range.age_min, range.age_max)}${unit.toLowerCase()}`)
   }
   if (range.condition) parts.push(range.condition)

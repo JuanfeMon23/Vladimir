@@ -26,7 +26,14 @@ function range(over: Partial<ReferenceRangeRead> = {}): ReferenceRangeRead {
   }
 }
 
-const ctx = { unit: 'mg/dL', decimals: null as number | null, option: (id: string) => ({ o1: 'No reactivo' } as Record<string, string>)[id] ?? id }
+const sexLabels: Record<string, string> = { male: 'Masculino', female: 'Femenino' }
+const ageUnitLabels: Record<string, string> = { dias: 'Días', meses: 'Meses', anos: 'Años' }
+const catalogNames = {
+  resultType: (code: string) => ({ numeric: 'Numérico' } as Record<string, string>)[code] ?? code,
+  sex: (code: string) => sexLabels[code] ?? null,
+  ageUnit: (code: string) => ageUnitLabels[code] ?? code
+}
+const ctx = { unit: 'mg/dL', decimals: null as number | null, option: (id: string) => ({ o1: 'No reactivo' } as Record<string, string>)[id] ?? id, ...catalogNames }
 
 describe('formatReferenceRange', () => {
   it('display_text tiene prioridad sobre los límites', () => {
@@ -100,7 +107,8 @@ function analyte(id: string, over: Partial<ResultTemplateAnalyteRead> = {}): Res
 const names = {
   analyte: (id: string) => `Nombre ${id}`,
   unit: (id: string | null) => (id === 'u1' ? 'mg/dL' : null),
-  option: (id: string) => id
+  option: (id: string) => id,
+  ...catalogNames
 }
 
 describe('buildReportPreview', () => {

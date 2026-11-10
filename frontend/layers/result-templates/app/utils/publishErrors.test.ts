@@ -3,7 +3,8 @@ import { describeResultTemplatePublishErrors } from './publishErrors'
 
 const names = {
   templateAnalyte: (id: string) => ({ ta1: 'Glucosa (GLU)', ta2: 'VIH (HIV)' } as Record<string, string>)[id] ?? id,
-  reference: (field: string, id: string) => `${field}:${id}`
+  reference: (field: string, id: string) => `${field}:${id}`,
+  resultType: (code: string) => ({ numeric: 'Numérico', qualitative: 'Cualitativo' } as Record<string, string>)[code] ?? code
 }
 
 describe('describeResultTemplatePublishErrors', () => {
